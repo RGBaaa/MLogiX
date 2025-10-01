@@ -30,7 +30,7 @@ public class Compiler {
         try {
             manager.walk()
                     .filter(Files::isRegularFile)
-                    .filter((Path f) -> f.endsWith("test.lx"))
+                    .filter((Path f) -> f.getFileName().toString().endsWith(".mlx"))
                     .forEach(file -> {
                         SourceMap sourceMap;
                         try {
@@ -87,7 +87,7 @@ public class Compiler {
         return true;
     }
 
-    public class PhaseTimer {
+    public static class PhaseTimer {
         private final Map<String, Long> phaseTimeMap = new HashMap<>();
         private String currentPhaseName;
         private long phaseStart;
@@ -109,8 +109,6 @@ public class Compiler {
         }
 
         public void printPhaseTimes() {
-            endPhase(); // 结束当前阶段
-
             System.out.println("=== 编译阶段耗时统计 ===");
             if(Log.isAllowed(Log.LogType.DEBUG)) {
                 phaseTimeMap.forEach((phaseName, time) -> {
