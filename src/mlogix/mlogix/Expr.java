@@ -2,7 +2,6 @@ package mlogix.mlogix;
 
 import mlogix.compiler.*;
 import mlogix.struct.*;
-import mlogix.compiler.*;
 
 import java.util.*;
 
