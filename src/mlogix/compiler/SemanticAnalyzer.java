@@ -3,16 +3,16 @@ package mlogix.compiler;
 import mlogix.logix.*;
 import mlogix.logix.Expr.*;
 import mlogix.logix.Stmt.*;
-import mlogix.compiler.issue.Issue.*;
 import mlogix.compiler.struct.SourceMapManager.*;
 import mlogix.compiler.struct.*;
+import mlogix.problem.*;
 
 import java.util.*;
 
 public class SemanticAnalyzer {
     private Stack<Scope> scopeStack;
-    private List<SemanticIssue> errorList;
-    private List<SemanticIssue> warningList;
+    private List<Problem.SemanticProblem> errorList;
+    private List<Problem.SemanticProblem> warningList;
     private SourceMap sourceMap;
 
     // 语义分析访问者接口
@@ -565,15 +565,15 @@ public class SemanticAnalyzer {
     }
 
     // 错误
-    private SemanticIssue error(String text) {
-        SemanticIssue e = new SemanticIssue(sourceMap, text, IssueLevel.ERROR);
+    private Problem.SemanticProblem error(String name) {
+        Problem.SemanticProblem e = new Problem.SemanticProblem(sourceMap, name, Problem.ProblemLevel.ERROR);
         errorList.add(e);
         return e;
     }
 
     // 警告
-    private SemanticIssue warning(String text) {
-        SemanticIssue e = new SemanticIssue(sourceMap, text, IssueLevel.WARNING);
+    private Problem.SemanticProblem warning(String name) {
+        Problem.SemanticProblem e = new Problem.SemanticProblem(sourceMap, name, Problem.ProblemLevel.WARNING);
         warningList.add(e);
         return e;
     }
@@ -592,7 +592,7 @@ public class SemanticAnalyzer {
     }
     
     // 语义分析结果
-    public record SemanticResult(List<SemanticIssue> errorList, List<SemanticIssue> warningList) {
+    public record SemanticResult(List<Problem.SemanticProblem> errorList, List<Problem.SemanticProblem> warningList) {
     }
 
 }

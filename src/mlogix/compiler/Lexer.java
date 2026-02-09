@@ -1,20 +1,20 @@
 package mlogix.compiler;
 
-import mlogix.compiler.issue.*;
-import mlogix.compiler.issue.Issue.*;
 import mlogix.compiler.struct.SourceMapManager.*;
 import mlogix.compiler.struct.*;
 import mlogix.logix.*;
+import mlogix.problem.*;
 import mlogix.util.*;
 
 import java.util.*;
 import java.util.function.*;
 
 import static mlogix.logix.TokenType.*;
+import static mlogix.problem.Problem.*;
 
 public class Lexer {
-    private final List<Issue> errorList;
-    private final List<Issue> warningList;
+    private final List<Problem> errorList;
+    private final List<Problem> warningList;
     private SourceMap sourceMap;
     private int length;
     private int start;
@@ -22,7 +22,7 @@ public class Lexer {
 
     private boolean lastIsNewline;
 
-    public Lexer(List<Issue> errorList, List<Issue> warningList) {
+    public Lexer(List<Problem> errorList, List<Problem> warningList) {
         this.errorList = errorList;
         this.warningList = warningList;
     }
@@ -619,18 +619,18 @@ public class Lexer {
         }
     }
 
-    private LexerIssue error(String text) {
-        LexerIssue e = new LexerIssue(sourceMap, text, IssueLevel.ERROR);
+    private LexerProblem error(String text) {
+        LexerProblem e = new LexerProblem(sourceMap, text, Problem.ProblemLevel.ERROR);
         errorList.add(e);
         return e;
     }
 
-    private LexerIssue warning(String text) {
-        LexerIssue e = new LexerIssue(sourceMap, text, IssueLevel.WARNING);
+    private LexerProblem warning(String text) {
+        LexerProblem e = new LexerProblem(sourceMap, text, Problem.ProblemLevel.WARNING);
         warningList.add(e);
         return e;
     }
 
-    public record LexerResult(List<LexerIssue> errorList, List<LexerIssue> warningList) {
+    public record LexerResult(List<LexerProblem> errorList, List<LexerProblem> warningList) {
     }
 }

@@ -1,9 +1,9 @@
 package mlogix.compiler;
 
-import mlogix.compiler.issue.*;
 import mlogix.compiler.struct.*;
 import mlogix.compiler.struct.SourceMapManager.*;
 import mlogix.logix.*;
+import mlogix.problem.*;
 import mlogix.util.*;
 
 import java.io.*;
@@ -12,8 +12,8 @@ import java.util.*;
 
 public class Compiler {
     private final SourceMapManager manager;
-    private final List<Issue> errorList;
-    private final List<Issue> warningList;
+    private final List<Problem> errorList;
+    private final List<Problem> warningList;
 
     public Compiler(Path projectPath) {
         this.manager = new SourceMapManager(projectPath);
@@ -59,8 +59,8 @@ public class Compiler {
                         StructRegistry structRegistry = new StructRegistry();
 
                         SemanticResult semanticResult = semanticAnalyzer.analyze(ast, sourceMap);
-                        List<Issue.SemanticIssue> semanticErrorList = semanticResult.errorList();
-                        List<Issue.SemanticIssue> semanticWarningList = semanticResult.warningList();
+                        List<Problem.SemanticProblem> semanticErrorList = semanticResult.errorList();
+                        List<Problem.SemanticProblem> semanticWarningList = semanticResult.warningList();
 
                         semanticErrorList.forEach(e -> {
                             Log.error((e.toString()));

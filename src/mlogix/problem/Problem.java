@@ -1,4 +1,4 @@
-package mlogix.compiler.issue;
+package mlogix.problem;
 
 import mlogix.compiler.struct.SourceMapManager.*;
 import mlogix.logix.*;
@@ -7,15 +7,15 @@ import mlogix.util.*;
 import java.util.*;
 
 // 用于表示编译器问题，包含错误和警告
-public abstract class Issue extends RuntimeException {
-    private final SourceMap sourceMap; // 这个问题所在文件
-    private final String issueName; // 这个问题的名称
-    private final List<LineInfo> lineList = new ArrayList<>();
-    private final IssueLevel level; // 问题级别（错误或警告）
+public abstract class Problem extends RuntimeException {
+    public final SourceMap sourceMap; // 这个问题所在文件
+    public final String problemName; // 这个问题的名称
+    public final List<LineInfo> lineList = new ArrayList<>();
+    public final ProblemLevel level; // 问题级别（错误或警告）
 
-    public Issue(SourceMap sourceMap, String issueName, IssueLevel level) {
+    public Problem(SourceMap sourceMap, String problemName, ProblemLevel level) {
         this.sourceMap = sourceMap;
-        this.issueName = issueName;
+        this.problemName = problemName;
         this.level = level;
     }
 
@@ -31,29 +31,29 @@ public abstract class Issue extends RuntimeException {
         return lineInfo;
     }
 
-    public Issue point(int start, int end, String text) {
+    public Problem point(int start, int end, String text) {
         LineInfo lineInfo = getLineInfo(sourceMap.getLine(start));
         lineInfo.point(sourceMap.getCol(start), "^".repeat(end - start), text);
         return this;
     }
 
-    public Issue point(Token token, String text) {
+    public Problem point(Token token, String text) {
         return point(token.span.start(), token.span.end(), text);
     }
 
-    public Issue info(int start, int end, String text) {
+    public Problem info(int start, int end, String text) {
         LineInfo lineInfo = getLineInfo(sourceMap.getLine(start));
         lineInfo.info(sourceMap.getCol(start), "-".repeat(end - start), text);
         return this;
     }
 
-    public Issue info(Token token, String text) {
+    public Problem info(Token token, String text) {
         return info(token.span.start(), token.span.end(), text);
     }
 
     public String toString() {
-        String color = level == IssueLevel.ERROR ? Ansi.RED : Ansi.YELLOW;
-        StringBuilder str = new StringBuilder(color + level.name() + ":" + issueName + Ansi.DEFAULT + "\n");
+        String color = level == ProblemLevel.ERROR ? Ansi.RED : Ansi.YELLOW;
+        StringBuilder str = new StringBuilder(color + level.name() + ":" + problemName + Ansi.DEFAULT + "\n");
         lineList.sort(Comparator.comparing(li -> li.line));
 
         int maxLineDigitLen = 0; // 所有LineInfo中最长的行号长度
@@ -67,29 +67,29 @@ public abstract class Issue extends RuntimeException {
         return str.toString();
     }
 
-    public enum IssueLevel {
+    public enum ProblemLevel {
         WARNING,
         ERROR
     }
 
     /* Lexer产生的问题 */
-    public static class LexerIssue extends Issue {
-        public LexerIssue(SourceMap sourceMap, String issueName, IssueLevel level) {
-            super(sourceMap, issueName, level);
+    public static class LexerProblem extends Problem {
+        public LexerProblem(SourceMap sourceMap, String problemName, ProblemLevel level) {
+            super(sourceMap, problemName, level);
         }
     }
 
     /* Parser产生的问题 */
-    public static class ParserIssue extends Issue {
-        public ParserIssue(SourceMap sourceMap, String issueName, IssueLevel level) {
-            super(sourceMap, issueName, level);
+    public static class ParserProblem extends Problem {
+        public ParserProblem(SourceMap sourceMap, String problemName, ProblemLevel level) {
+            super(sourceMap, problemName, level);
         }
     }
 
     /* SemanticAnalyzer产生的问题 */
-    public static class SemanticIssue extends Issue {
-        public SemanticIssue(SourceMap sourceMap, String issueName, IssueLevel level) {
-            super(sourceMap, issueName, level);
+    public static class SemanticProblem extends Problem {
+        public SemanticProblem(SourceMap sourceMap, String problemName, ProblemLevel level) {
+            super(sourceMap, problemName, level);
         }
     }
 

@@ -1,4 +1,4 @@
-package mlogix.test.compiler;
+package mlogix.compiler;
 
 import java.util.*;
 

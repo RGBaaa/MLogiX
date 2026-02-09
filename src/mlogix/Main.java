@@ -4,7 +4,6 @@ import java.nio.file.*;
 
 import mlogix.compiler.Compiler;
 import mlogix.util.*;
-import mlogix.test.compiler.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -25,10 +24,6 @@ public class Main {
             case "c":
                 compile();
                 break;
-
-            case "t":
-                test();
-                break;
         }
     }
 
@@ -38,9 +33,5 @@ public class Main {
 
         Compiler compiler = new Compiler(projectDirectory);
         boolean result = compiler.compile();
-    }
-
-    static void test() {
-        new LexerTest().test();
     }
 }
