@@ -1,6 +1,6 @@
-package mlogix.compiler.struct;
+package mlogix.struct;
 
-import mlogix.logix.*;
+import mlogix.mlogix.*;
 
 /**
  * @param index 该Span所在SourceMap的索引

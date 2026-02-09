@@ -1,5 +1,3 @@
-package mlogix;
-
 import java.nio.file.*;
 
 import mlogix.compiler.Compiler;

@@ -1,4 +1,4 @@
-package mlogix.logix;
+package mlogix.mlogix;
 
 public class BuiltinStruct {
     public static final Struct

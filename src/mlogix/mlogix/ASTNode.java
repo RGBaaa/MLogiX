@@ -1,6 +1,6 @@
-package mlogix.logix;
+package mlogix.mlogix;
 
-import mlogix.compiler.struct.*;
+import mlogix.struct.*;
 
 public abstract sealed class ASTNode permits Expr, Stmt {
     public Span span;

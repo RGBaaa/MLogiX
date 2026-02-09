@@ -1,15 +1,15 @@
 package mlogix.compiler;
 
+import mlogix.mlogix.*;
 import mlogix.problem.*;
-import mlogix.compiler.struct.SourceMapManager.*;
-import mlogix.compiler.struct.*;
-import mlogix.logix.*;
+import mlogix.struct.SourceMapManager.*;
+import mlogix.struct.*;
 
 import java.util.*;
 
-import static mlogix.logix.Expr.*;
-import static mlogix.logix.Stmt.*;
-import static mlogix.logix.TokenType.*;
+import static mlogix.mlogix.Expr.*;
+import static mlogix.mlogix.Stmt.*;
+import static mlogix.mlogix.TokenType.*;
 
 public class Parser {
     private final Lexer lexer;

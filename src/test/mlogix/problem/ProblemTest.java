@@ -1,9 +1,10 @@
-package mlogix.problem;
+package test.mlogix.problem;
 
-import mlogix.compiler.struct.SourceMapManager;
-import mlogix.compiler.struct.Span;
-import mlogix.logix.Token;
-import mlogix.logix.TokenType;
+import mlogix.struct.SourceMapManager;
+import mlogix.struct.Span;
+import mlogix.mlogix.Token;
+import mlogix.mlogix.TokenType;
+import mlogix.problem.*;
 import mlogix.util.Log;
 
 class ProblemTest {
@@ -41,7 +42,7 @@ class ProblemTest {
         );
 
         if (problem == null) {
-            Log.error("FAILED: problem should not be null");
+            Log.error("FAILED: mlogix.problem should not be null");
             return;
         }
         if (!"Test Lexer Error".equals(problem.problemName)) {
@@ -67,7 +68,7 @@ class ProblemTest {
         );
 
         if (problem == null) {
-            Log.error("FAILED: problem should not be null");
+            Log.error("FAILED: mlogix.problem should not be null");
             return;
         }
         if (!"Test Parser Warning".equals(problem.problemName)) {
@@ -93,7 +94,7 @@ class ProblemTest {
         );
 
         if (problem == null) {
-            Log.error("FAILED: problem should not be null");
+            Log.error("FAILED: mlogix.problem should not be null");
             return;
         }
         if (!"Test Semantic Error".equals(problem.problemName)) {
@@ -122,7 +123,7 @@ class ProblemTest {
         Problem result = problem.point(0, 4, "error here");
 
         if (problem != result) {
-            Log.error("FAILED: point should return the same problem instance");
+            Log.error("FAILED: point should return the same mlogix.problem instance");
             return;
         }
         String resultStr = result.toString();
@@ -158,7 +159,7 @@ class ProblemTest {
         Problem result = problem.point(token, "token error");
 
         if (problem != result) {
-            Log.error("FAILED: point should return the same problem instance");
+            Log.error("FAILED: point should return the same mlogix.problem instance");
             return;
         }
         if (result.toString() == null) {
@@ -182,7 +183,7 @@ class ProblemTest {
         Problem result = problem.info(0, 4, "info here");
 
         if (problem != result) {
-            Log.error("FAILED: info should return the same problem instance");
+            Log.error("FAILED: info should return the same mlogix.problem instance");
             return;
         }
         String resultStr = result.toString();
@@ -214,7 +215,7 @@ class ProblemTest {
         Problem result = problem.info(token, "token info");
 
         if (problem != result) {
-            Log.error("FAILED: info should return the same problem instance");
+            Log.error("FAILED: info should return the same mlogix.problem instance");
             return;
         }
         if (result.toString() == null) {
@@ -375,7 +376,7 @@ class ProblemTest {
         );
 
         if (!(problem instanceof RuntimeException)) {
-            Log.error("FAILED: problem should be instance of RuntimeException");
+            Log.error("FAILED: mlogix.problem should be instance of RuntimeException");
             return;
         }
         Log.info("PASSED: testProblemExtendsRuntimeException");

@@ -1,9 +1,8 @@
-package mlogix.compiler.struct;
+package mlogix.struct;
+
+import mlogix.mlogix.*;
 
 import java.util.*;
-
-import mlogix.logix.Struct;
-import mlogix.logix.BuiltinStruct;
 
 public class StructRegistry {
     private final Map<String, Struct> structs = new HashMap<>();

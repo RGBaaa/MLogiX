@@ -1,7 +1,7 @@
 package mlogix.problem;
 
-import mlogix.compiler.struct.SourceMapManager.*;
-import mlogix.logix.*;
+import mlogix.mlogix.*;
+import mlogix.struct.SourceMapManager.*;
 import mlogix.util.*;
 
 import java.util.*;
@@ -10,11 +10,12 @@ import java.util.*;
 public abstract class Problem extends RuntimeException {
     public final SourceMap sourceMap; // 这个问题所在文件
     public final String problemName; // 这个问题的名称
-    public final List<LineInfo> lineList = new ArrayList<>();
     public final ProblemLevel level; // 问题级别（错误或警告）
+    final List<LineInfo> lineList = new ArrayList<>();
 
     public Problem(SourceMap sourceMap, String problemName, ProblemLevel level) {
         this.sourceMap = sourceMap;
+
         this.problemName = problemName;
         this.level = level;
     }

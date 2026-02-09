@@ -1,7 +1,8 @@
-package mlogix.logix;
+package mlogix.mlogix;
 
 import mlogix.compiler.*;
-import mlogix.compiler.struct.*;
+import mlogix.struct.*;
+import mlogix.compiler.*;
 
 import java.util.*;
 

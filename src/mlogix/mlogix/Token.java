@@ -1,6 +1,6 @@
-package mlogix.logix;
+package mlogix.mlogix;
 
-import mlogix.compiler.struct.Span;
+import mlogix.struct.Span;
 
 public class Token {
 	public final TokenType type;

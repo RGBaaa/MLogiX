@@ -1,6 +1,6 @@
-package mlogix.logix;
+package mlogix.mlogix;
 
-import mlogix.compiler.struct.SourceMapManager.*;
+import mlogix.struct.SourceMapManager.SourceMap;
 
 import java.lang.reflect.*;
 import java.util.*;

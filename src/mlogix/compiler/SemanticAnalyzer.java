@@ -1,13 +1,14 @@
 package mlogix.compiler;
 
-import mlogix.logix.*;
-import mlogix.logix.Expr.*;
-import mlogix.logix.Stmt.*;
-import mlogix.compiler.struct.SourceMapManager.*;
-import mlogix.compiler.struct.*;
+import mlogix.mlogix.*;
 import mlogix.problem.*;
+import mlogix.struct.SourceMapManager.*;
+import mlogix.struct.*;
 
 import java.util.*;
+
+import static mlogix.mlogix.Expr.*;
+import static mlogix.mlogix.Stmt.*;
 
 public class SemanticAnalyzer {
     private Stack<Scope> scopeStack;
@@ -15,90 +16,18 @@ public class SemanticAnalyzer {
     private List<Problem.SemanticProblem> warningList;
     private SourceMap sourceMap;
 
-    // 语义分析访问者接口
-    public interface SemanticVisitor {
-        // 语句类型
-        void visit(Program node);
-        void visit(Block node);
-        void visit(ExprStmt node);
-        void visit(IfStmt node);
-        void visit(ForStmt node);
-        void visit(WhileStmt node);
-        void visit(BreakStmt node);
-        void visit(ContinueStmt node);
-        void visit(FnStmt node);
-        void visit(ReturnStmt node);
-        void visit(AssignStmt node);
-        void visit(SetVarStmt node);
-        
-        // 表达式类型
-        Struct visit(Literal node);
-        Struct visit(Identifier node);
-        Struct visit(Unary node);
-        Struct visit(Binary node);
-        Struct visit(Array node);
-        Struct visit(Index node);
-        Struct visit(Range node);
-        Struct visit(Call node);
-        Struct visit(Get node);
+    // 辅助方法
+    private void enterScope() {
+        Scope parent = scopeStack.isEmpty() ? null : scopeStack.peek();
+        scopeStack.push(new Scope(parent));
     }
 
-    // 符号表条目
-    public static class Symbol {
-        public final String name;
-        public final Struct type;
-        public final Span span;
-
-        public Map<String, Object> values = new HashMap<>();
-
-        public Symbol(String name, Struct type, Span span) {
-            this.name = name;
-            this.type = type;
-            this.span = span;
-        }
+    private void exitScope() {
+        scopeStack.pop();
     }
 
-    // 作用域
-    public static class Scope {
-        private final Map<String, Symbol> symbols = new HashMap<>();
-        public final Scope parent;
-
-        public Scope(Scope parent) {
-            this.parent = parent;
-        }
-
-        /**
-         * @return 符号名是否在“当前”作用域出现
-         */
-        public boolean contains(String name) {
-            return symbols.containsKey(name);
-        }
-
-        /**
-         * 在这个作用域添加符号
-         * @param symbol 添加的符号
-         * @return 已定义返回false 未定义且成功定义则返回true
-         */
-        public boolean addSymbol(Symbol symbol) {
-            if (contains(symbol.name)) {
-                return false; // 重复定义
-            }
-            symbols.put(symbol.name, symbol);
-            return true;
-        }
-
-        /**
-         * 从符号名找到作用域及其父作用域的符号
-         * @return 没找到则为null
-         */
-        public Symbol lookup(String name) {
-            Symbol symbol = symbols.get(name);
-            if (symbol == null && parent != null) {
-                return parent.lookup(name);
-            }
-            return symbol;
-        }
-
+    private Scope currentScope() {
+        return scopeStack.peek();
     }
 
     // 语义分析主访问者
@@ -530,30 +459,16 @@ public class SemanticAnalyzer {
         }
     }*/
 
-    // 辅助方法
-    private void enterScope() {
-        Scope parent = scopeStack.isEmpty() ? null : scopeStack.peek();
-        scopeStack.push(new Scope(parent));
-    }
-
-    private void exitScope() {
-        scopeStack.pop();
-    }
-
-    private Scope currentScope() {
-        return scopeStack.peek();
-    }
-
     private Symbol lookupSymbol(String name) {
         return currentScope().lookup(name);
     }
 
     // 根据操作符和操作数类型确定结果类型
     private Struct getResultType(Token operator, Struct leftType, Struct rightType) {
-        
-        switch (operator.type) {
+
+        switch(operator.type) {
             case PLUS, MINUS, STAR, SLASH:
-                if (leftType == BuiltinStruct.Num || rightType == BuiltinStruct.Num) {
+                if(leftType == BuiltinStruct.Num || rightType == BuiltinStruct.Num) {
                     return BuiltinStruct.Num;
                 }
                 return BuiltinStruct.Int;
@@ -590,7 +505,112 @@ public class SemanticAnalyzer {
 
         return new SemanticResult(errorList, warningList);
     }
-    
+
+    // 语义分析访问者接口
+    public interface SemanticVisitor {
+        // 语句类型
+        void visit(Program node);
+
+        void visit(Block node);
+
+        void visit(ExprStmt node);
+
+        void visit(IfStmt node);
+
+        void visit(ForStmt node);
+
+        void visit(WhileStmt node);
+
+        void visit(BreakStmt node);
+
+        void visit(ContinueStmt node);
+
+        void visit(FnStmt node);
+
+        void visit(ReturnStmt node);
+
+        void visit(AssignStmt node);
+
+        void visit(SetVarStmt node);
+
+        // 表达式类型
+        Struct visit(Literal node);
+
+        Struct visit(Identifier node);
+
+        Struct visit(Unary node);
+
+        Struct visit(Binary node);
+
+        Struct visit(Array node);
+
+        Struct visit(Index node);
+
+        Struct visit(Range node);
+
+        Struct visit(Call node);
+
+        Struct visit(Get node);
+    }
+
+    // 符号表条目
+    public static class Symbol {
+        public final String name;
+        public final Struct type;
+        public final Span span;
+
+        public Map<String, Object> values = new HashMap<>();
+
+        public Symbol(String name, Struct type, Span span) {
+            this.name = name;
+            this.type = type;
+            this.span = span;
+        }
+    }
+
+    // 作用域
+    public static class Scope {
+        public final Scope parent;
+        private final Map<String, Symbol> symbols = new HashMap<>();
+
+        public Scope(Scope parent) {
+            this.parent = parent;
+        }
+
+        /**
+         * @return 符号名是否在“当前”作用域出现
+         */
+        public boolean contains(String name) {
+            return symbols.containsKey(name);
+        }
+
+        /**
+         * 在这个作用域添加符号
+         * @param symbol 添加的符号
+         * @return 已定义返回false 未定义且成功定义则返回true
+         */
+        public boolean addSymbol(Symbol symbol) {
+            if(contains(symbol.name)) {
+                return false; // 重复定义
+            }
+            symbols.put(symbol.name, symbol);
+            return true;
+        }
+
+        /**
+         * 从符号名找到作用域及其父作用域的符号
+         * @return 没找到则为null
+         */
+        public Symbol lookup(String name) {
+            Symbol symbol = symbols.get(name);
+            if(symbol == null && parent != null) {
+                return parent.lookup(name);
+            }
+            return symbol;
+        }
+
+    }
+
     // 语义分析结果
     public record SemanticResult(List<Problem.SemanticProblem> errorList, List<Problem.SemanticProblem> warningList) {
     }
