@@ -16,7 +16,6 @@ public class SemanticAnalyzer {
     private List<Problem.SemanticProblem> warningList;
     private SourceMap sourceMap;
 
-    // 辅助方法
     private void enterScope() {
         Scope parent = scopeStack.isEmpty() ? null : scopeStack.peek();
         scopeStack.push(new Scope(parent));
@@ -211,7 +210,7 @@ public class SemanticAnalyzer {
                         error("未知类型: " + typeName, id.type);
                     }
                 }
-                
+
                 // 如果有初始化表达式，检查类型兼容性
                 if (node.assignStmt != null && node.assignStmt instanceof AssignStmt) {
                     AssignStmt assignStmt = (AssignStmt) node.assignStmt;
@@ -459,6 +458,51 @@ public class SemanticAnalyzer {
         }
     }*/
 
+    // 执行语义分析
+    public SemanticResult analyze(ASTNode ast, SourceMap sourceMap) {
+        this.sourceMap = sourceMap;
+        this.scopeStack = new Stack<>();
+        this.errorList = new ArrayList<>();
+        this.warningList = new ArrayList<>();
+
+        //AnalysisVisitor visitor = new AnalysisVisitor();
+        //ast.accept(visitor);
+
+        return new SemanticResult(errorList, warningList);
+    }
+
+    // 语义分析访问者接口
+    public interface SemanticVisitor {
+        // 语句类型
+        void visit(Program node);
+        void visit(Block node);
+        void visit(ExprStmt node);
+        void visit(IfStmt node);
+        void visit(ForStmt node);
+        void visit(WhileStmt node);
+        void visit(BreakStmt node);
+        void visit(ContinueStmt node);
+        void visit(FnStmt node);
+        void visit(ReturnStmt node);
+        void visit(AssignStmt node);
+        void visit(SetVarStmt node);
+
+        // 表达式类型
+        Struct visit(Literal node);
+        Struct visit(Identifier node);
+        Struct visit(Unary node);
+        Struct visit(Binary node);
+        Struct visit(Array node);
+        Struct visit(Index node);
+        Struct visit(Range node);
+        Struct visit(Call node);
+        Struct visit(Get node);
+    }
+
+    private boolean containsSymbol(String name) {
+        return currentScope().contains(name);
+    }
+
     private Symbol lookupSymbol(String name) {
         return currentScope().lookup(name);
     }
@@ -493,70 +537,11 @@ public class SemanticAnalyzer {
         return e;
     }
 
-    // 执行语义分析
-    public SemanticResult analyze(ASTNode ast, SourceMap sourceMap) {
-        this.sourceMap = sourceMap;
-        this.scopeStack = new Stack<>();
-        this.errorList = new ArrayList<>();
-        this.warningList = new ArrayList<>();
-
-        //AnalysisVisitor visitor = new AnalysisVisitor();
-        //ast.accept(visitor);
-
-        return new SemanticResult(errorList, warningList);
-    }
-
-    // 语义分析访问者接口
-    public interface SemanticVisitor {
-        // 语句类型
-        void visit(Program node);
-
-        void visit(Block node);
-
-        void visit(ExprStmt node);
-
-        void visit(IfStmt node);
-
-        void visit(ForStmt node);
-
-        void visit(WhileStmt node);
-
-        void visit(BreakStmt node);
-
-        void visit(ContinueStmt node);
-
-        void visit(FnStmt node);
-
-        void visit(ReturnStmt node);
-
-        void visit(AssignStmt node);
-
-        void visit(SetVarStmt node);
-
-        // 表达式类型
-        Struct visit(Literal node);
-
-        Struct visit(Identifier node);
-
-        Struct visit(Unary node);
-
-        Struct visit(Binary node);
-
-        Struct visit(Array node);
-
-        Struct visit(Index node);
-
-        Struct visit(Range node);
-
-        Struct visit(Call node);
-
-        Struct visit(Get node);
-    }
-
     // 符号表条目
     public static class Symbol {
         public final String name;
         public final Struct type;
+        /** 符号定义处 */
         public final Span span;
 
         public Map<String, Object> values = new HashMap<>();
@@ -578,10 +563,29 @@ public class SemanticAnalyzer {
         }
 
         /**
-         * @return 符号名是否在“当前”作用域出现
+         * 检查符号表中是否包含指定的符号名称。
+         *
+         * @param name 要检查的符号名称
+         * @return 如果符号表中包含该名称则返回 true，否则返回 false
          */
         public boolean contains(String name) {
             return symbols.containsKey(name);
+        }
+
+
+        /**
+         * 根据名称查找符号。
+         *
+         * @param name 要查找的符号名称
+         * @return 如果找到则返回对应的Symbol对象；如果当前作用域未找到且存在父作用域，则递归在父作用域中查找；
+         *         如果所有作用域都未找到，则返回null
+         */
+        public Symbol lookup(String name) {
+            Symbol symbol = symbols.get(name);
+            if(symbol == null && parent != null) {
+                return parent.lookup(name);
+            }
+            return symbol;
         }
 
         /**
@@ -596,19 +600,6 @@ public class SemanticAnalyzer {
             symbols.put(symbol.name, symbol);
             return true;
         }
-
-        /**
-         * 从符号名找到作用域及其父作用域的符号
-         * @return 没找到则为null
-         */
-        public Symbol lookup(String name) {
-            Symbol symbol = symbols.get(name);
-            if(symbol == null && parent != null) {
-                return parent.lookup(name);
-            }
-            return symbol;
-        }
-
     }
 
     // 语义分析结果

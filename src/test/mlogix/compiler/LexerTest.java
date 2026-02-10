@@ -4,16 +4,23 @@ import java.util.*;
 
 import mlogix.mlogix.*;
 import mlogix.compiler.Lexer;
+import mlogix.problem.*;
 import mlogix.struct.SourceMapManager;
 import mlogix.util.*;
 
 public class LexerTest {
-    final SourceMapManager manager = new SourceMapManager();
-    final Lexer lexer = new Lexer(new ArrayList<>(), new ArrayList<>());
-    int testNum = 0;
-    int errorNum = 0;
+    static final SourceMapManager manager = new SourceMapManager();
+    static final List<Problem> errorList = new ArrayList<>();
+    static final List<Problem> warningList = new ArrayList<>();
+    static final Lexer lexer = new Lexer(errorList, warningList);
+    static int testNum = 0;
+    static int errorNum = 0;
 
-    public void test() {
+    public static void main(String[] args) {
+        test();
+    }
+
+    public static void test() {
         Log.info(Ansi.CYAN + "LexerTest: 开始" + Ansi.DEFAULT);
 
         test("+", token(TokenType.PLUS));
@@ -57,16 +64,21 @@ public class LexerTest {
         test("\"hello\\nworld!\"", token(TokenType.STRING, "hello\\nworld!"));
 
         // 错误测试 - 字符串
-        test("\"hello"); // 未闭合的字符串
-        test("\"hello\nworld\""); // 字符串中包含换行符
+        test("\"hello", 1, token(TokenType.STRING, "hello")); // 未闭合的字符串
+        test("\"hello\nworld\"", 2, token(TokenType.STRING, "hello")); // 字符串中包含换行符
         
         // 错误测试 - 未知字符
-        test("a $ b"); // 包含未知字符 $
-        test("a @ b"); // @ 应该被识别为逻辑关键字开始
+        test("a $ b",
+            token(TokenType.IDENTIFIER, "a"),
+            token(TokenType.ERROR, "$"),
+            token(TokenType.IDENTIFIER, "b")); // 包含未知字符 $
+        test("a @ b",
+            token(TokenType.IDENTIFIER, "a"),
+            token(TokenType.IDENTIFIER, "b")); // @ 应该被识别为逻辑关键字开始
         
         // 错误测试 - 数字格式
-        test("0x12ZG"); // 非法的十六进制数字
-        test("0b102"); // 非法的二进制数字
+        test("0x12ZG", token(TokenType.ERROR)); // 非法的十六进制数字
+        test("0b102", token(TokenType.ERROR)); // 非法的二进制数字
 
         // 测试普通数字
         test("27_30", token(TokenType.NUM, (double) 2730));
@@ -85,8 +97,8 @@ public class LexerTest {
         test("0b10_1100", token(TokenType.NUM, (double) 0b101100));
         
         // 错误测试 - 数字格式
-        test("_2730"); // 数字不能以分隔符开头
-        test("2730_"); // 数字不能以分隔符结尾
+        test("_2730", token(TokenType.ERROR)); // 数字不能以分隔符开头
+        test("2730_", token(TokenType.ERROR)); // 数字不能以分隔符结尾
         test("1.2.3"); // 多个小数点
         test("1e2e3"); // 多个指数标记
         
@@ -203,7 +215,11 @@ public class LexerTest {
         }
     }
 
-    private void test(String source, RToken... rTokens) {
+    private static void test(String source, RToken... rTokens) {
+        test(source, 0, rTokens);
+    }
+
+    private static void test(String source, int problemNum, RToken... rTokens) {
         testNum++;
         List<Token> result = new ArrayList<>();
         lexer.reset(manager.loadSourceMap(source));
@@ -215,7 +231,17 @@ public class LexerTest {
                 break;
             }
         }
-        lexer.clearIssue();
+
+        if (errorList.size() + warningList.size() != problemNum) {
+            errorNum++;
+            Log.error(String.format("%s%s\n错误数量不匹配(%d!=%d)%s\n",
+                    Ansi.RED,
+                    source,
+                    errorList.size() + warningList.size(),
+                    problemNum,
+                    Ansi.DEFAULT
+            ));
+        }
 
         if (result.size() != rTokens.length) {
             errorNum++;
@@ -241,13 +267,14 @@ public class LexerTest {
                 ));
             }
         }
+        lexer.clearProblem();
     }
 
-    private RToken token(TokenType type, Object literal) {
+    private static RToken token(TokenType type, Object literal) {
         return new RToken(type, literal);
     }
 
-    private RToken token(TokenType type) {
+    private static RToken token(TokenType type) {
         return new RToken(type, null);
     }
 

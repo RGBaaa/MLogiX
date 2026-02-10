@@ -1,3 +1,2 @@
-fn sayHello() {
-    print("hello")[0]
-}
+"hello
+world"

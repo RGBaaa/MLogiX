@@ -21,6 +21,13 @@ public class BuiltinStruct {
         Unknown = new Struct("Unknown");
     }
 
+    /**
+     * 将给定的 TokenType 转换为对应的 Struct 类型
+     *
+     * @param tokenType 要转换的词法标记类型
+     * @return 对应的 Struct 类型
+     * @throws IllegalArgumentException 当遇到未知的 tokenType 时抛出
+     */
     public static Struct toStruct(TokenType tokenType) {
         return switch(tokenType) {
             case INT -> Int;

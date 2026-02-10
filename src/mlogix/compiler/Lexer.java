@@ -39,7 +39,7 @@ public class Lexer {
         return this;
     }
 
-    public Lexer clearIssue() {
+    public Lexer clearProblem() {
         errorList.clear();
         warningList.clear();
         return this;

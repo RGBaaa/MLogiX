@@ -180,13 +180,13 @@ public class Parser {
                                 .point(lookAhead(), "期望`{`");
                     }
                 }
-                try {
+//                try {
                     results.add(expression());
-                } catch(Problem.ParserProblem e) {
-                    e.info(arrow, "解析`函数返回值声明`时出现错误");
-                    normalRecover();
-                    break;
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(arrow, "解析`函数返回值声明`时出现错误");
+//                    normalRecover();
+//                    break;
+//                }
                 match(COMMA); // 可选逗号
             }
         }
@@ -202,23 +202,23 @@ public class Parser {
         if(check(BREAK)) {
             Token start = next();
             Token end;
-            try {
+//            try {
                 end = consumeStmtEnd();
-            } catch(Problem.ParserProblem e) {
-                e.info(start, "解析`break`时出错");
-                end = start;
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(start, "解析`break`时出错");
+//                end = start;
+//            }
             return new BreakStmt(span(start, end));
 
         } else if(check(CONTINUE)) {
             Token start = next();
             Token end;
-            try {
+//            try {
                 end = consumeStmtEnd();
-            } catch(Problem.ParserProblem e) {
-                e.info(start, "解析`continue`时出错");
-                end = start;
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(start, "解析`continue`时出错");
+//                end = start;
+//            }
             return new ContinueStmt(span(start, end));
         } else if(check(RETURN)) {
             Token start = next();
@@ -229,46 +229,46 @@ public class Parser {
             }
 
             Expr expr;
-            try {
+//            try {
                 expr = expression();
-            } catch(Problem.ParserProblem e) {
-                e.info(start, "解析`return`语句时出错");
-                expr = new Literal(token(ERROR, lookAhead()));
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(start, "解析`return`语句时出错");
+//                expr = new Literal(token(ERROR, lookAhead()));
+//            }
 
-            try {
+//            try {
                 end = consumeStmtEnd();
-            } catch(Problem.ParserProblem e) {
-                e.info(start, "解析`return`语句时出错");
-                end = lookAhead();
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(start, "解析`return`语句时出错");
+//                end = lookAhead();
+//            }
             return new ReturnStmt(span(start, end), expr);
         } else if(check(SET)) {
             Token start = next();
             Expr var;
-            try {
+//            try {
                 var = expression();
-            } catch(Problem.ParserProblem e) {
-                e.info(start, "解析`set`变量时出错");
-                var = new Identifier(token(ERROR, lookAhead()));
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(start, "解析`set`变量时出错");
+//                var = new Identifier(token(ERROR, lookAhead()));
+//            }
 
             Stmt assignStmt;
-            try {
+//            try {
                 assignStmt = assignStmt(var);
-            } catch(Problem.ParserProblem e) {
-                e.info(start, "解析`set`赋值语句时出错");
-                assignStmt = null;
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(start, "解析`set`赋值语句时出错");
+//                assignStmt = null;
+//            }
 
             if(assignStmt == null) {
                 int end;
-                try {
+//                try {
                     end = consumeStmtEnd().span.end();
-                } catch(Problem.ParserProblem e) {
-                    e.info(start, "解析`break`时出错");
-                    end = var.span.end();
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(start, "解析`break`时出错");
+//                    end = var.span.end();
+//                }
                 return new SetVarStmt(span(start, end), var, null);
             } else {
                 return new SetVarStmt(span(start, assignStmt.span.end()), var, assignStmt);
@@ -276,29 +276,29 @@ public class Parser {
         } else {
             Token start = lookAhead();
             Expr var;
-            try {
+//            try {
                 var = expression();
-            } catch(Problem.ParserProblem e) {
-                e.info(start, "解析表达式时出错");
-                var = new Literal(token(ERROR, lookAhead()));
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(start, "解析表达式时出错");
+//                var = new Literal(token(ERROR, lookAhead()));
+//            }
 
             Stmt assignStmt;
-            try {
+//            try {
                 assignStmt = assignStmt(var);
-            } catch(Problem.ParserProblem e) {
-                e.info(start, "解析`赋值语句`时出错");
-                assignStmt = null;
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(start, "解析`赋值语句`时出错");
+//                assignStmt = null;
+//            }
 
             if(assignStmt == null) {
                 int end;
-                try {
+//                try {
                     end = consumeStmtEnd().span.end();
-                } catch(Problem.ParserProblem e) {
-                    e.info(start, "解析`赋值语句`时出错");
-                    end = var.span.end();
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(start, "解析`赋值语句`时出错");
+//                    end = var.span.end();
+//                }
                 return new ExprStmt(span(start, end), var);
             } else {
                 return assignStmt;
@@ -310,20 +310,20 @@ public class Parser {
         if(check(ASSIGN)) {
             Token operator = next();
             Expr value;
-            try {
+//            try {
                 value = expression();
-            } catch(Problem.ParserProblem e) {
-                e.info(operator, "解析赋值表达式时出错");
-                value = new Literal(token(ERROR, lookAhead()));
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(operator, "解析赋值表达式时出错");
+//                value = new Literal(token(ERROR, lookAhead()));
+//            }
 
             Token end;
-            try {
+//            try {
                 end = consumeStmtEnd();
-            } catch(Problem.ParserProblem e) {
-                e.info(operator, "解析赋值语句时出错");
-                end = lookAhead();
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(operator, "解析赋值语句时出错");
+//                end = lookAhead();
+//            }
             return new AssignStmt(span(expr.span.start(), end.span.end()), expr, operator, value);
 
         } else if(check(BINARY_OPERATORS)) {
@@ -331,29 +331,29 @@ public class Parser {
             if(check(ASSIGN)) {
                 Token assignOp = next();
                 Expr value;
-                try {
+//                try {
                     value = expression();
-                } catch(Problem.ParserProblem e) {
-                    e.info(operator, "解析复合赋值表达式时出错");
-                    value = new Literal(token(ERROR, lookAhead()));
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(operator, "解析复合赋值表达式时出错");
+//                    value = new Literal(token(ERROR, lookAhead()));
+//                }
 
                 Token end;
-                try {
+//                try {
                     end = consumeStmtEnd();
-                } catch(Problem.ParserProblem e) {
-                    e.info(operator, "解析复合赋值语句时出错");
-                    end = lookAhead();
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(operator, "解析复合赋值语句时出错");
+//                    end = lookAhead();
+//                }
                 return new AssignStmt(span(expr.span.start(), end.span.end()), expr, operator, value);
             }
             Expr right;
-            try {
+//            try {
                 right = expression();
-            } catch(Problem.ParserProblem e) {
-                e.info(operator, "解析二元表达式时出错");
-                right = new Literal(token(ERROR, lookAhead()));
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(operator, "解析二元表达式时出错");
+//                right = new Literal(token(ERROR, lookAhead()));
+//            }
             return new ExprStmt(span(expr.span.start(), right.span.end()), new Binary(expr, operator, right));
         }
         return null;
@@ -437,12 +437,12 @@ public class Parser {
             }
 
             Expr right;
-            try {
+//            try {
                 right = addAndSub();
-            } catch(Problem.ParserProblem e) {
-                e.info(operator, "解析`范围表达式`时出现错误");
-                right = new Literal(token(ERROR, lookAhead()));
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(operator, "解析`范围表达式`时出现错误");
+//                right = new Literal(token(ERROR, lookAhead()));
+//            }
             // .. expr
             new Range(span(operator, right.span.end()), null, operator, right);
         }
@@ -457,12 +457,12 @@ public class Parser {
             }
 
             Expr right;
-            try {
+//            try {
                 right = addAndSub();
-            } catch(Problem.ParserProblem e) {
-                e.info(operator, "解析`范围表达式`时出现错误");
-                right = new Literal(token(ERROR, lookAhead()));
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(operator, "解析`范围表达式`时出现错误");
+//                right = new Literal(token(ERROR, lookAhead()));
+//            }
             // expr .. expr
             expr = new Range(Span.between(expr.span, right.span), expr, operator, right);
         }
@@ -516,21 +516,20 @@ public class Parser {
                 Token lBracket = next();
 
                 Expr index;
-                try {
+//                try {
                     index = expression();
-                } catch(Problem.ParserProblem e) {
-                    e.info(lBracket, "解析`数组索引`时出现错误");
-                    index = new Literal(token(ERROR, lookAhead()));
-                    ;
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(lBracket, "解析`数组索引`时出现错误");
+//                    index = new Literal(token(ERROR, lookAhead()));
+//                }
 
                 Token rBracket;
-                try {
+//                try {
                     rBracket = consume(RBRACKET);
-                } catch(Problem.ParserProblem e) {
-                    e.info(lBracket, "解析`数组索引`时出现错误");
-                    rBracket = null;
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(lBracket, "解析`数组索引`时出现错误");
+//                    rBracket = null;
+//                }
                 if(rBracket != null) {
                     expr = new Index(span(lBracket, rBracket), expr, index);
                 } else {
@@ -546,11 +545,11 @@ public class Parser {
                                 .info(lParen, "参数开头")
                                 .point(lookAhead(), "末尾");
                     }
-                    try {
+//                    try {
                         arguments.add(expression());
-                    } catch(Problem.ParserProblem e) {
-                        e.info(lParen, "解析`函数调用`时出现错误");
-                    }
+//                    } catch(Problem.ParserProblem e) {
+//                        e.info(lParen, "解析`函数调用`时出现错误");
+//                    }
                 }
                 Token rParen = next();
                 expr = new Call(span(lParen, rParen), expr, arguments);
@@ -559,12 +558,12 @@ public class Parser {
             } else if(check(DOT)) {//访问类的元素
                 Token dot = next();
                 Expr field;
-                try {
+//                try {
                     field = new Identifier(consume(IDENTIFIER));
-                } catch(Problem.ParserProblem e) {
-                    e.info(dot, "解析`类元素访问`时出现错误");
-                    field = new Identifier(token(ERROR, lookAhead()));
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(dot, "解析`类元素访问`时出现错误");
+//                    field = new Identifier(token(ERROR, lookAhead()));
+//                }
                 expr = new Get(expr, field);
                 continue;
             }
@@ -581,11 +580,11 @@ public class Parser {
             if(!isStmtEnd() && check(COLON)) {
                 Token colon = next();
                 while(!isAtEnd() && !isStmtEnd()) {
-                    try {
+//                    try {
                         type.add(primary());
-                    } catch(Problem.ParserProblem e) {
-                        e.info(colon, "解析`类型声明`时出现错误");
-                    }
+//                    } catch(Problem.ParserProblem e) {
+//                        e.info(colon, "解析`类型声明`时出现错误");
+//                    }
                 }
                 return new Literal(literal);
             }
@@ -597,11 +596,11 @@ public class Parser {
             if(!isStmtEnd() && check(COLON)) {
                 Token colon = next();
                 while(!isAtEnd()) {
-                    try {
+//                    try {
                         type.add(primary());
-                    } catch(Problem.ParserProblem e) {
-                        e.info(colon, "解析`类型声明`时出现错误");
-                    }
+//                    } catch(Problem.ParserProblem e) {
+//                        e.info(colon, "解析`类型声明`时出现错误");
+//                    }
                 }
                 return new Identifier(id);
             }
@@ -616,11 +615,11 @@ public class Parser {
                 e.info(lParen, "找不到括号内的表达式");
                 expr = new Literal(token(ERROR, lookAhead()));
             }
-            try {
+//            try {
                 consume(RPAREN);
-            } catch(Problem.ParserProblem e) {
-                e.info(lParen, "解析`括号内表达式`时出现错误");
-            }
+//            } catch(Problem.ParserProblem e) {
+//                e.info(lParen, "解析`括号内表达式`时出现错误");
+//            }
             return expr;
         } else if(check(LBRACE)) {
             Token lBrace = next();
@@ -631,12 +630,12 @@ public class Parser {
                             .info(lBrace, "数组开头")
                             .point(lookAhead(), "末尾");
                 }
-                try {
+//                try {
                     elements.add(expression());
-                } catch(Problem.ParserProblem e) {
-                    e.info(lBrace, "解析`数组`时出现错误");
-                    elements.add(new Literal(token(ERROR, lookAhead())));
-                }
+//                } catch(Problem.ParserProblem e) {
+//                    e.info(lBrace, "解析`数组`时出现错误");
+//                    elements.add(new Literal(token(ERROR, lookAhead())));
+//                }
                 match(COMMA); // 可选逗号
             }
             Token rBrace = next();
