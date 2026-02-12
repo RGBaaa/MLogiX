@@ -41,35 +41,25 @@ public class Compiler {
                         }
                         if(sourceMap.source.isEmpty()) return;
 
+                        // ---------- 词法分析 + 语法分析 ----------
                         timer.startPhase("词法分析+语法分析");
                         Parser parser = new Parser(lexer.reset(sourceMap), sourceMap, errorList, warningList);
-                        ASTNode ast = parser.parse();
+                        Stmt ast = parser.parse();
+                        timer.endPhase();
+                        
+                        // ---------- 语义分析 ----------
+                        timer.startPhase("语义分析");
+                        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(errorList, warningList);
+                        semanticAnalyzer.analyze(ast, sourceMap);
                         timer.endPhase();
 
+                        // ---------- 输出报告 ----------
                         errorList.forEach(e -> Log.error(e.toString()));
                         warningList.forEach(e -> Log.warning(e.toString()));
 
                         if(Log.isAllowed(Log.LogType.DEBUG)) {
                             ASTPrinter.print(ast, sourceMap);
                         }
-
-                        /*
-                        // 语义分析
-                        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer();
-                        StructRegistry structRegistry = new StructRegistry();
-
-                        SemanticResult semanticResult = semanticAnalyzer.analyze(ast, sourceMap);
-                        List<Problem.SemanticProblem> semanticErrorList = semanticResult.errorList();
-                        List<Problem.SemanticProblem> semanticWarningList = semanticResult.warningList();
-
-                        semanticErrorList.forEach(e -> {
-                            Log.error((e.toString()));
-                        });
-                        semanticWarningList.forEach(e -> {
-                            Log.warning((e.toString()));
-                        });
-
-                         */
                     });
         } catch(IOException e) {
             e.printStackTrace();
@@ -81,10 +71,10 @@ public class Compiler {
             Log.info(errorList.size() + " errors");
             Log.info("编译失败");
             return false;
+        } else {
+            Log.info("编译成功");
+            return true;
         }
-
-        Log.info("编译成功");
-        return true;
     }
 
     public static class PhaseTimer {

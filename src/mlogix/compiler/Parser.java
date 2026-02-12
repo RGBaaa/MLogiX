@@ -28,10 +28,8 @@ public class Parser {
         this.warningList = warningList;
     }
 
-    public ASTNode parse() {
-        Stmt program = program();
-
-        return program;
+    public Stmt parse() {
+        return program();
     }
 
     //########################################

@@ -1,4 +1,4 @@
-package test.mlogix.compiler;
+package mlogix.compiler;
 
 import java.util.*;
 
@@ -267,7 +267,8 @@ public class LexerTest {
                 ));
             }
         }
-        lexer.clearProblem();
+        errorList.clear();
+        warningList.clear();
     }
 
     private static RToken token(TokenType type, Object literal) {

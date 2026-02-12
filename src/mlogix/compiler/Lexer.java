@@ -31,17 +31,14 @@ public class Lexer {
         this.sourceMap = sourceMap;
         this.length = sourceMap.length();
 
+        errorList.clear();
+        warningList.clear();
+
         this.lastIsNewline = false;
 
         this.start = 0;
         this.current = 0;
 
-        return this;
-    }
-
-    public Lexer clearProblem() {
-        errorList.clear();
-        warningList.clear();
         return this;
     }
 
@@ -631,6 +628,5 @@ public class Lexer {
         return e;
     }
 
-    public record LexerResult(List<LexerProblem> errorList, List<LexerProblem> warningList) {
-    }
+//    public record LexerResult(List<LexerProblem> errorList, List<LexerProblem> warningList) {}
 }

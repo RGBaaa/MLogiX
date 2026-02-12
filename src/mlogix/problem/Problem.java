@@ -1,6 +1,7 @@
 package mlogix.problem;
 
 import mlogix.mlogix.*;
+import mlogix.struct.*;
 import mlogix.struct.SourceMapManager.*;
 import mlogix.util.*;
 
@@ -32,14 +33,34 @@ public abstract class Problem extends RuntimeException {
         return lineInfo;
     }
 
+    public Problem point(ASTNode node, String text) {
+        return point(node.span,text);
+    }
+
+    public Problem point(Token token, String text) {
+        return point(token.span, text);
+    }
+
+    public Problem point(Span span, String text) {
+        return point(span.start(), span.end(), text);
+    }
+
     public Problem point(int start, int end, String text) {
         LineInfo lineInfo = getLineInfo(sourceMap.getLine(start));
         lineInfo.point(sourceMap.getCol(start), "^".repeat(end - start), text);
         return this;
     }
 
-    public Problem point(Token token, String text) {
-        return point(token.span.start(), token.span.end(), text);
+    public Problem info(ASTNode node, String text) {
+        return info(node.span, text);
+    }
+
+    public Problem info(Token token, String text) {
+        return info(token.span, text);
+    }
+
+    public Problem info(Span span, String text) {
+        return info(span.start(), span.end(), text);
     }
 
     public Problem info(int start, int end, String text) {
@@ -48,9 +69,6 @@ public abstract class Problem extends RuntimeException {
         return this;
     }
 
-    public Problem info(Token token, String text) {
-        return info(token.span.start(), token.span.end(), text);
-    }
 
     public String toString() {
         String color = level == ProblemLevel.ERROR ? Ansi.RED : Ansi.YELLOW;

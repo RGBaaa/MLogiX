@@ -15,6 +15,10 @@ public record Span(int index, int start, int end) {
 		return between(from.span, to.span);
 	}
 
+	public static Span between(ASTNode from, ASTNode to) {
+		return between(from.span, to.span);
+	}
+
 	public static Span between(Span from, Span to) {
 		if(from.index != to.index) {
 			throw new RuntimeException("不能对index不同的Span使用between(_)");

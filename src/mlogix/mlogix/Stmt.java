@@ -14,7 +14,6 @@ public abstract non-sealed class Stmt extends ASTNode {
 
     public abstract void accept(SemanticAnalyzer.SemanticVisitor visitor);
 
-
     public static class Program extends Stmt {
         public final List<Stmt> stmts;
 

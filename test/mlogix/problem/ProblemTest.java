@@ -1,4 +1,4 @@
-package test.mlogix.problem;
+package mlogix.problem;
 
 import mlogix.struct.SourceMapManager;
 import mlogix.struct.Span;

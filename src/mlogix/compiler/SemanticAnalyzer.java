@@ -1,5 +1,6 @@
 package mlogix.compiler;
 
+import mindustry.logic.*;
 import mlogix.mlogix.*;
 import mlogix.problem.*;
 import mlogix.struct.SourceMapManager.*;
@@ -7,30 +8,36 @@ import mlogix.struct.*;
 
 import java.util.*;
 
+import static mlogix.mlogix.BuiltinStruct.*;
 import static mlogix.mlogix.Expr.*;
 import static mlogix.mlogix.Stmt.*;
 
 public class SemanticAnalyzer {
+    private SourceMap sourceMap;
     private Stack<Scope> scopeStack;
+
     private List<Problem.SemanticProblem> errorList;
     private List<Problem.SemanticProblem> warningList;
-    private SourceMap sourceMap;
 
-    private void enterScope() {
-        Scope parent = scopeStack.isEmpty() ? null : scopeStack.peek();
-        scopeStack.push(new Scope(parent));
+    private int anonymousSymbolIndex;
+
+    public SemanticAnalyzer(List<Problem> errorList, List<Problem> warningList) {
+        this.errorList = new ArrayList<>();
+        this.warningList = new ArrayList<>();
     }
 
-    private void exitScope() {
-        scopeStack.pop();
+    // ========== 执行语义分析 ==========
+    public void analyze(Stmt ast, SourceMap sourceMap) {
+        this.sourceMap = sourceMap;
+        this.scopeStack = new Stack<>();
+        this.anonymousSymbolIndex = 0;
+
+        AnalysisVisitor visitor = new AnalysisVisitor();
+        ast.accept(visitor);
     }
 
-    private Scope currentScope() {
-        return scopeStack.peek();
-    }
-
-    // 语义分析主访问者
-    /*public class AnalysisVisitor implements SemanticVisitor {
+    // ========== 语义分析主访问者 ==========
+    public class AnalysisVisitor implements SemanticVisitor {
         @Override
         public void visit(Program node) {
             enterScope(); // 全局作用域
@@ -69,21 +76,28 @@ public class SemanticAnalyzer {
 
         @Override
         public void visit(ForStmt node) {
-            Struct type = node.expr.accept(this);
-            if(node.varDecl != null) {
-                currentScope().addSymbol(new Symbol((String)node.varDecl.token.literal,
-                        type,
-                        Span.between(node.varDecl.span, node.expr.span);
-            }
-
             enterScope();
+            Struct type = node.expr.accept(this);
+            Symbol var;
+            if(node.varDecl != null) {
+                var = new Symbol((String)node.varDecl.token.literal,
+                        type,
+                        Span.between(node.varDecl, node.expr)
+                );
+            } else {
+                var = genAnonymousSymbol(Int, node.expr.span);
+            }
+            addSymbol(var);
             node.body.accept(this);
             exitScope();
         }
 
         @Override
         public void visit(WhileStmt node) {
-            node.expr.accept(this);
+            if(node.expr.accept(this) != Bool) {
+                error("while语句的条件类型不为Bool")
+                        .point(node.expr, "");
+            }
             node.body.accept(this);
         }
 
@@ -456,22 +470,9 @@ public class SemanticAnalyzer {
             node.field.accept(this);
             // TODO 检查对象字段访问
         }
-    }*/
-
-    // 执行语义分析
-    public SemanticResult analyze(ASTNode ast, SourceMap sourceMap) {
-        this.sourceMap = sourceMap;
-        this.scopeStack = new Stack<>();
-        this.errorList = new ArrayList<>();
-        this.warningList = new ArrayList<>();
-
-        //AnalysisVisitor visitor = new AnalysisVisitor();
-        //ast.accept(visitor);
-
-        return new SemanticResult(errorList, warningList);
     }
 
-    // 语义分析访问者接口
+    // ========== 语义分析访问者接口 ==========
     public interface SemanticVisitor {
         // 语句类型
         void visit(Program node);
@@ -499,6 +500,20 @@ public class SemanticAnalyzer {
         Struct visit(Get node);
     }
 
+    // ========== 工具方法 ==========
+    private Scope currentScope() {
+        return scopeStack.peek();
+    }
+
+    private void enterScope() {
+        Scope parent = scopeStack.isEmpty() ? null : currentScope();
+        scopeStack.push(new Scope(parent));
+    }
+
+    private void exitScope() {
+        scopeStack.pop();
+    }
+
     private boolean containsSymbol(String name) {
         return currentScope().contains(name);
     }
@@ -507,9 +522,12 @@ public class SemanticAnalyzer {
         return currentScope().lookup(name);
     }
 
+    private void addSymbol(Symbol symbol) {
+        currentScope().addSymbol(symbol);
+    }
+
     // 根据操作符和操作数类型确定结果类型
     private Struct getResultType(Token operator, Struct leftType, Struct rightType) {
-
         switch(operator.type) {
             case PLUS, MINUS, STAR, SLASH:
                 if(leftType == BuiltinStruct.Num || rightType == BuiltinStruct.Num) {
@@ -521,6 +539,16 @@ public class SemanticAnalyzer {
             default:
                 return BuiltinStruct.Unknown;
         }
+    }
+
+    /**
+     * 生成匿名符号，格式($INDEX$ = 匿名符号序号)：
+     * __$INDEX$
+     */
+    private Symbol genAnonymousSymbol(Struct type, Span span) {
+        Symbol symbol = new Symbol("__" + anonymousSymbolIndex, type, span);
+        anonymousSymbolIndex++;
+        return symbol;
     }
 
     // 错误
@@ -537,8 +565,9 @@ public class SemanticAnalyzer {
         return e;
     }
 
+    // ========== classes ==========
     // 符号表条目
-    public static class Symbol {
+    public class Symbol {
         public final String name;
         public final Struct type;
         /** 符号定义处 */
@@ -554,7 +583,7 @@ public class SemanticAnalyzer {
     }
 
     // 作用域
-    public static class Scope {
+    public class Scope {
         public final Scope parent;
         private final Map<String, Symbol> symbols = new HashMap<>();
 
@@ -564,14 +593,18 @@ public class SemanticAnalyzer {
 
         /**
          * 检查符号表中是否包含指定的符号名称。
+         * 该方法会首先检查当前符号表中是否存在指定的符号名称，
+         * 如果不存在，则递归检查其父符号表。
          *
          * @param name 要检查的符号名称
          * @return 如果符号表中包含该名称则返回 true，否则返回 false
          */
         public boolean contains(String name) {
-            return symbols.containsKey(name);
+            if(!symbols.containsKey(name) && parent != null) {
+                return parent.contains(name);
+            }
+            return true;
         }
-
 
         /**
          * 根据名称查找符号。
@@ -591,19 +624,15 @@ public class SemanticAnalyzer {
         /**
          * 在这个作用域添加符号
          * @param symbol 添加的符号
-         * @return 已定义返回false 未定义且成功定义则返回true
          */
-        public boolean addSymbol(Symbol symbol) {
+        public void addSymbol(Symbol symbol) {
             if(contains(symbol.name)) {
-                return false; // 重复定义
+                // 重复定义
+                throw error("重复定义变量: " + symbol.name)
+                        .point(symbol.span, "");
+            } else {
+                symbols.put(symbol.name, symbol);
             }
-            symbols.put(symbol.name, symbol);
-            return true;
         }
     }
-
-    // 语义分析结果
-    public record SemanticResult(List<Problem.SemanticProblem> errorList, List<Problem.SemanticProblem> warningList) {
-    }
-
 }
