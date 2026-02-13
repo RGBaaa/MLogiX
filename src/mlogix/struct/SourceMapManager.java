@@ -1,5 +1,7 @@
 package mlogix.struct;
 
+import arc.struct.Seq;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
@@ -8,7 +10,7 @@ import java.util.stream.*;
 public class SourceMapManager {
     public final Path projectPath; /* 项目根目录 */
     private final Map<Path, SourceMap> sourceMaps = new HashMap<>();
-    private final List<SourceMap> sourceMapList = new ArrayList<>(); /* 以此通过索引获取sourceMap */
+    private final Seq<SourceMap> sourceMapList = new Seq<>(); /* 以此通过索引获取sourceMap */
 
     public SourceMapManager(Path projectPath) {
         this.projectPath = projectPath;
@@ -22,7 +24,7 @@ public class SourceMapManager {
      * 加载文件并创建 SourceMap
      */
     public SourceMap loadSourceMap(Path filePath) throws IOException {
-        SourceMap sourceMap = new SourceMap(filePath, sourceMapList.size());
+        SourceMap sourceMap = new SourceMap(filePath, sourceMapList.size);
         sourceMaps.put(filePath, sourceMap);
         sourceMapList.add(sourceMap);
         return sourceMap;
@@ -32,7 +34,7 @@ public class SourceMapManager {
      * 从字符串创建 SourceMap
      */
     public SourceMap loadSourceMap(String source) {
-        SourceMap sourceMap = new SourceMap(source, sourceMapList.size());
+        SourceMap sourceMap = new SourceMap(source, sourceMapList.size);
         // sourceMaps.put(null, sourceMap); 临时代码无需
         sourceMapList.add(sourceMap);
         return sourceMap;

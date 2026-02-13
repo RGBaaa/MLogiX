@@ -1,20 +1,23 @@
 package mlogix.compiler;
 
-import mlogix.mlogix.*;
-import mlogix.problem.*;
-import mlogix.struct.SourceMapManager.*;
-import mlogix.struct.*;
-import mlogix.util.*;
+import arc.graphics.Color;
+import mlogix.mlogix.Token;
+import mlogix.mlogix.TokenType;
+import mlogix.problem.Problem;
+import mlogix.problem.ProblemCollector;
+import mlogix.struct.SourceMapManager.SourceMap;
+import mlogix.span.Span;
+import mlogix.util.Ansi;
+import mlogix.util.Log;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import static mlogix.mlogix.TokenType.*;
-import static mlogix.problem.Problem.*;
+import static mlogix.problem.Problem.LexerProblem;
 
 public class Lexer {
-    private final List<Problem> errorList;
-    private final List<Problem> warningList;
+    private final ProblemCollector collector;
     private SourceMap sourceMap;
     private int length;
     private int start;
@@ -22,24 +25,25 @@ public class Lexer {
 
     private boolean lastIsNewline;
 
-    public Lexer(List<Problem> errorList, List<Problem> warningList) {
-        this.errorList = errorList;
-        this.warningList = warningList;
+    /**
+     * 一个项目 构造一次
+     */
+    public Lexer(ProblemCollector collector) {
+        this.collector = collector;
     }
 
-    public Lexer reset(SourceMap sourceMap) {
+    /**
+     * 一个文件 重置一次
+     * 重置后才能调用其他方法
+     */
+    public void reset(SourceMap sourceMap) {
         this.sourceMap = sourceMap;
         this.length = sourceMap.length();
-
-        errorList.clear();
-        warningList.clear();
 
         this.lastIsNewline = false;
 
         this.start = 0;
         this.current = 0;
-
-        return this;
     }
 
     /**
@@ -618,14 +622,14 @@ public class Lexer {
 
     private LexerProblem error(String text) {
         LexerProblem e = new LexerProblem(sourceMap, text, Problem.ProblemLevel.ERROR);
-        errorList.add(e);
+        collector.addError(e);
         return e;
     }
 
     private LexerProblem warning(String text) {
-        LexerProblem e = new LexerProblem(sourceMap, text, Problem.ProblemLevel.WARNING);
-        warningList.add(e);
-        return e;
+        LexerProblem w = new LexerProblem(sourceMap, text, Problem.ProblemLevel.WARNING);
+        collector.addWarning(w);
+        return w;
     }
 
 //    public record LexerResult(List<LexerProblem> errorList, List<LexerProblem> warningList) {}

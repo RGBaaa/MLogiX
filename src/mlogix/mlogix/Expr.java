@@ -1,7 +1,7 @@
 package mlogix.mlogix;
 
 import mlogix.compiler.*;
-import mlogix.struct.*;
+import mlogix.span.Span;
 
 import java.util.*;
 

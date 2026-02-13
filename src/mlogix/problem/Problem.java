@@ -1,18 +1,19 @@
 package mlogix.problem;
 
+import arc.struct.Seq;
 import mlogix.mlogix.*;
-import mlogix.struct.*;
+import mlogix.span.Span;
 import mlogix.struct.SourceMapManager.*;
 import mlogix.util.*;
 
 import java.util.*;
 
 // 用于表示编译器问题，包含错误和警告
-public abstract class Problem extends RuntimeException {
+public abstract class Problem {
     public final SourceMap sourceMap; // 这个问题所在文件
     public final String problemName; // 这个问题的名称
     public final ProblemLevel level; // 问题级别（错误或警告）
-    final List<LineInfo> lineList = new ArrayList<>();
+    final Seq<LineInfo> lineInfos = new Seq<>();
 
     public Problem(SourceMap sourceMap, String problemName, ProblemLevel level) {
         this.sourceMap = sourceMap;
@@ -23,13 +24,13 @@ public abstract class Problem extends RuntimeException {
 
     // 获取行，若不存在则新建并返回
     private LineInfo getLineInfo(int line) {
-        for(LineInfo lineInfo : lineList) {
+        for(LineInfo lineInfo : lineInfos) {
             if(lineInfo.line == line) {
                 return lineInfo;
             }
         }
         LineInfo lineInfo = new LineInfo(line, sourceMap.getLineString(line));
-        lineList.add(lineInfo);
+        lineInfos.add(lineInfo);
         return lineInfo;
     }
 
@@ -73,14 +74,14 @@ public abstract class Problem extends RuntimeException {
     public String toString() {
         String color = level == ProblemLevel.ERROR ? Ansi.RED : Ansi.YELLOW;
         StringBuilder str = new StringBuilder(color + level.name() + ":" + problemName + Ansi.DEFAULT + "\n");
-        lineList.sort(Comparator.comparing(li -> li.line));
+        lineInfos.sort(Comparator.comparing(li -> li.line));
 
         int maxLineDigitLen = 0; // 所有LineInfo中最长的行号长度
-        for(LineInfo lineInfo : lineList) {
+        for(LineInfo lineInfo : lineInfos) {
             maxLineDigitLen = Math.max(maxLineDigitLen, Integer.toString(lineInfo.line).length());
         }
 
-        for(LineInfo lineInfo : lineList) {
+        for(LineInfo lineInfo : lineInfos) {
             str.append(lineInfo.toString(maxLineDigitLen));
         }
         return str.toString();

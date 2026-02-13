@@ -12,19 +12,18 @@ import java.util.*;
 
 public class Compiler {
     private final SourceMapManager manager;
-    private final List<Problem> errorList;
-    private final List<Problem> warningList;
+    private final ProblemCollector collector;
 
     public Compiler(Path projectPath) {
         this.manager = new SourceMapManager(projectPath);
-        this.errorList = new ArrayList<>();
-        this.warningList = new ArrayList<>();
+        this.collector = new ProblemCollector();
     }
 
     public boolean compile() {
         PhaseTimer timer = new PhaseTimer();
         // 可复用
-        Lexer lexer = new Lexer(errorList, warningList);
+        Lexer lexer = new Lexer(collector);
+        Parser parser = new Parser(lexer, collector);
 
         // 遍历项目树
         try {
@@ -43,19 +42,18 @@ public class Compiler {
 
                         // ---------- 词法分析 + 语法分析 ----------
                         timer.startPhase("词法分析+语法分析");
-                        Parser parser = new Parser(lexer.reset(sourceMap), sourceMap, errorList, warningList);
-                        Stmt ast = parser.parse();
+                        Stmt ast = parser.parse(sourceMap);
                         timer.endPhase();
                         
                         // ---------- 语义分析 ----------
-                        timer.startPhase("语义分析");
-                        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(errorList, warningList);
-                        semanticAnalyzer.analyze(ast, sourceMap);
-                        timer.endPhase();
+//                        timer.startPhase("语义分析");
+//                        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(collector);
+//                        semanticAnalyzer.analyze(ast, sourceMap);
+//                        timer.endPhase();
 
                         // ---------- 输出报告 ----------
-                        errorList.forEach(e -> Log.error(e.toString()));
-                        warningList.forEach(e -> Log.warning(e.toString()));
+                        collector.printError();
+                        collector.printWarning();
 
                         if(Log.isAllowed(Log.LogType.DEBUG)) {
                             ASTPrinter.print(ast, sourceMap);
@@ -67,8 +65,13 @@ public class Compiler {
 
         timer.printPhaseTimes();
 
-        if(!errorList.isEmpty()) {
-            Log.info(errorList.size() + " errors");
+        if(collector.errorNum() != 0) {
+            Log.info(collector.errorNum() + " errors");
+        }
+        if(collector.warningNum()!=0){
+            Log.info(collector.warningNum() + " warnings");
+        }
+        if(collector.hasError()) {
             Log.info("编译失败");
             return false;
         } else {

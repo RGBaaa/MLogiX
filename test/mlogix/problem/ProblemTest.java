@@ -1,10 +1,9 @@
 package mlogix.problem;
 
 import mlogix.struct.SourceMapManager;
-import mlogix.struct.Span;
+import mlogix.span.Span;
 import mlogix.mlogix.Token;
 import mlogix.mlogix.TokenType;
-import mlogix.problem.*;
 import mlogix.util.Log;
 
 class ProblemTest {

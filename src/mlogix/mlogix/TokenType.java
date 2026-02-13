@@ -54,7 +54,7 @@ public enum TokenType {
 
     // 其他
     NEWLINE, // 换行符
-    UNKNOWN,//未知
+    UNKNOWN,//未知 似乎没用
     ERROR,//错误
     EOF; // 标识源码结尾
 
