@@ -590,10 +590,8 @@ public class Parser {
                 }
 
                 // lit : anno1 | anno2 ...
-                Res<Expr> res;
                 while(!isAtEnd()) {
-                    res = unary();
-                    if(res instanceof Ok<Expr> ok) {
+                    if(unary() instanceof Ok<Expr> ok) {
                         annotations.add(ok.obj);
                     }
                     if(!match(OR)) break;
@@ -606,41 +604,44 @@ public class Parser {
 
         } else if(check(IDENTIFIER)) {
             Token id = next();
-            Seq<Expr> type = new Seq<>();
-            if(!isStmtEnd() && check(COLON)) {
-                Token colon = next();
-                while(!isAtEnd()) {
-//                    try {
-                    type.add(primary());
-//                    } catch(Problem.ParserProblem e) {
-//                        e.info(colon, "解析`类型声明`时出现错误");
-//                    }
-                }
-                return new Identifier(id);
-            }
-            return new Identifier(id);
 
-        } else if(check(LPAREN)) {
-            Token lParen = next();
-            Expr expr = null;
-//            try {
-            expr = expression();
-//            } catch(Problem.ParserProblem e) {
-//                e.info(lParen, "找不到括号内的表达式");
-//                expr = new Literal(token(ERROR, lookAhead()));
-//            }
-//            try {
-            consume(RPAREN);
-//            } catch(Problem.ParserProblem e) {
-//                e.info(lParen, "解析`括号内表达式`时出现错误");
-//            }
-            return expr;
+            // id :
+            if(!isStmtEnd() && match(COLON)) {
+                Seq<Expr> annotations = new Seq<>();
+
+                // id : ?
+                if(check(QUESTION_MARK)) {
+                    annotations.add(new Literal(new Token(next().span, NULL)));
+                }
+
+                // id : anno1 | anno2 ...
+                while(!isAtEnd()) {
+                    if(unary() instanceof Ok<Expr> ok) {
+                        annotations.add(ok.obj);
+                    }
+                    if(!match(OR)) break;
+                }
+                if(annotations.size != 0)
+                    return new Ok<>(new Annotation(new Identifier(id), annotations));
+                // 如果标注数量为0，视作Identifier
+            }
+            return new Ok<>(new Identifier(id));
+
+        } else if(match(LPAREN)) {
+            if(expression() instanceof Ok<Expr> ok) {
+                consume(RPAREN);
+                return ok;
+            } else {
+                consume(RPAREN);
+                return new Ok<>(new ErrorExpr());
+            }
+
         } else if(check(LBRACE)) {
             Token lBrace = next();
             Seq<Expr> elements = new Seq<>();
             while(!check(RBRACE)) {
                 if(isAtEnd()) {
-                    throw error("无法结束的数组")
+                    error("无法结束的数组")
                             .info(lBrace, "数组开头")
                             .point(lookAhead(), "末尾");
                 }

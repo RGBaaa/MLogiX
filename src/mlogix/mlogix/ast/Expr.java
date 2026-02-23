@@ -1,12 +1,12 @@
 package mlogix.mlogix.ast;
 
 import arc.struct.Seq;
-import mlogix.compiler.*;
+import mlogix.compiler.SemanticAnalyzer;
 import mlogix.mlogix.token.Token;
 import mlogix.mlogix.type.Type;
 import mlogix.span.Span;
 
-import java.util.*;
+import java.util.List;
 
 //Expression
 public abstract non-sealed class Expr extends ASTNode {
@@ -50,12 +50,11 @@ public abstract non-sealed class Expr extends ASTNode {
         public final Expr expr;
         public final Seq<Expr> annotations;
 
+        /**
+         *需要保证annotations.size > 0
+         */
         public Annotation(Expr expr, Seq<Expr> annotations) {
-            if(annotations.size == 0) {
-                super(expr.span);
-            } else {
-                super(Span.between(expr, annotations.get(annotations.size - 1)));
-            }
+            super(Span.between(expr, annotations.get(annotations.size - 1)));
             this.expr = expr;
             this.annotations = annotations;
         }
