@@ -1,10 +1,10 @@
-package mlogix.mlogix;
+package mlogix.mlogix.ast;
 
+import arc.struct.Seq;
 import mlogix.compiler.*;
-import mlogix.mlogix.Expr.*;
+import mlogix.mlogix.token.Token;
+import mlogix.mlogix.ast.Expr.*;
 import mlogix.span.Span;
-
-import java.util.*;
 
 //Statement
 public abstract non-sealed class Stmt extends ASTNode {
@@ -15,9 +15,9 @@ public abstract non-sealed class Stmt extends ASTNode {
     public abstract void accept(SemanticAnalyzer.SemanticVisitor visitor);
 
     public static class Program extends Stmt {
-        public final List<Stmt> stmts;
+        public final Seq<Stmt> stmts;
 
-        public Program(Span span, List<Stmt> stmts) {
+        public Program(Span span, Seq<Stmt> stmts) {
             super(span);
             this.stmts = stmts;
         }
@@ -29,9 +29,9 @@ public abstract non-sealed class Stmt extends ASTNode {
     }
 
     public static class Block extends Stmt {
-        public final List<Stmt> stmts;
+        public final Seq<Stmt> stmts;
 
-        public Block(Span span, List<Stmt> stmts) {
+        public Block(Span span, Seq<Stmt> stmts) {
             super(span);
             this.stmts = stmts;
         }
@@ -132,11 +132,11 @@ public abstract non-sealed class Stmt extends ASTNode {
 
     public static class FnStmt extends Stmt {
         public final Token name;
-        public final List<Expr> parameters;
-        public final List<Expr> results;
+        public final Seq<Expr> parameters;
+        public final Seq<Expr> results;
         public final Stmt body;
 
-        public FnStmt(Span span, Token name, List<Expr> parameters, List<Expr> results, Stmt body) {
+        public FnStmt(Span span, Token name, Seq<Expr> parameters, Seq<Expr> results, Stmt body) {
             super(span);
             this.name = name;
             this.parameters = parameters;

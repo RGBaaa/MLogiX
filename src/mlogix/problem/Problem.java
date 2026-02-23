@@ -1,9 +1,9 @@
 package mlogix.problem;
 
 import arc.struct.Seq;
-import mlogix.mlogix.*;
 import mlogix.span.Span;
-import mlogix.struct.SourceMapManager.*;
+import mlogix.span.Spanned;
+import mlogix.compiler.SourceMapManager.*;
 import mlogix.util.*;
 
 import java.util.*;
@@ -34,16 +34,9 @@ public abstract class Problem {
         return lineInfo;
     }
 
-    public Problem point(ASTNode node, String text) {
-        return point(node.span,text);
-    }
-
-    public Problem point(Token token, String text) {
-        return point(token.span, text);
-    }
-
-    public Problem point(Span span, String text) {
-        return point(span.start(), span.end(), text);
+    public Problem point(Spanned obj, String text) {
+        Span span = obj.span();
+        return point(span.start(), span.end(),text);
     }
 
     public Problem point(int start, int end, String text) {
@@ -52,15 +45,8 @@ public abstract class Problem {
         return this;
     }
 
-    public Problem info(ASTNode node, String text) {
-        return info(node.span, text);
-    }
-
-    public Problem info(Token token, String text) {
-        return info(token.span, text);
-    }
-
-    public Problem info(Span span, String text) {
+    public Problem info(Spanned obj, String text) {
+        Span span = obj.span();
         return info(span.start(), span.end(), text);
     }
 

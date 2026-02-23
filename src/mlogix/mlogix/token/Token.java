@@ -1,22 +1,22 @@
-package mlogix.mlogix;
+package mlogix.mlogix.token;
 
 import mlogix.span.Span;
 import mlogix.span.Spanned;
 
 public class Token implements Spanned {
-    public final TokenType type;
     public final Span span;
+    public final TokenType type;
     public final Object literal;
 
-    public Token(TokenType type, Span span) {
-        this.type = type;
+    public Token(Span span, TokenType type) {
         this.span = span;
+        this.type = type;
         this.literal = null;
     }
 
-    public Token(TokenType type, Span span, Object literal) {
-        this.type = type;
+    public Token(Span span, TokenType type, Object literal) {
         this.span = span;
+        this.type = type;
         this.literal = literal;
     }
 

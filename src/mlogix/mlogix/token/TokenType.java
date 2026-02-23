@@ -1,4 +1,4 @@
-package mlogix.mlogix;
+package mlogix.mlogix.token;
 
 import java.util.*;
 
@@ -7,7 +7,7 @@ public enum TokenType {
     SET("set"), MACRO("macro"), CONST("const"),
     IF("if"), ELIF("elif"), ELSE("else"),
     WHILE("while"), FOR("for"), BREAK("break"), CONTINUE("continue"),
-    STRUCT("struct"),
+    TYPE("type"),
     MATCH("match"),
     FN("fn"), RETURN("return"),
     ENUM("enum"),
@@ -17,7 +17,7 @@ public enum TokenType {
     IDENTIFIER, FLAG,
 
     // 字面量
-    NUM, INT, COL, STRING, TRUE("true"), FALSE("false"), NULL("null"),
+    NUM, INT, COL, STR, TRUE("true"), FALSE("false"), NULL("null"),
 
     // 运算符
     // +  -      *     /      **         %        %%               //
@@ -34,8 +34,8 @@ public enum TokenType {
     LESS, GREATER, LESS_EQ, GREATER_EQ,
     // &&    ||     !
     AND_AND, OR_OR, BANG,
-    // ..    ..=
-    DOT_DOT, DOT_DOT_EQ,
+    // :<      :=
+    COLON_LESS, COLON_ASSIGN,
 
     // 分隔符
     // ->
@@ -48,6 +48,8 @@ public enum TokenType {
     LBRACKET, RBRACKET,
     // {    }
     LBRACE, RBRACE,
+    // ?
+    QUESTION_MARK,
 
     // 文档注释
     DOC_COMMENT,
@@ -62,7 +64,7 @@ public enum TokenType {
     public static final Map<String, TokenType> KEYWORDS_MAP;
 
     public static final Set<TokenType> LITERALS = EnumSet.of(
-            NUM, INT, COL, STRING, TRUE, FALSE, NULL
+            NUM, INT, COL, STR, TRUE, FALSE, NULL
     );
 
     public static final Set<TokenType> BINARY_OPERATORS = EnumSet.of(
@@ -138,8 +140,8 @@ public enum TokenType {
             case AND_AND -> "&&";
             case OR_OR -> "||";
             case BANG -> "!";
-            case DOT_DOT -> "..";
-            case DOT_DOT_EQ -> "..=";
+            case COLON_LESS -> ":<";
+            case COLON_ASSIGN -> ":=";
 
             // 分隔符
             case ARROW -> "->";
@@ -153,6 +155,7 @@ public enum TokenType {
             case RBRACKET -> "]";
             case LBRACE -> "{";
             case RBRACE -> "}";
+            case QUESTION_MARK -> "?";
 
             // 其他
             case NEWLINE -> "\\n";

@@ -1,6 +1,7 @@
-package mlogix.mlogix;
+package mlogix.mlogix.ast;
 
-import mlogix.struct.SourceMapManager.SourceMap;
+import mlogix.compiler.SourceMapManager.SourceMap;
+import mlogix.mlogix.token.Token;
 
 import java.lang.reflect.*;
 import java.util.*;
@@ -27,7 +28,7 @@ public class ASTPrinter {
     private static SourceMap sourceMap;
 
     public static void print(ASTNode node, SourceMap sourceMap) {
-        if(node == null) throw new RuntimeException("空的astNode");
+        if(node == null) throw new RuntimeException("astNode为null");
         indentEnabled = false; // Program前不需要缩进
         ASTPrinter.sourceMap = sourceMap;
         print(node, "", true);

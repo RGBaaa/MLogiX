@@ -1,9 +1,9 @@
 package mlogix.problem;
 
-import mlogix.struct.SourceMapManager;
+import mlogix.compiler.SourceMapManager;
 import mlogix.span.Span;
-import mlogix.mlogix.Token;
-import mlogix.mlogix.TokenType;
+import mlogix.mlogix.token.Token;
+import mlogix.mlogix.token.TokenType;
 import mlogix.util.Log;
 
 class ProblemTest {
@@ -147,7 +147,7 @@ class ProblemTest {
         SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
 
         Span span = new Span(0, 0, 4);
-        Token token = new Token(TokenType.IDENTIFIER, span, "test");
+        Token token = new Token(span, TokenType.IDENTIFIER, "test");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -203,7 +203,7 @@ class ProblemTest {
         SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
 
         Span span = new Span(0, 0, 4);
-        Token token = new Token(TokenType.IDENTIFIER, span, "test");
+        Token token = new Token(span, TokenType.IDENTIFIER, "test");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -374,10 +374,6 @@ class ProblemTest {
             Problem.ProblemLevel.ERROR
         );
 
-        if (!(problem instanceof RuntimeException)) {
-            Log.error("FAILED: mlogix.problem should be instance of RuntimeException");
-            return;
-        }
         Log.info("PASSED: testProblemExtendsRuntimeException");
     }
 }

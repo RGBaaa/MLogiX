@@ -1,19 +1,19 @@
 package mlogix.compiler;
 
 import arc.graphics.Color;
-import mlogix.mlogix.Token;
-import mlogix.mlogix.TokenType;
+import mlogix.mlogix.token.Token;
+import mlogix.mlogix.token.TokenType;
 import mlogix.problem.Problem;
 import mlogix.problem.ProblemCollector;
-import mlogix.struct.SourceMapManager.SourceMap;
 import mlogix.span.Span;
+import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.util.Ansi;
 import mlogix.util.Log;
 
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static mlogix.mlogix.TokenType.*;
+import static mlogix.mlogix.token.TokenType.*;
 import static mlogix.problem.Problem.LexerProblem;
 
 public class Lexer {
@@ -145,17 +145,15 @@ public class Lexer {
                         return token(ASSIGN);
                     }
                 case '.':
-                    if(match('.')) {
-                        if(match('=')) {
-                            return token(DOT_DOT_EQ);
-                        } else {
-                            return token(DOT_DOT);
-                        }
-                    } else {
-                        return token(DOT);
-                    }
+                    return token(DOT);
                 case ':':
-                    return token(COLON);
+                    if(match('<')) {
+                        return token(COLON_LESS);
+                    } else if(match('=')) {
+                        return token(COLON_ASSIGN);
+                    } else {
+                        return token(COLON);
+                    }
                 case ';':
                     return token(SEMICOLON);
                 case ',':
@@ -172,6 +170,8 @@ public class Lexer {
                     return token(LBRACE);
                 case '}':
                     return token(RBRACE);
+                case '?':
+                    return token(QUESTION_MARK);
 
                 case '"':
                     return string();
@@ -209,7 +209,8 @@ public class Lexer {
                 default:
                     if(isDigit(c)) {
                         return number();
-                    } else if(isAlpha(c) || isChinese(c)) {
+                    // TODO 现在：
+                    } else if(isIdentifierStart(c)) {
                         return identifier();
                     } else {
                         error("未知的字符")
@@ -229,7 +230,7 @@ public class Lexer {
 
     /* 标识符 关键字 */
     private Token identifier() {
-        while(!isAtEnd() && (isAlpha(peek()) || isChinese(peek()) || isDigit(peek()))) advance();
+        while(!isAtEnd() && isIdentifierPart(peek())) advance();
         String text = subString(start, current);
         if(text.startsWith("__")) {
             error("非法的标识符")
@@ -258,7 +259,7 @@ public class Lexer {
                 error("未匹配到字符串末尾`\"`")
                         .info(start, start + 1, "字符串头部")
                         .point(current, current + 1, "匹配末尾");
-                return token(STRING, subString(start + 1, current));
+                return token(STR, subString(start + 1, current));
             }
             if(match('”')) {
                 warning("字符串应该使用英文双引号`\"`")
@@ -267,7 +268,7 @@ public class Lexer {
             }
             advance();
         }
-        return token(STRING, subString(start + 1, current - 1));
+        return token(STR, subString(start + 1, current - 1));
     }
 
     private Token number() {
@@ -325,6 +326,7 @@ public class Lexer {
             return token(INT, (double) Long.parseLong(builder.toString(), 2));
 
             // 颜色值
+            // TODO 以内置颜色名称索引 0cRED
         } else if(match('c')) {
             if(peek(-2) != '0') {
                 error("颜色值应以`0c`开头")
@@ -350,21 +352,21 @@ public class Lexer {
                 advance();
             }
 
-            if(builder.length() == 8) { // 0cRR_GG_BB
+            if(builder.length() == 6) { // 0cRR_GG_BB
                 int r = Integer.valueOf(builder.substring(2, 4), 16);
                 int g = Integer.valueOf(builder.substring(4, 6), 16);
                 int b = Integer.valueOf(builder.substring(6, 8), 16);
                 int a = 0xFF;
                 return token(COL, Color.toDoubleBits(r, g, b, a));
-            } else if(builder.length() == 10) { // 0cRR_GG_BB_AA
+            } else if(builder.length() == 8) { // 0cRR_GG_BB_AA
                 int r = Integer.valueOf(builder.substring(2, 4), 16);
                 int g = Integer.valueOf(builder.substring(4, 6), 16);
                 int b = Integer.valueOf(builder.substring(6, 8), 16);
                 int a = Integer.valueOf(builder.substring(8, 10), 16);
                 return token(COL, Color.toDoubleBits(r, g, b, a));
             } else {
-                error("`颜色值`长度应为8或10")
-                        .point(start, current, "长度 = " + builder.length());
+                error("`颜色值`长度应为6或8")
+                        .point(start, current, "长度 = " + (builder.length() - 2));
                 return token(ERROR);
             }
 
@@ -398,6 +400,7 @@ public class Lexer {
 
                 normalNumber(builder);
 
+                //TODO 是否移除
                 if(match('.')) {
                     builder.append('.');
                     normalNumber(builder);
@@ -497,8 +500,15 @@ public class Lexer {
         return c == '0' || c == '1';
     }
 
-    private boolean isChinese(char c) {
-        return c >= '\u4E00' && c <= '\u9FFF';
+    // 标识符开头
+    private boolean isIdentifierStart(char c) {
+        return isAlpha(c)
+                || Character.isLetter(c);
+    }
+
+    // 标识符中间和末尾
+    private boolean isIdentifierPart(char c) {
+        return isIdentifierStart(c) || isDigit(c);
     }
 
     private boolean isWhitespace(char c) {
@@ -574,7 +584,7 @@ public class Lexer {
                     + Ansi.DEFAULT + literal));
         }
 
-        return new Token(type, span, literal);
+        return new Token(span, type, literal);
     }
 
     // EOF特化
@@ -590,7 +600,7 @@ public class Lexer {
                     + Ansi.DEFAULT);
         }
 
-        return new Token(EOF, span, null);
+        return new Token(span, EOF, null);
     }
 
     /**

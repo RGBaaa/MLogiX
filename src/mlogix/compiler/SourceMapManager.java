@@ -1,4 +1,4 @@
-package mlogix.struct;
+package mlogix.compiler;
 
 import arc.struct.Seq;
 

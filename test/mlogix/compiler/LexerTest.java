@@ -2,10 +2,9 @@ package mlogix.compiler;
 
 import java.util.*;
 
-import mlogix.mlogix.*;
-import mlogix.compiler.Lexer;
+import mlogix.mlogix.token.Token;
+import mlogix.mlogix.token.TokenType;
 import mlogix.problem.*;
-import mlogix.struct.SourceMapManager;
 import mlogix.util.*;
 
 public class LexerTest {
@@ -48,8 +47,8 @@ public class LexerTest {
         test("==", token(TokenType.EQ_EQ));
         test("===", token(TokenType.EQ_EQ_EQ));
         test(".", token(TokenType.DOT));
-        test("..", token(TokenType.DOT_DOT));
-        test("..=", token(TokenType.DOT_DOT_EQ));
+        test(":<", token(TokenType.COLON_LESS));
+        test(":=", token(TokenType.COLON_ASSIGN));
         test(":", token(TokenType.COLON));
         test(";", token(TokenType.SEMICOLON));
         test(",", token(TokenType.COMMA));
@@ -113,7 +112,7 @@ public class LexerTest {
         test("for", token(TokenType.FOR));
         test("break", token(TokenType.BREAK));
         test("continue", token(TokenType.CONTINUE));
-        test("struct", token(TokenType.STRUCT));
+        test("type", token(TokenType.TYPE));
         test("match", token(TokenType.MATCH));
         test("fn", token(TokenType.FN));
         test("return", token(TokenType.RETURN));

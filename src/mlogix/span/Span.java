@@ -1,8 +1,5 @@
 package mlogix.span;
 
-import mlogix.mlogix.ASTNode;
-import mlogix.mlogix.Token;
-
 /**
  * @param index 该Span所在SourceMap的索引
  */

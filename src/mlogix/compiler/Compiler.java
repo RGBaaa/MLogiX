@@ -1,9 +1,9 @@
 package mlogix.compiler;
 
-import mlogix.mlogix.*;
+import mlogix.mlogix.ast.ASTPrinter;
+import mlogix.mlogix.ast.Stmt;
 import mlogix.problem.*;
-import mlogix.struct.*;
-import mlogix.struct.SourceMapManager.*;
+import mlogix.compiler.SourceMapManager.*;
 import mlogix.util.*;
 
 import java.io.*;

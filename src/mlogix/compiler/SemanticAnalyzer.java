@@ -1,20 +1,21 @@
 package mlogix.compiler;
 
-import mlogix.mlogix.BuiltinStruct;
-import mlogix.mlogix.Stmt;
-import mlogix.mlogix.Struct;
-import mlogix.mlogix.Token;
+import mlogix.mlogix.ast.Expr;
+import mlogix.mlogix.type.BuiltinType;
+import mlogix.mlogix.ast.Stmt;
+import mlogix.mlogix.type.Type;
+import mlogix.mlogix.token.Token;
 import mlogix.problem.Problem;
 import mlogix.problem.ProblemCollector;
-import mlogix.struct.SourceMapManager.SourceMap;
+import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.span.Span;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-import static mlogix.mlogix.Expr.*;
-import static mlogix.mlogix.Stmt.*;
+import static mlogix.mlogix.ast.Expr.*;
+import static mlogix.mlogix.ast.Stmt.*;
 
 public class SemanticAnalyzer {
     private SourceMap sourceMap;
@@ -82,17 +83,17 @@ public class SemanticAnalyzer {
     }
 
     // 根据操作符和操作数类型确定结果类型
-    private Struct getResultType(Token operator, Struct leftType, Struct rightType) {
+    private Type getResultType(Token operator, Type leftType, Type rightType) {
         switch(operator.type) {
             case PLUS, MINUS, STAR, SLASH:
-                if(leftType == BuiltinStruct.Num || rightType == BuiltinStruct.Num) {
-                    return BuiltinStruct.Num;
+                if(leftType == BuiltinType.Num || rightType == BuiltinType.Num) {
+                    return BuiltinType.Num;
                 }
-                return BuiltinStruct.Int;
+                return BuiltinType.Int;
             case GREATER, GREATER_EQ, LESS, LESS_EQ, EQ_EQ, BANG_EQ:
-                return BuiltinStruct.Bool;
+                return BuiltinType.Bool;
             default:
-                return BuiltinStruct.Unknown;
+                return BuiltinType.Unknown;
         }
     }
 
@@ -100,7 +101,7 @@ public class SemanticAnalyzer {
      * 生成匿名符号，格式($INDEX$ = 匿名符号序号)：
      * __$INDEX$
      */
-    private Symbol genAnonymousSymbol(Struct type, Span span) {
+    private Symbol genAnonymousSymbol(Type type, Span span) {
         Symbol symbol = new Symbol("__" + anonymousSymbolIndex, type, span);
         anonymousSymbolIndex++;
         return symbol;
@@ -137,15 +138,17 @@ public class SemanticAnalyzer {
         void visit(SetVarStmt node);
 
         // 表达式类型
-        Struct visit(Literal node);
-        Struct visit(Identifier node);
-        Struct visit(Unary node);
-        Struct visit(Binary node);
-        Struct visit(Array node);
-        Struct visit(Index node);
-        Struct visit(Range node);
-        Struct visit(Call node);
-        Struct visit(Get node);
+        Type visit(Literal node);
+        Type visit(Identifier node);
+        Type visit(Unary node);
+        Type visit(Binary node);
+        Type visit(Array node);
+        Type visit(Index node);
+        Type visit(Range node);
+        Type visit(Call node);
+        Type visit(Get node);
+        Type visit(ErrorExpr node);
+        Type visit(Annotation node);
     }
 
     // ========== 语义分析主访问者 ==========
@@ -196,7 +199,7 @@ public class SemanticAnalyzer {
         @Override
         public void visit(ForStmt node) {
             newScope(() -> {
-                Struct type;
+                Type type;
                 if(node.expr instanceof Literal literal) {
                     if(literal.token.literal instanceof Double repeatNum) {
                         if(node.varDecl != null)
@@ -207,10 +210,10 @@ public class SemanticAnalyzer {
                             error()
                     }
                 }
-//                Struct type = node.expr.accept(this);
+//                Type type = node.expr.accept(this);
 //                Symbol var;
 //                if(node.varDecl != null) {
-//                    var = new Symbol((String) node.varDecl.token.literal,
+//                    var = new Symbol((Str) node.varDecl.token.literal,
 //                            type,
 //                            Span.between(node.varDecl, node.expr)
 //                    );
@@ -245,7 +248,7 @@ public class SemanticAnalyzer {
 
         @Override
         public void visit(FnStmt node) {
-            String functionName = (String) node.name.literal;
+            Str functionName = (Str) node.name.literal;
 
             // 检查函数是否已定义
             if(functionTable.containsKey(functionName)) {
@@ -254,13 +257,13 @@ public class SemanticAnalyzer {
             }
 
             // 解析参数类型
-            List<Struct> paramTypes = new ArrayList<>();
+            List<Type> paramTypes = new ArrayList<>();
             List<Symbol> paramSymbols = new ArrayList<>();
 
             for(Expr param : node.parameters) {
                 if(param instanceof Identifier) {
                     Identifier id = (Identifier) param;
-                    String paramName = (String) id.token.literal;
+                    Str paramName = (Str) id.token.literal;
 
                     // 检查参数名是否重复
                     for(Symbol existingParam : paramSymbols) {
@@ -271,11 +274,11 @@ public class SemanticAnalyzer {
                     }
 
                     // 解析参数类型
-                    Struct paramType = BuiltinStruct.Unknown;
+                    Type paramType = BuiltinType.Unknown;
                     if(id.type != null) {
-                        String typeName = (String) id.type.literal;
+                        Str typeName = (Str) id.type.literal;
                         paramType = resolveType(typeName);
-                        if(paramType == BuiltinStruct.Unknown) {
+                        if(paramType == BuiltinType.Unknown) {
                             error("未知参数类型: " + typeName, id.type);
                         }
                     } else {
@@ -290,7 +293,7 @@ public class SemanticAnalyzer {
             }
 
             // 解析返回类型（如果有）
-            Struct returnType = BuiltinStruct.Unknown; // 默认返回类型
+            Type returnType = BuiltinType.Unknown; // 默认返回类型
 
             // 创建函数符号并添加到函数表
             FunctionSymbol functionSymbol = new FunctionSymbol(
@@ -323,8 +326,8 @@ public class SemanticAnalyzer {
             // 这里需要知道当前所在的函数，可以通过维护一个当前函数栈来实现
             // 简化版实现：检查返回值类型是否有效
             if(node.expr != null) {
-                Struct returnType = analyzeExpression(node.expr);
-                if(returnType == BuiltinStruct.Unknown) {
+                Type returnType = analyzeExpression(node.expr);
+                if(returnType == BuiltinType.Unknown) {
                     error("无法确定返回值类型", node.expr.token);
                 }
 
@@ -337,22 +340,22 @@ public class SemanticAnalyzer {
         public void visit(SetVarStmt node) {
             // 处理变量声明
             if(node.var instanceof Identifier identifier) {
-                String name = (String) identifier.token.literal;
+                Str name = (Str) identifier.token.literal;
 
                 // 检查变量是否已在当前作用域中定义
-                Map<String, Symbol> currentScope = currentScope();
+                Map<Str, Symbol> currentScope = currentScope();
                 if(currentScope.containsKey(name)) {
                     error("变量 '" + name + "' 已在当前作用域中定义", id.token);
                     return;
                 }
 
                 // 确定变量类型
-                Struct type = null;
+                Type type = null;
                 if(id.type != null) {
                     // 如果显式指定了类型
-                    String typeName = (String) id.type.literal;
+                    Str typeName = (Str) id.type.literal;
                     type = resolveType(typeName);
-                    if(type == BuiltinStruct.Unknown) {
+                    if(type == BuiltinType.Unknown) {
                         error("未知类型: " + typeName, id.type);
                     }
                 }
@@ -362,7 +365,7 @@ public class SemanticAnalyzer {
                     AssignStmt assignStmt = (AssignStmt) node.assignStmt;
                     assignStmt.accept(this);
 
-                    Struct initType = analyzeExpression(assignStmt.value);
+                    Type initType = analyzeExpression(assignStmt.value);
 
                     if(type == null) {
                         // 如果没有显式指定类型，使用初始化表达式的类型
@@ -374,7 +377,7 @@ public class SemanticAnalyzer {
 
                 // 如果类型仍然未确定，使用默认类型
                 if(type == null) {
-                    type = BuiltinStruct.Unknown;
+                    type = BuiltinType.Unknown;
                     error("无法推断变量 '" + name + "' 的类型", id.token);
                 }
 
@@ -414,13 +417,13 @@ public class SemanticAnalyzer {
             node.value.accept(this);
 
             // 检查赋值类型是否匹配
-            Struct varType = analyzeExpression(node.var);
-            Struct valueType = analyzeExpression(node.value);
+            Type varType = analyzeExpression(node.var);
+            Type valueType = analyzeExpression(node.value);
 
-            if(varType == BuiltinStruct.Unknown) {
+            if(varType == BuiltinType.Unknown) {
                 // 如果变量类型未知，可能是未定义的变量
                 if(node.var instanceof Identifier) {
-                    String name = (String) ((Identifier) node.var).token.literal;
+                    Str name = (Str) ((Identifier) node.var).token.literal;
                     error("未定义的变量: " + name, ((Identifier) node.var).token);
                 }
                 return;
@@ -456,7 +459,7 @@ public class SemanticAnalyzer {
         @Override
         public void visit(Identifier node) {
             // 检查标识符是否已定义
-            String name = (String) node.token.literal;
+            Str name = (Str) node.token.literal;
             Symbol symbol = lookupSymbol(name);
             if(symbol == null) {
                 error("未定义的标识符: " + name, node.token);
@@ -475,8 +478,8 @@ public class SemanticAnalyzer {
             node.right.accept(this);
 
             // 检查二元运算符类型
-            Struct leftType = analyzeExpression(node.left);
-            Struct rightType = analyzeExpression(node.right);
+            Type leftType = analyzeExpression(node.left);
+            Type rightType = analyzeExpression(node.right);
 
             // 检查类型兼容性
             if(!isTypeCompatible(node.operator.type, leftType, rightType)) {
@@ -485,17 +488,17 @@ public class SemanticAnalyzer {
         }
 
         // 检查类型兼容性
-        private boolean isTypeCompatible(TokenType operator, Struct leftType, Struct rightType) {
+        private boolean isTypeCompatible(TokenType operator, Type leftType, Type rightType) {
             // 根据操作符和类型进行兼容性检查
             switch(operator) {
                 case PLUS, MINUS, STAR, SLASH:
-                    return (leftType == BuiltinStruct.Int || leftType == BuiltinStruct.Num) &&
-                            (rightType == BuiltinStruct.Int || rightType == BuiltinStruct.Num);
+                    return (leftType == BuiltinType.Int || leftType == BuiltinType.Num) &&
+                            (rightType == BuiltinType.Int || rightType == BuiltinType.Num);
                 case EQ_EQ, BANG_EQ:
                     return true; // 所有类型都可以进行相等性比较
                 case GREATER, GREATER_EQ, LESS, LESS_EQ:
-                    return (leftType == BuiltinStruct.Int || leftType == BuiltinStruct.Num) &&
-                            (rightType == BuiltinStruct.Int || rightType == BuiltinStruct.Num);
+                    return (leftType == BuiltinType.Int || leftType == BuiltinType.Num) &&
+                            (rightType == BuiltinType.Int || rightType == BuiltinType.Num);
                 default:
                     return false;
             }
@@ -539,7 +542,7 @@ public class SemanticAnalyzer {
 
             // 检查函数调用
             if(node.callee instanceof Identifier) {
-                String functionName = (String) ((Identifier) node.callee).token.literal;
+                Str functionName = (Str) ((Identifier) node.callee).token.literal;
                 FunctionSymbol function = functionTable.get(functionName);
 
                 if(function == null) {
@@ -560,8 +563,8 @@ public class SemanticAnalyzer {
 
                 // 检查参数类型
                 for(int i = 0; i < node.arguments.size(); i++) {
-                    Struct argType = analyzeExpression(node.arguments.get(i));
-                    Struct paramType = function.parameters.get(i).type;
+                    Type argType = analyzeExpression(node.arguments.get(i));
+                    Type paramType = function.parameters.get(i).type;
 
                     if(argType != paramType && !isAssignable(paramType, argType)) {
                         error("参数类型不匹配: 函数 '" + functionName + "' 的第 " + (i + 1) +
@@ -572,8 +575,8 @@ public class SemanticAnalyzer {
             } else if(node.callee instanceof Get) {
                 // 处理方法调用
                 Get get = (Get) node.callee;
-                Struct objectType = analyzeExpression(get.object);
-                String methodName = (String) get.name.literal;
+                Type objectType = analyzeExpression(get.object);
+                Str methodName = (Str) get.name.literal;
 
                 // 检查对象是否有该方法
                 if(objectType.methods == null || !objectType.methods.containsKey(methodName)) {
@@ -584,12 +587,12 @@ public class SemanticAnalyzer {
         }
 
         // 检查类型是否可赋值
-        private boolean isAssignable(Struct target, Struct source) {
+        private boolean isAssignable(Type target, Type source) {
             // 相同类型可以赋值
             if(target == source) return true;
 
             // 特殊类型转换规则
-            if(target == BuiltinStruct.Num && source == BuiltinStruct.Int) return true;
+            if(target == BuiltinType.Num && source == BuiltinType.Int) return true;
 
             // 其他类型转换规则可以在这里添加
 
@@ -597,7 +600,7 @@ public class SemanticAnalyzer {
         }
 
         @Override
-        public Struct visit(Get node) {
+        public Type visit(Get node) {
             node.object.accept(this);
             node.field.accept(this);
             // TODO 检查对象字段访问
@@ -609,13 +612,13 @@ public class SemanticAnalyzer {
     // 符号表条目
     public class Symbol {
         public final String name;
-        public final Struct type;
+        public final Type type;
         /** 符号定义处 */
         public final Span span;
 
         public Map<String, Object> values = new HashMap<>();
 
-        public Symbol(String name, Struct type, Span span) {
+        public Symbol(String name, Type type, Span span) {
             this.name = name;
             this.type = type;
             this.span = span;

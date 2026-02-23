@@ -1,6 +1,9 @@
-package mlogix.mlogix;
+package mlogix.mlogix.ast;
 
+import arc.struct.Seq;
 import mlogix.compiler.*;
+import mlogix.mlogix.token.Token;
+import mlogix.mlogix.type.Type;
 import mlogix.span.Span;
 
 import java.util.*;
@@ -11,7 +14,7 @@ public abstract non-sealed class Expr extends ASTNode {
         this.span = span;
     }
 
-    public abstract Struct accept(SemanticAnalyzer.SemanticVisitor visitor);
+    public abstract Type accept(SemanticAnalyzer.SemanticVisitor visitor);
 
     /* 字面量 */
     public static class Literal extends Expr {
@@ -23,7 +26,7 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }
@@ -38,7 +41,27 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
+            return visitor.visit(this);
+        }
+    }
+
+    public static class Annotation extends Expr {
+        public final Expr expr;
+        public final Seq<Expr> annotations;
+
+        public Annotation(Expr expr, Seq<Expr> annotations) {
+            if(annotations.size == 0) {
+                super(expr.span);
+            } else {
+                super(Span.between(expr, annotations.get(annotations.size - 1)));
+            }
+            this.expr = expr;
+            this.annotations = annotations;
+        }
+
+        @Override
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }
@@ -55,7 +78,7 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }
@@ -74,7 +97,7 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }
@@ -89,7 +112,7 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }
@@ -106,7 +129,7 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }
@@ -124,7 +147,7 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }
@@ -141,12 +164,12 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }
 
-    /* 获取字段 struct.field  struct.func */
+    /* 获取字段 type.field  type.func */
     public static class Get extends Expr {
         public final Expr object;
         public final Expr field;
@@ -158,7 +181,21 @@ public abstract non-sealed class Expr extends ASTNode {
         }
 
         @Override
-        public Struct accept(SemanticAnalyzer.SemanticVisitor visitor) {
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
+            return visitor.visit(this);
+        }
+    }
+
+    /**
+     * 错误恢复占位符
+     */
+    public static class ErrorExpr extends Expr {
+        public ErrorExpr() {
+            super(null);
+        }
+
+        @Override
+        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
             return visitor.visit(this);
         }
     }

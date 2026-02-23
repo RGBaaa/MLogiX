@@ -1,4 +1,4 @@
-package mlogix.mlogix;
+package mlogix.mlogix.ast;
 
 import mlogix.span.Span;
 import mlogix.span.Spanned;
