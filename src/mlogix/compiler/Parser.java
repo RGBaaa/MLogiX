@@ -544,15 +544,15 @@ public class Parser {
                                 .info(lParen, "参数开头")
                                 .point(lookAhead(), "末尾");
                         if(arguments.isEmpty()) {
-                            expr = new Call(lParen.span, expr, arguments);
+                            expr = new Call(expr.span, expr, arguments);
                         } else {
-                            expr = new Call(between(lParen, arguments.get(arguments.size - 1)),
+                            expr = new Call(between(expr, arguments.get(arguments.size - 1)),
                                     expr, arguments);
                         }
                         break;
                     }
                     if(check(RPAREN)) {
-                        expr = new Call(between(lParen, next()), expr, arguments);
+                        expr = new Call(between(expr, next()), expr, arguments);
                         break;
                     }
 
