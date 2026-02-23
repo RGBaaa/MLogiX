@@ -6,8 +6,6 @@ import mlogix.mlogix.token.Token;
 import mlogix.mlogix.type.Type;
 import mlogix.span.Span;
 
-import java.util.List;
-
 //Expression
 public abstract non-sealed class Expr extends ASTNode {
     protected Expr(Span span) {
@@ -103,9 +101,9 @@ public abstract non-sealed class Expr extends ASTNode {
 
     /* 数组 */
     public static class Array extends Expr {
-        public final List<Expr> elements;
+        public final Seq<Expr> elements;
 
-        public Array(Span span, List<Expr> elements) {
+        public Array(Span span, Seq<Expr> elements) {
             super(span);
             this.elements = elements;
         }
@@ -154,9 +152,9 @@ public abstract non-sealed class Expr extends ASTNode {
     /* 函数调用 func(...) */
     public static class Call extends Expr {
         public final Expr callee;
-        public final List<Expr> arguments;
+        public final Seq<Expr> arguments;
 
-        public Call(Span span, Expr callee, List<Expr> arguments) {
+        public Call(Span span, Expr callee, Seq<Expr> arguments) {
             super(span);
             this.callee = callee;
             this.arguments = arguments;
@@ -189,8 +187,8 @@ public abstract non-sealed class Expr extends ASTNode {
      * 错误恢复占位符
      */
     public static class ErrorExpr extends Expr {
-        public ErrorExpr() {
-            super(null);
+        public ErrorExpr(Span span) {
+            super(span);
         }
 
         @Override

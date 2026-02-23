@@ -50,13 +50,15 @@ public class Lexer {
      * 扫描下一个Token
      */
     public Token scanToken() {
-        while(!isAtEnd()) {
+        while(true) {
+            start = current;
+
+            if(isAtEnd()) return eofToken();
             if(lastIsNewline) {
                 lastIsNewline = false;
                 recover(c -> c != '\n'); // 跳过newline防止重复出现
-                if(isAtEnd()) return token(EOF);
+                if(isAtEnd()) return eofToken();
             }
-            start = current;
 
             char c = advance();
             switch(c) {
@@ -224,8 +226,6 @@ public class Lexer {
                     }
             }
         }
-        // EOF特化
-        return eofToken();
     }
 
     /* 标识符 关键字 */

@@ -36,7 +36,7 @@ public abstract class Problem {
 
     public Problem point(Spanned obj, String text) {
         Span span = obj.span();
-        return point(span.start(), span.end(),text);
+        return point(span.start, span.end,text);
     }
 
     public Problem point(int start, int end, String text) {
@@ -47,7 +47,7 @@ public abstract class Problem {
 
     public Problem info(Spanned obj, String text) {
         Span span = obj.span();
-        return info(span.start(), span.end(), text);
+        return info(span.start, span.end, text);
     }
 
     public Problem info(int start, int end, String text) {

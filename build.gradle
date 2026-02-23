@@ -25,13 +25,13 @@ repositories {
 }
 
 ext {
-    mindustryVersion = 'v155.2'
+    mindustryVersion = 'v155.4'
     jabelVersion = "93fde537c7"
 }
 
 dependencies {
-    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    implementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 }
@@ -56,6 +56,24 @@ configurations.configureEach{
     resolutionStrategy.eachDependency { details ->
         if(details.requested.group == 'com.github.Anuken.Arc'){
             details.useVersion "$mindustryVersion"
+        }
+    }
+}
+
+tasks.register('runApp', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'mlogix.Main'
+
+    args 'c', 'd'
+
+    ignoreExitValue = true as JavaExecSpec  // 不因为退出码而失败
+
+    // 重定向错误输出
+    errorOutput = System.err
+
+    doLast {
+        if (executionResult.get().exitValue != 0) {
+            println "程序执行失败，退出码: ${executionResult.get().exitValue}"
         }
     }
 }

@@ -9,9 +9,10 @@ import mlogix.util.*;
 
 public class LexerTest {
     static final SourceMapManager manager = new SourceMapManager();
+    static final ProblemCollector collector = new ProblemCollector();
     static final List<Problem> errorList = new ArrayList<>();
     static final List<Problem> warningList = new ArrayList<>();
-    static final Lexer lexer = new Lexer(errorList, warningList);
+    static final Lexer lexer = new Lexer(collector);
     static int testNum = 0;
     static int errorNum = 0;
 
@@ -59,12 +60,12 @@ public class LexerTest {
         test("{", token(TokenType.LBRACE));
         test("}", token(TokenType.RBRACE));
 
-        test("\"hello\"", token(TokenType.STRING, "hello"));
-        test("\"hello\\nworld!\"", token(TokenType.STRING, "hello\\nworld!"));
+        test("\"hello\"", token(TokenType.STR, "hello"));
+        test("\"hello\\nworld!\"", token(TokenType.STR, "hello\\nworld!"));
 
         // 错误测试 - 字符串
-        test("\"hello", 1, token(TokenType.STRING, "hello")); // 未闭合的字符串
-        test("\"hello\nworld\"", 2, token(TokenType.STRING, "hello")); // 字符串中包含换行符
+        test("\"hello", 1, token(TokenType.STR, "hello")); // 未闭合的字符串
+        test("\"hello\nworld\"", 2, token(TokenType.STR, "hello")); // 字符串中包含换行符
         
         // 错误测试 - 未知字符
         test("a $ b",

@@ -138,6 +138,7 @@ public class SemanticAnalyzer {
         void visit(SetVarStmt node);
 
         // 表达式类型
+        // 小心！一切都可能是ErrorExpr，这表示错误
         Type visit(Literal node);
         Type visit(Identifier node);
         Type visit(Unary node);
@@ -147,8 +148,8 @@ public class SemanticAnalyzer {
         Type visit(Range node);
         Type visit(Call node);
         Type visit(Get node);
-        Type visit(ErrorExpr node);
         Type visit(Annotation node);
+        Type visit(ErrorExpr node);
     }
 
     // ========== 语义分析主访问者 ==========

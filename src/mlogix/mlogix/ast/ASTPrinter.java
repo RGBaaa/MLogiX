@@ -1,10 +1,10 @@
 package mlogix.mlogix.ast;
 
+import arc.struct.Seq;
 import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.mlogix.token.Token;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Field;
 
 import static mlogix.util.Ansi.*;
 
@@ -23,6 +23,7 @@ public class ASTPrinter {
     private static final String CONNECTOR_MID = "├──" + LINE_COLOR;
     private static final String VERTICAL_LINE = "│  " + LINE_COLOR;
 
+    // 是否缩进
     private static boolean indentEnabled;
 
     private static SourceMap sourceMap;
@@ -47,8 +48,8 @@ public class ASTPrinter {
             printASTNode(expr, indent, isLast, EXPR_COLOR);
         } else if(node instanceof Token) {
             printLine(indent, isLast, TOKEN_COLOR + ((Token) node).toSimpleString() + DEFAULT);
-        } else if(node instanceof List) {
-            printList((List<?>) node, indent, isLast);
+        } else if(node instanceof Seq) {
+            printList((Seq<?>) node, indent, isLast);
         } else if(node.getClass().isArray()) {
             printArray((Object[]) node, indent, isLast);
         } else {
@@ -58,24 +59,35 @@ public class ASTPrinter {
 
     private static void printASTNode(ASTNode node, String indent, boolean isLast, String color) {
         // 打印节点类型名称
-        int start = node.span.start();
-        int end = node.span.end();
-        int line = sourceMap.getLine(start);
-        String lineString = sourceMap.getLineString(line);
-        char startChar = sourceMap.charAt(start);
-        printLine(indent, isLast, color + node.getClass().getSimpleName()
-                + VALUE_COLOR + "[" + start + "," + end + ")" + DEFAULT
-                + " " + line
-                + B_CYAN + lineString.substring(0, Math.max(0, sourceMap.getCol(start) - 1))
-                + B_MAGENTA + (startChar == '\n' ? "" : startChar)
-                + B_CYAN + lineString.substring(Math.min(sourceMap.getCol(start), lineString.length()))
-                + DEFAULT
-                + (start == end ? "" : " "
-                    + sourceMap.getLine(end - 1)
-                    + B_YELLOW + sourceMap.getLineString(sourceMap.getLine(end - 1))
-                    + DEFAULT
-                )
-        );
+        int start = node.span.start;
+        int end = Math.max(node.span.end - 1, start); // 左闭右开
+
+        int startLine = sourceMap.getLine(start);
+        int endLine = sourceMap.getLine(end);
+
+        String startLineString = sourceMap.getLineString(startLine);
+        String endLineString = sourceMap.getLineString(endLine);
+
+        int startCol = Math.max(0, sourceMap.getCol(start) - 1);
+        int endCol = sourceMap.getCol(end);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(color).append(node.getClass().getSimpleName());
+        sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append(")").append(" ");
+        sb.append(DEFAULT).append(startLine);
+        sb.append(B_CYAN).append(startLineString, 0, startCol);
+        if(startLine == endLine) {
+            sb.append(B_MAGENTA).append(startLineString, startCol, endCol);
+            sb.append(B_CYAN).append(startLineString, endCol, startLineString.length());
+        } else {
+            sb.append(B_MAGENTA).append(startLineString, startCol, startLineString.length());
+            sb.append(DEFAULT).append(" ").append(endLine);
+            sb.append(B_MAGENTA).append(endLineString, 0, endCol);
+            sb.append(B_YELLOW).append(endLineString, endCol, endLineString.length());
+        }
+        sb.append(DEFAULT);
+
+        printLine(indent, isLast, sb.toString());
 
         indentEnabled = true;
 
@@ -107,8 +119,10 @@ public class ASTPrinter {
         if(value == null) {
             printLine(indent, isLast, FIELD_COLOR + fieldName + ": " + VALUE_COLOR + "null" + DEFAULT);
             return;
-        } else if((value instanceof List && ((List<?>) value).isEmpty()) ||
-                (value.getClass().isArray() && ((Object[]) value).length == 0)) {
+        } else if(
+                (value instanceof Seq && ((Seq<?>) value).isEmpty())
+                        || (value.getClass().isArray() && ((Object[]) value).length == 0)
+        ) {
             printLine(indent, isLast, FIELD_COLOR + fieldName + ": " + LIST_COLOR + "[]" + DEFAULT);
             return;
         }
@@ -125,8 +139,8 @@ public class ASTPrinter {
         print(value, indent + (isLast ? INDENT_BLANK : VERTICAL_LINE + FIELD_COLOR), true);
     }
 
-    private static void printList(List<?> list, String indent, boolean isLast) {
-        if(list.isEmpty()) {
+    private static void printList(Seq<?> seq, String indent, boolean isLast) {
+        if(seq.isEmpty()) {
             printLine(indent, isLast, "List[]");
             return;
         }
@@ -135,9 +149,9 @@ public class ASTPrinter {
         String newIndent = indent + LIST_COLOR;
 
         indentEnabled = true;
-        for(int i = 0; i < list.size(); i++) {
-            boolean itemIsLast = (i == list.size() - 1);
-            print(list.get(i), newIndent, itemIsLast);
+        for(int i = 0; i < seq.size; i++) {
+            boolean itemIsLast = (i == seq.size - 1);
+            print(seq.get(i), newIndent, itemIsLast);
         }
     }
 
