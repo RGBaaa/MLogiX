@@ -3,4 +3,9 @@ fn println_f(text : ? Str | Num | Int
     print(text)
     print("\n")
     print_flush(message1)
+    if(a==1){
+
+    }else{
+
+    }
 }

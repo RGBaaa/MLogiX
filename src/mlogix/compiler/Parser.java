@@ -1,6 +1,7 @@
 package mlogix.compiler;
 
 import arc.func.Cons;
+import arc.struct.Queue;
 import arc.struct.Seq;
 import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.mlogix.ast.Expr;
@@ -23,8 +24,7 @@ public class Parser {
     private final Lexer lexer;
     private final ProblemCollector collector;
     private SourceMap sourceMap;
-    // 作为前瞻缓冲 必须通过工具方法访问
-    private Token nextToken;
+    private LookAheadWindow input;
 
     /**
      * 一个项目 一次构造
@@ -42,7 +42,7 @@ public class Parser {
         this.sourceMap = sourceMap;
         this.lexer.reset(sourceMap);
 
-        nextToken = null;
+        this.input = new LookAheadWindow();
 
         return program();
     }
@@ -81,7 +81,7 @@ public class Parser {
             if(isAtEnd()) {
                 error("找不到`块`语句的`}`")
                         .info(lBrace, "开头")
-                        .point(lookAhead(), "当前");
+                        .point(lookAhead(0), "当前");
                 return new Block(between(lBrace, stmts.isEmpty() ? lBrace
                         : stmts.get(stmts.size - 1)), stmts);
             }
@@ -131,7 +131,7 @@ public class Parser {
             if(match("in")) {
                 expr = expression();
 
-            // for id
+                // for id
             } else {
                 expr = null;
             }
@@ -146,7 +146,7 @@ public class Parser {
 
             return new ForStmt(between(start, body), var, expr, body);
 
-        //for repeatNum
+            //for repeatNum
         } else {
             Expr expr = expression();
 
@@ -204,8 +204,8 @@ public class Parser {
             if(isAtEnd()) {
                 error("无法结束的`函数形参声明`")
                         .info(start, "函数声明开头")
-                        .point(lookAhead(), "末尾");
-                return new FnStmt(between(start, lookAhead()), name, null, null, null);
+                        .point(lookAhead(0), "末尾");
+                return new FnStmt(between(start, lookAhead(0)), name, null, null, null);
             }
             if(!check(IDENTIFIER)) {
                 recover(RPAREN);
@@ -225,12 +225,12 @@ public class Parser {
                     if(results.isEmpty()) {
                         error("无法找到`函数返回值声明`")
                                 .info(start, "函数开头")
-                                .point(lookAhead(), "期望`标识符`");
+                                .point(lookAhead(0), "期望`标识符`");
                         return new FnStmt(between(start, end), name, parameters, null, null);
                     } else {
                         error("无法找到函数体")
                                 .info(start, "函数开头")
-                                .point(lookAhead(), "期望`{`");
+                                .point(lookAhead(0), "期望`{`");
                         return new FnStmt(between(start, end), name, parameters, results, null);
                     }
                 }
@@ -512,7 +512,7 @@ public class Parser {
         Expr expr = primary();
 
         while(true) {
-            // if(isStmtEnd()) return expr;
+//            if(isStmtEnd()) return expr;
 
             if(check(LBRACKET)) {//对列表的索引或切片
                 Token lBracket = next();
@@ -542,7 +542,7 @@ public class Parser {
                     if(isAtEnd()) {
                         error("无法结束的`函数传参`")
                                 .info(lParen, "参数开头")
-                                .point(lookAhead(), "末尾");
+                                .point(lookAhead(0), "末尾");
                         if(arguments.isEmpty()) {
                             expr = new Call(expr.span, expr, arguments);
                         } else {
@@ -639,7 +639,7 @@ public class Parser {
                 if(isAtEnd()) {
                     error("无法结束的数组")
                             .info(lBrace, "数组开头")
-                            .point(lookAhead(), "末尾");
+                            .point(lookAhead(0), "末尾");
                 }
 //                try {
                 elements.add(expression());
@@ -653,8 +653,8 @@ public class Parser {
             return new Array(between(lBrace, rBrace), elements);
         }
 
-        error("期望表达式").point(lookAhead(), "");
-        return new ErrorExpr(lookAhead().span);
+        error("期望表达式").point(lookAhead(0), "");
+        return new ErrorExpr(lookAhead(0).span);
     }
 
     /**
@@ -692,23 +692,14 @@ public class Parser {
      * 向前推进一个token
      */
     private Token next() {
-        if(nextToken != null) {
-            Token temp = nextToken;
-            nextToken = null;
-            return temp;
-        }
-        return lexer.scanToken();
+        return input.next();
     }
 
     /**
      * 前瞻下一个token
      */
-    private Token lookAhead() {
-        if(nextToken != null) {
-            return nextToken;
-        }
-        nextToken = lexer.scanToken();
-        return nextToken;
+    private Token lookAhead(int index) {
+        return input.lookAhead(index);
     }
 
     /**
@@ -716,10 +707,10 @@ public class Parser {
      * @return 下一个Token为`EOF`时返回true，自动消耗NEWLINE
      */
     private boolean isAtEnd() {
-        TokenType nextType = lookAhead().type;
+        TokenType nextType = lookAhead(0).type;
         if(nextType == NEWLINE) {
             next();
-            nextType = lookAhead().type; // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            nextType = lookAhead(0).type; // 第二个不会是NEWLINE，由Lexer.scanToken()证明
         }
         return nextType == EOF;
     }
@@ -729,7 +720,7 @@ public class Parser {
      * @return 下一个Token为`NEWLINE`或`SEMICOLON`或`EOF`时返回true
      */
     private boolean isStmtEnd() {
-        TokenType peekType = lookAhead().type;
+        TokenType peekType = lookAhead(0).type;
         return peekType == NEWLINE || peekType == SEMICOLON || peekType == EOF;
     }
 
@@ -737,11 +728,14 @@ public class Parser {
      * 不支持NEWLINE
      */
     private boolean check(TokenType type) {
-        TokenType nextType = lookAhead().type;
-        if(nextType == ERROR) return false; // Lexer传来的错误Token
+        TokenType nextType = lookAhead(0).type;
         if(nextType == NEWLINE) {
-            next();
-            nextType = lookAhead().type; // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            if(lookAhead(1).type == type) {
+                next(); // 跳过NEWLINE
+                return true;
+            }
+            return false;
         }
         return nextType == type;
     }
@@ -750,11 +744,14 @@ public class Parser {
      * 不支持NEWLINE
      */
     private boolean check(Set<TokenType> types) {
-        TokenType nextType = lookAhead().type;
-        if(nextType == ERROR) return false; // Lexer传来的错误Token
+        TokenType nextType = lookAhead(0).type;
         if(nextType == NEWLINE) {
-            next();
-            nextType = lookAhead().type; // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            if(types.contains(lookAhead(1).type)) {
+                next(); // 跳过NEWLINE
+                return true;
+            }
+            return false;
         }
         return types.contains(nextType);
     }
@@ -763,11 +760,14 @@ public class Parser {
      * 不支持NEWLINE
      */
     private boolean check(String text) {
-        Token next = lookAhead();
-        if(next.type == ERROR) return false; // Lexer传来的错误Token
+        Token next = lookAhead(0);
         if(next.type == NEWLINE) {
-            next();
-            next = lookAhead(); // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            if(text.equals(lookAhead(1).literal)) {
+                next(); // 跳过NEWLINE
+                return true;
+            }
+            return false;
         }
         return text.equals(next.literal);
     }
@@ -776,14 +776,20 @@ public class Parser {
      * 不支持NEWLINE
      */
     private boolean check(TokenType... types) {
-        TokenType nextType = lookAhead().type;
-        if(nextType == ERROR) return false; // Lexer传来的错误Token
-        if(nextType == NEWLINE) {
-            next();
-            nextType = lookAhead().type;// 第二个不会是NEWLINE，由Lexer.scanToken()证明
+        TokenType nextType0 = lookAhead(0).type;
+        if(nextType0 == NEWLINE) {
+            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            TokenType nextType1 = lookAhead(1).type;
+            for(TokenType expected : types) {
+                if(nextType1 == expected) {
+                    next(); // 跳过NEWLINE
+                    return true;
+                }
+            }
+            return false;
         }
         for(TokenType expected : types) {
-            if(nextType == expected) return true;
+            if(nextType0 == expected) return true;
         }
         return false;
     }
@@ -837,9 +843,9 @@ public class Parser {
      * 若下一个token不是指定类型的则返回null并报告错误，否则返回该token。
      */
     private Token expect(TokenType type) {
-        if(check(type)) return lookAhead();
+        if(check(type)) return lookAhead(0);
 
-        error("未找到期望TokenType").point(lookAhead(), type.toString());
+        error("未找到期望TokenType").point(lookAhead(0), type.toString());
         return null;
     }
 
@@ -847,9 +853,9 @@ public class Parser {
      * 若下一个token不是指定类型的则返回null并报告错误并将错误输入Cons，否则返回该token。
      */
     private Token expect(TokenType type, Cons<Problem> cons) {
-        if(check(type)) return lookAhead();
+        if(check(type)) return lookAhead(0);
 
-        cons.get(error("未找到期望TokenType").point(lookAhead(), type.toString()));
+        cons.get(error("未找到期望TokenType").point(lookAhead(0), type.toString()));
         return null;
     }
 
@@ -859,7 +865,7 @@ public class Parser {
      * 不报错。
      */
     private boolean matchStmtEnd() {
-        TokenType peekType = lookAhead().type;
+        TokenType peekType = lookAhead(0).type;
         if(peekType == NEWLINE || peekType == SEMICOLON || peekType == EOF) {
             next();
             return true;
@@ -874,7 +880,7 @@ public class Parser {
      * 都没有则报错。
      */
     private void consumeStmtEnd() {
-        TokenType peekType = lookAhead().type;
+        TokenType peekType = lookAhead(0).type;
         if(peekType == NEWLINE || peekType == SEMICOLON || peekType == EOF) {
             next();
             return;
@@ -884,7 +890,7 @@ public class Parser {
         }
         // 如果没有找到，报告错误
         error("缺少换行或分号作为语句结束符")
-                .point(lookAhead(), "");
+                .point(lookAhead(0), "");
     }
 
     /**
@@ -894,7 +900,7 @@ public class Parser {
         if(check(type)) return next();
 
         error("未找到期望TokenType")
-                .point(lookAhead(), type.toString());
+                .point(lookAhead(0), type.toString());
         return null;
     }
 
@@ -905,7 +911,7 @@ public class Parser {
         if(check(type)) return next();
 
         cons.get(error("未找到期望TokenType")
-                .point(lookAhead(), type.toString())
+                .point(lookAhead(0), type.toString())
         );
         return null;
     }
@@ -975,5 +981,29 @@ public class Parser {
         Problem.ParserProblem w = new Problem.ParserProblem(sourceMap, text, Problem.ProblemLevel.WARNING);
         collector.addWarning(w);
         return w;
+    }
+
+    // ========== 工具类 ==========
+
+    private class LookAheadWindow {
+        private final byte capacity = 2;
+        private final Queue<Token> buffer = new Queue<>(capacity);
+
+        public LookAheadWindow() {
+        }
+
+        public Token next() {
+            if(buffer.size < 1)
+                return lexer.scanToken();
+            return buffer.removeFirst();
+        }
+
+        public Token lookAhead(int index) {
+            for(int i = 0; i <= index - buffer.size; i++) {
+                buffer.addLast(lexer.scanToken());
+            }
+            return buffer.get(index);
+        }
+
     }
 }

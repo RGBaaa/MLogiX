@@ -77,13 +77,13 @@ public class ASTPrinter {
         sb.append(DEFAULT).append(startLine);
         sb.append(B_CYAN).append(startLineString, 0, startCol);
         if(startLine == endLine) {
-            sb.append(B_MAGENTA).append(startLineString, startCol, endCol);
+            sb.append(B_YELLOW).append(startLineString, startCol, endCol);
             sb.append(B_CYAN).append(startLineString, endCol, startLineString.length());
         } else {
-            sb.append(B_MAGENTA).append(startLineString, startCol, startLineString.length());
+            sb.append(B_YELLOW).append(startLineString, startCol, startLineString.length());
             sb.append(DEFAULT).append(" ").append(endLine);
-            sb.append(B_MAGENTA).append(endLineString, 0, endCol);
-            sb.append(B_YELLOW).append(endLineString, endCol, endLineString.length());
+            sb.append(B_YELLOW).append(endLineString, 0, endCol);
+            sb.append(B_CYAN).append(endLineString, endCol, endLineString.length());
         }
         sb.append(DEFAULT);
 
