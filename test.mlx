@@ -1,11 +1,8 @@
-fn println_f(text : ? Str | Num | Int
-             sep : ? Str) {
-    print(text)
-    print("\n")
-    print_flush(message1)
-    if(a==1){
-
-    }else{
-
+while(true) {
+    unit = bind(mono)
+    if unit.totalItem >= mono.itemCapacity {
+        core = locate("core", true)
+        move(core)
+        drop(core)
     }
 }

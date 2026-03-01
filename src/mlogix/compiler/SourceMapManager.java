@@ -161,7 +161,9 @@ public class SourceMapManager {
             return source.substring(start, end);
         }
 
-        /* 获取一行字符串，不带\n */
+        /**
+         * 获取一行字符串，不带\n
+         */
         public String getLineString(int line) {
             line = line - 1;
 

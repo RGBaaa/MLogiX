@@ -19,7 +19,6 @@ import static mlogix.mlogix.ast.Expr.*;
 import static mlogix.mlogix.ast.Stmt.*;
 import static mlogix.mlogix.token.TokenType.*;
 
-// TODO isStmtEnd()可能不应该使用，或者需要更改实现，否则可能出现不使用分号作为语句结尾时的歧义
 public class Parser {
     private final Lexer lexer;
     private final ProblemCollector collector;

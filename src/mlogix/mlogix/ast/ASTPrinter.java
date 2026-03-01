@@ -60,7 +60,7 @@ public class ASTPrinter {
     private static void printASTNode(ASTNode node, String indent, boolean isLast, String color) {
         // 打印节点类型名称
         int start = node.span.start;
-        int end = Math.max(node.span.end - 1, start); // 左闭右开
+        int end = Math.max(node.span.end, start);
 
         int startLine = sourceMap.getLine(start);
         int endLine = sourceMap.getLine(end);
@@ -69,11 +69,11 @@ public class ASTPrinter {
         String endLineString = sourceMap.getLineString(endLine);
 
         int startCol = Math.max(0, sourceMap.getCol(start) - 1);
-        int endCol = sourceMap.getCol(end);
+        int endCol = sourceMap.getCol(end) - 1;
 
         StringBuilder sb = new StringBuilder();
         sb.append(color).append(node.getClass().getSimpleName());
-        sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append("]").append(" ");
+        sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append(")").append(" ");
         sb.append(DEFAULT).append(startLine);
         sb.append(B_CYAN).append(startLineString, 0, startCol);
         if(startLine == endLine) {
