@@ -653,7 +653,7 @@ public class Parser {
         }
 
         error("期望表达式").point(lookAhead(0), "");
-        return new ErrorExpr(lookAhead(0).span);
+        return new ErrorExpr(next().span);
     }
 
     /**

@@ -1,8 +1,0 @@
-while(true) {
-    unit = bind(mono)
-    if unit.totalItem >= mono.itemCapacity {
-        core = locate("core", true)
-        move(core)
-        drop(core)
-    }
-}

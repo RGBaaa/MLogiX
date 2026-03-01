@@ -58,6 +58,7 @@ public class Lexer {
                 lastIsNewline = false;
                 recover(c -> c != '\n'); // 跳过newline防止重复出现
                 if(isAtEnd()) return eofToken();
+                start = current;
             }
 
             char c = advance();
@@ -211,7 +212,6 @@ public class Lexer {
                 default:
                     if(isDigit(c)) {
                         return number();
-                    // TODO 现在：
                     } else if(isIdentifierStart(c)) {
                         return identifier();
                     } else {
