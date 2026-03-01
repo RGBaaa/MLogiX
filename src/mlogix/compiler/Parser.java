@@ -676,7 +676,7 @@ public class Parser {
                 annotations.add(unary());
                 if(!match(OR)) break;
             }
-            if(annotations.isEmpty())
+            if(!annotations.isEmpty())
                 return new Annotation(new Identifier(id), annotations);
             // 如果标注数量为0，视作Identifier
         }
