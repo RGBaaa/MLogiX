@@ -73,7 +73,7 @@ public class ASTPrinter {
 
         StringBuilder sb = new StringBuilder();
         sb.append(color).append(node.getClass().getSimpleName());
-        sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append(")").append(" ");
+        sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append("]").append(" ");
         sb.append(DEFAULT).append(startLine);
         sb.append(B_CYAN).append(startLineString, 0, startCol);
         if(startLine == endLine) {
