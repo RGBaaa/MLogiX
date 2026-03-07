@@ -34,6 +34,9 @@ dependencies {
     implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
+
+    testImplementation(platform('org.junit:junit-bom:5.8.1'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -49,6 +52,10 @@ tasks.withType(JavaCompile).configureEach {
             '--add-exports', 'jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
             '--add-exports', 'jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED'
     ])
+}
+
+test {
+    useJUnitPlatform()
 }
 
 //force arc version

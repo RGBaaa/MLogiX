@@ -36,4 +36,9 @@ public class ProblemCollector {
     public void printWarning() {
         warnings.forEach(w -> Log.warn(w.toString()));
     }
+
+    public void clear() {
+        errors.clear();
+        warnings.clear();
+    }
 }
