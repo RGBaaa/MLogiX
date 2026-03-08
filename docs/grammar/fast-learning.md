@@ -200,7 +200,7 @@ use link.*                # 导入了transport和message1
 set a = transport.router1 # 只能间接访问
 set b = message1          # 直接访问
 ```
-**你可以使用`**`跳过组导入全部建筑**
+**你可以使用`**`递归导入全部建筑**
 ```mlx
 use link.**      # 导入了router1, router2, message1，但没有导入transport
 set a = router1  # 直接访问

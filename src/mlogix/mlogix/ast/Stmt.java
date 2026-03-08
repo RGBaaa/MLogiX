@@ -1,9 +1,9 @@
 package mlogix.mlogix.ast;
 
 import arc.struct.Seq;
-import mlogix.compiler.*;
+import mlogix.compiler.SemanticAnalyzer;
+import mlogix.mlogix.ast.Expr.Identifier;
 import mlogix.mlogix.token.Token;
-import mlogix.mlogix.ast.Expr.*;
 import mlogix.span.Span;
 
 //Statement
@@ -28,10 +28,71 @@ public abstract non-sealed class Stmt extends ASTNode {
         }
     }
 
-    public static class Block extends Stmt {
+    public static class UseStmt extends Stmt {
+        public final UseItem item;
+
+        public UseStmt(Span span, UseItem item) {
+            super(span);
+            this.item = item;
+        }
+
+        @Override
+        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
+            visitor.visit(this);
+        }
+    }
+
+    public static abstract sealed class UseItem extends Stmt
+            permits UseItem.Single, UseItem.All, UseItem.Multi, UseItem.Recursion {
+
+        public final Seq<Identifier> path;
+
+        public UseItem(Span span, Seq<Identifier> path) {
+            super(span);
+            this.path = path;
+        }
+
+        @Override
+        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
+            visitor.visit(this);
+        }
+
+        public static final class Single extends UseItem {
+            public Single(Span span, Seq<Identifier> path) {
+                super(span, path);
+            }
+        }
+
+        // *
+        public static final class All extends UseItem {
+            public All(Span span, Seq<Identifier> path) {
+                super(span, path);
+            }
+        }
+
+        // **
+        public static final class Recursion extends UseItem {
+            public Recursion(Span span, Seq<Identifier> path) {
+                super(span, path);
+            }
+        }
+
+        // {...}
+        public static final class Multi extends UseItem {
+            public final Seq<UseItem> items;
+
+            public Multi(Span span, Seq<Identifier> path, Seq<UseItem> items) {
+                super(span, path);
+                this.items = items;
+            }
+        }
+    }
+
+
+    public static class BlockStmt extends Stmt {
         public final Seq<Stmt> stmts;
 
-        public Block(Span span, Seq<Stmt> stmts) {
+        public BlockStmt(Span span, Seq<Stmt> stmts) {
             super(span);
             this.stmts = stmts;
         }

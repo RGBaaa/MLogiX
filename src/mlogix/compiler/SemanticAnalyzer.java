@@ -1,6 +1,5 @@
 package mlogix.compiler;
 
-import mlogix.mlogix.ast.Expr;
 import mlogix.mlogix.type.BuiltinType;
 import mlogix.mlogix.ast.Stmt;
 import mlogix.mlogix.type.Type;
@@ -125,7 +124,9 @@ public class SemanticAnalyzer {
     public interface SemanticVisitor {
         // 语句类型
         void visit(Program node);
-        void visit(Block node);
+        void visit(BlockStmt node);
+        void visit(UseStmt node);
+        void visit(UseItem node);
         void visit(ExprStmt node);
         void visit(IfStmt node);
         void visit(ForStmt node);
@@ -164,7 +165,7 @@ public class SemanticAnalyzer {
         }
 
         @Override
-        public void visit(Block node) {
+        public void visit(BlockStmt node) {
             newScope(() -> {
                 for(Stmt stmt : node.stmts) {
                     try {

@@ -60,6 +60,8 @@ public class Parser {
     }
 
     private Stmt statement() {
+        if(check(USE)) return useStmt();
+
         if(check(IF)) return ifStmt();
 
         if(check(FOR)) return forStmt();
@@ -72,6 +74,61 @@ public class Parser {
         return exprStmt();
     }
 
+    private Stmt useStmt() {
+        Token start = next(); // consume 'use'
+        UseItem item = useItem();
+        if(item == null) return null;
+        return new UseStmt(between(start, item), item);
+    }
+
+    /**
+     * @return 可能为null
+     */
+    private UseItem useItem() {
+        Seq<Identifier> path = new Seq<>();
+        while(true) {
+            if(check(IDENTIFIER)) {
+                path.add(new Identifier(next()));
+
+            } else if(check(STAR)) {
+                return new UseItem.All(path.isEmpty() ? next().span : between(path.get(0), next()), path);
+
+            } else if(check(STAR_STAR)) {
+                return new UseItem.Recursion(path.isEmpty() ? next().span : between(path.get(0), next()), path);
+
+            } else if(check(LBRACE)) {
+                Token lbrace = next();
+
+                Seq<UseItem> items = new Seq<>();
+                Span end;
+                while(true) {
+                    if(check(RBRACE)) {
+                        end = next().span;
+                        break;
+                    }
+                    UseItem item = useItem();
+                    if(item == null) {
+                        end = items.isEmpty() ? lbrace.span : items.get(0).span;
+                        break;
+                    } else {
+                        items.add(item);
+                    }
+                    match(COMMA);
+                }
+                return new UseItem.Multi(between(path.isEmpty() ? lbrace : path.get(0), end), path, items);
+
+            } else {
+                error("期望标识符、* 或 **")
+                        .point(lookAhead(0), "");
+                normalRecover();
+                return null;
+            }
+            if(!match(DOT)) {
+                return new UseItem.Single(between(path.get(0), path.get(path.size - 1)), path);
+            }
+        }
+    }
+
     private Stmt block() {
         Token lBrace = next();
 
@@ -81,14 +138,14 @@ public class Parser {
                 error("找不到`块`语句的`}`")
                         .info(lBrace, "开头")
                         .point(lookAhead(0), "当前");
-                return new Block(between(lBrace, stmts.isEmpty() ? lBrace
+                return new BlockStmt(between(lBrace, stmts.isEmpty() ? lBrace
                         : stmts.get(stmts.size - 1)), stmts);
             }
             stmts.add(statement());
         }
         Token rbrace = next();
 
-        return new Block(between(lBrace, rbrace), stmts);
+        return new BlockStmt(between(lBrace, rbrace), stmts);
     }
 
     private Stmt ifStmt() {
@@ -98,7 +155,7 @@ public class Parser {
 
         if(expect(LBRACE) == null) {
             normalRecover();
-            return new IfStmt(Span.between(start, condition), condition, null, null);
+            return new IfStmt(between(start, condition), condition, null, null);
         }
         Stmt thenBranch = block();
 
@@ -108,7 +165,7 @@ public class Parser {
         } else if(match(ELSE)) {
             if(expect(LBRACE) == null) {
                 normalRecover();
-                return new IfStmt(Span.between(start, condition), condition, thenBranch, null);
+                return new IfStmt(between(start, condition), condition, thenBranch, null);
             }
             elseBranch = block();
         }
@@ -455,7 +512,7 @@ public class Parser {
 //                e.info(operator, "解析`范围表达式`时出现错误");
 //                right = new Literal(token(ERROR, lookAhead()));
 //            }
-            expr = new Range(Span.between(expr, right), expr, operator, right);
+            expr = new Range(between(expr, right), expr, operator, right);
         }
 
         return expr;
@@ -950,10 +1007,10 @@ public class Parser {
     }
 
     /**
-     * 等价于recover(IF, FOR, WHILE, FN, LBRACE)
+     * 等价于recover(USE, IF, FOR, WHILE, FN, LBRACE)
      */
     private void normalRecover() {
-        recover(IF, FOR, WHILE, FN, LBRACE);
+        recover(USE, IF, FOR, WHILE, FN, LBRACE);
     }
 
     // ---------- 类生成方法 ----------
@@ -1006,3 +1063,4 @@ public class Parser {
 
     }
 }
+

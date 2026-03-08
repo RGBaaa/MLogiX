@@ -91,14 +91,25 @@ public class ASTPrinter {
 
         indentEnabled = true;
 
+        // 计算新的缩进
+        String newIndent = indent + (isLast ? INDENT_BLANK : VERTICAL_LINE + FIELD_COLOR);
+
+        // 打印UseItem的path
+        if(node instanceof Stmt.UseItem item) {
+            try {
+                Field field = item.getClass().getSuperclass().getDeclaredFields()[0];
+                Object value = field.get(node);
+                printField(field.getName(), value, newIndent, !(node instanceof Stmt.UseItem.Multi));
+            } catch(IllegalAccessException e) {
+                printLine(newIndent, !(node instanceof Stmt.UseItem.Multi), "ERROR: " + e.getMessage());
+            }
+        }
+
         // 获取所有字段
         Field[] fields = node.getClass().getDeclaredFields();
         if(fields.length == 0) {
             return;
         }
-
-        // 计算新的缩进
-        String newIndent = indent + (isLast ? INDENT_BLANK : VERTICAL_LINE + FIELD_COLOR);
 
         // 打印所有字段
         for(int i = 0; i < fields.length; i++) {

@@ -116,13 +116,13 @@ public class ParserTest {
         Expr.Binary condition = (Expr.Binary) ifStmt.condition;
         assertEquals(TokenType.GREATER, condition.operator.type);
 
-        assertInstanceOf(Stmt.Block.class, ifStmt.thenBranch);
-        Stmt.Block thenBlock = (Stmt.Block) ifStmt.thenBranch;
+        assertInstanceOf(Stmt.BlockStmt.class, ifStmt.thenBranch);
+        Stmt.BlockStmt thenBlock = (Stmt.BlockStmt) ifStmt.thenBranch;
         assertEquals(1, thenBlock.stmts.size);
         assertInstanceOf(Stmt.AssignStmt.class, thenBlock.stmts.first());
 
-        assertInstanceOf(Stmt.Block.class, ifStmt.elseBranch);
-        Stmt.Block elseBlock = (Stmt.Block) ifStmt.elseBranch;
+        assertInstanceOf(Stmt.BlockStmt.class, ifStmt.elseBranch);
+        Stmt.BlockStmt elseBlock = (Stmt.BlockStmt) ifStmt.elseBranch;
         assertEquals(1, elseBlock.stmts.size);
         assertInstanceOf(Stmt.AssignStmt.class, elseBlock.stmts.first());
         Log.info("If statement structure test passed.");
@@ -142,12 +142,12 @@ public class ParserTest {
         Expr.Binary condition = (Expr.Binary) whileStmt.expr;
         assertEquals(TokenType.LESS, condition.operator.type);
 
-        assertInstanceOf(Stmt.Block.class, whileStmt.body);
-        Stmt.Block block = (Stmt.Block) whileStmt.body;
-        assertEquals(1, block.stmts.size);
-        assertInstanceOf(Stmt.AssignStmt.class, block.stmts.first());
+        assertInstanceOf(Stmt.BlockStmt.class, whileStmt.body);
+        Stmt.BlockStmt blockStmt = (Stmt.BlockStmt) whileStmt.body;
+        assertEquals(1, blockStmt.stmts.size);
+        assertInstanceOf(Stmt.AssignStmt.class, blockStmt.stmts.first());
 
-        Stmt.AssignStmt assignStmt = (Stmt.AssignStmt) block.stmts.first();
+        Stmt.AssignStmt assignStmt = (Stmt.AssignStmt) blockStmt.stmts.first();
         assertInstanceOf(Expr.Identifier.class, assignStmt.var);
         assertInstanceOf(Expr.Binary.class, assignStmt.value);
         Log.info("While loop structure test passed.");
@@ -165,11 +165,11 @@ public class ParserTest {
         Stmt.ForStmt forStmt = (Stmt.ForStmt) program.stmts.first();
         assertInstanceOf(Expr.Identifier.class, forStmt.varDecl);
         assertInstanceOf(Expr.Call.class, forStmt.expr);
-        assertInstanceOf(Stmt.Block.class, forStmt.body);
+        assertInstanceOf(Stmt.BlockStmt.class, forStmt.body);
 
-        Stmt.Block block = (Stmt.Block) forStmt.body;
-        assertEquals(1, block.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, block.stmts.first());
+        Stmt.BlockStmt blockStmt = (Stmt.BlockStmt) forStmt.body;
+        assertEquals(1, blockStmt.stmts.size);
+        assertInstanceOf(Stmt.ExprStmt.class, blockStmt.stmts.first());
         Log.info("For loop structure test passed.");
     }
 
@@ -186,13 +186,13 @@ public class ParserTest {
         assertEquals("add", fnStmt.name.literal);
         assertEquals(2, fnStmt.parameters.size);
         assertEquals(1, fnStmt.results.size);
-        assertInstanceOf(Stmt.Block.class, fnStmt.body);
+        assertInstanceOf(Stmt.BlockStmt.class, fnStmt.body);
 
-        Stmt.Block block = (Stmt.Block) fnStmt.body;
-        assertEquals(1, block.stmts.size);
-        assertInstanceOf(Stmt.ReturnStmt.class, block.stmts.first());
+        Stmt.BlockStmt blockStmt = (Stmt.BlockStmt) fnStmt.body;
+        assertEquals(1, blockStmt.stmts.size);
+        assertInstanceOf(Stmt.ReturnStmt.class, blockStmt.stmts.first());
 
-        Stmt.ReturnStmt returnStmt = (Stmt.ReturnStmt) block.stmts.first();
+        Stmt.ReturnStmt returnStmt = (Stmt.ReturnStmt) blockStmt.stmts.first();
         assertInstanceOf(Expr.Binary.class, returnStmt.expr);
         Log.info("Function declaration structure test passed.");
     }
@@ -283,14 +283,14 @@ public class ParserTest {
         assertInstanceOf(Stmt.Program.class, stmt);
         Stmt.Program program = (Stmt.Program) stmt;
         assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.Block.class, program.stmts.first());
+        assertInstanceOf(Stmt.BlockStmt.class, program.stmts.first());
 
-        Stmt.Block outerBlock = (Stmt.Block) program.stmts.first();
+        Stmt.BlockStmt outerBlock = (Stmt.BlockStmt) program.stmts.first();
         assertEquals(2, outerBlock.stmts.size);
         assertInstanceOf(Stmt.AssignStmt.class, outerBlock.stmts.get(0));
-        assertInstanceOf(Stmt.Block.class, outerBlock.stmts.get(1));
+        assertInstanceOf(Stmt.BlockStmt.class, outerBlock.stmts.get(1));
 
-        Stmt.Block innerBlock = (Stmt.Block) outerBlock.stmts.get(1);
+        Stmt.BlockStmt innerBlock = (Stmt.BlockStmt) outerBlock.stmts.get(1);
         assertEquals(1, innerBlock.stmts.size);
         assertInstanceOf(Stmt.AssignStmt.class, innerBlock.stmts.first());
         Log.info("Nested block structure test passed.");
@@ -380,8 +380,8 @@ public class ParserTest {
 
         assertInstanceOf(Expr.Identifier.class, left.left);
         assertInstanceOf(Expr.Binary.class, left.right);
-        Expr.Binary mult = (Expr.Binary) left.right;
-        assertEquals(TokenType.STAR, mult.operator.type);
+        Expr.Binary right = (Expr.Binary) left.right;
+        assertEquals(TokenType.STAR, right.operator.type);
 
         // Right side: d / e
         assertInstanceOf(Expr.Binary.class, root.right);

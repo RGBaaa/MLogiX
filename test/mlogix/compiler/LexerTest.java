@@ -113,7 +113,7 @@ public class LexerTest {
         test("for", token(TokenType.FOR));
         test("break", token(TokenType.BREAK));
         test("continue", token(TokenType.CONTINUE));
-        test("type", token(TokenType.TYPE));
+        test("type", token(TokenType.STRUCT));
         test("match", token(TokenType.MATCH));
         test("fn", token(TokenType.FN));
         test("return", token(TokenType.RETURN));

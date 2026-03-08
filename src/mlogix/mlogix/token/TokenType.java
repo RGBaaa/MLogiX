@@ -4,10 +4,11 @@ import java.util.*;
 
 public enum TokenType {
     // 关键字
+    USE("use"),
     SET("set"), MACRO("macro"), CONST("const"),
     IF("if"), ELIF("elif"), ELSE("else"),
     WHILE("while"), FOR("for"), BREAK("break"), CONTINUE("continue"),
-    TYPE("type"),
+    STRUCT("struct"),
     MATCH("match"),
     FN("fn"), RETURN("return"),
     ENUM("enum"),
