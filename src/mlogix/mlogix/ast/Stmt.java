@@ -5,6 +5,7 @@ import mlogix.compiler.SemanticAnalyzer;
 import mlogix.mlogix.ast.Expr.Identifier;
 import mlogix.mlogix.token.Token;
 import mlogix.span.Span;
+import mlogix.span.Spanned;
 
 //Statement
 public abstract non-sealed class Stmt extends ASTNode {
@@ -42,48 +43,57 @@ public abstract non-sealed class Stmt extends ASTNode {
         }
     }
 
-    public static abstract sealed class UseItem extends Stmt
+    public static abstract sealed class UseItem implements Spanned
             permits UseItem.Single, UseItem.All, UseItem.Multi, UseItem.Recursion {
+        public final Span span;
 
-        public final Seq<Identifier> path;
-
-        public UseItem(Span span, Seq<Identifier> path) {
-            super(span);
-            this.path = path;
+        public UseItem(Span span) {
+            this.span = span;
         }
 
         @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
+        public Span span() {
+            return this.span;
         }
 
         public static final class Single extends UseItem {
+            public final Seq<Identifier> path;
+
             public Single(Span span, Seq<Identifier> path) {
-                super(span, path);
+                super(span);
+                this.path = path;
             }
         }
 
         // *
         public static final class All extends UseItem {
+            public final Seq<Identifier> path;
+
             public All(Span span, Seq<Identifier> path) {
-                super(span, path);
+                super(span);
+                this.path = path;
             }
         }
 
         // **
         public static final class Recursion extends UseItem {
+            public final Seq<Identifier> path;
+
             public Recursion(Span span, Seq<Identifier> path) {
-                super(span, path);
+                super(span);
+                this.path = path;
             }
         }
 
         // {...}
         public static final class Multi extends UseItem {
+            public final Seq<Identifier> path;
             public final Seq<UseItem> items;
 
             public Multi(Span span, Seq<Identifier> path, Seq<UseItem> items) {
-                super(span, path);
+                super(span);
                 this.items = items;
+                this.path = path;
             }
         }
     }

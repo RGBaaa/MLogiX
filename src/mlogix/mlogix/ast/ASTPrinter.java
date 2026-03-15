@@ -3,6 +3,7 @@ package mlogix.mlogix.ast;
 import arc.struct.Seq;
 import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.mlogix.token.Token;
+import mlogix.span.Spanned;
 
 import java.lang.reflect.Field;
 
@@ -43,9 +44,11 @@ public class ASTPrinter {
 
         // 处理不同类型
         if(node instanceof Stmt stmt) {
-            printASTNode(stmt, indent, isLast, STMT_COLOR);
+            printNode(stmt, indent, isLast, STMT_COLOR);
         } else if(node instanceof Expr expr) {
-            printASTNode(expr, indent, isLast, EXPR_COLOR);
+            printNode(expr, indent, isLast, EXPR_COLOR);
+        } else if(node instanceof Stmt.UseItem item) {
+            printNode(item, indent, isLast, EXPR_COLOR);
         } else if(node instanceof Token) {
             printLine(indent, isLast, TOKEN_COLOR + ((Token) node).toSimpleString() + DEFAULT);
         } else if(node instanceof Seq) {
@@ -57,10 +60,10 @@ public class ASTPrinter {
         }
     }
 
-    private static void printASTNode(ASTNode node, String indent, boolean isLast, String color) {
+    private static void printNode(Spanned node, String indent, boolean isLast, String color) {
         // 打印节点类型名称
-        int start = node.span.start;
-        int end = Math.max(node.span.end, start);
+        int start = node.span().start;
+        int end = Math.max(node.span().end, start);
 
         int startLine = sourceMap.getLine(start);
         int endLine = sourceMap.getLine(end);
@@ -93,17 +96,6 @@ public class ASTPrinter {
 
         // 计算新的缩进
         String newIndent = indent + (isLast ? INDENT_BLANK : VERTICAL_LINE + FIELD_COLOR);
-
-        // 打印UseItem的path
-        if(node instanceof Stmt.UseItem item) {
-            try {
-                Field field = item.getClass().getSuperclass().getDeclaredFields()[0];
-                Object value = field.get(node);
-                printField(field.getName(), value, newIndent, !(node instanceof Stmt.UseItem.Multi));
-            } catch(IllegalAccessException e) {
-                printLine(newIndent, !(node instanceof Stmt.UseItem.Multi), "ERROR: " + e.getMessage());
-            }
-        }
 
         // 获取所有字段
         Field[] fields = node.getClass().getDeclaredFields();
