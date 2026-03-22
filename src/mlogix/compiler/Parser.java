@@ -777,8 +777,12 @@ public class Parser {
     private boolean isAtEnd() {
         TokenType nextType = lookAhead(0).type;
         if(nextType == NEWLINE) {
-            next();
-            nextType = lookAhead(0).type; // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            if(lookAhead(1).type == EOF) {
+                next(); // 跳过NEWLINE
+                return true;
+            }
+            return false;
         }
         return nextType == EOF;
     }
