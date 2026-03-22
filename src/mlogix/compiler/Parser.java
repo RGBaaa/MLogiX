@@ -1,8 +1,6 @@
 package mlogix.compiler;
 
-import arc.freetype.FreeType;
 import arc.func.Cons;
-import arc.struct.Bits;
 import arc.struct.Queue;
 import arc.struct.Seq;
 import mlogix.compiler.SourceMapManager.SourceMap;
@@ -27,6 +25,7 @@ public class Parser {
     private final ProblemCollector collector;
     private SourceMap sourceMap;
     private LookAheadWindow input;
+    private Token prevToken;
 
     /**
      * 一个项目 一次构造
@@ -103,22 +102,19 @@ public class Parser {
                 Token lbrace = next();
 
                 Seq<UseItem> items = new Seq<>();
-                Span end;
                 while(true) {
                     if(check(RBRACE)) {
-                        end = next().span;
                         break;
                     }
                     UseItem item = useItem();
                     if(item == null) {
-                        end = items.isEmpty() ? lbrace.span : items.get(0).span;
                         break;
                     } else {
                         items.add(item);
                     }
                     match(COMMA);
                 }
-                return new UseItem.Multi(between(path.isEmpty() ? lbrace : path.get(0), end), path, items);
+                return new UseItem.Multi(between(path.isEmpty() ? lbrace : path.get(0), prevToken), path, items);
 
             } else {
                 error("期望标识符、* 或 **")
@@ -127,7 +123,7 @@ public class Parser {
                 return null;
             }
             if(!match(DOT)) {
-                return new UseItem.Single(between(path.get(0), path.get(path.size - 1)), path);
+                return new UseItem.Single(between(path.get(0), prevToken), path);
             }
         }
     }
@@ -141,8 +137,7 @@ public class Parser {
                 error("找不到`块`语句的`}`")
                         .info(lBrace, "开头")
                         .point(lookAhead(0), "当前");
-                return new BlockStmt(between(lBrace, stmts.isEmpty() ? lBrace
-                        : stmts.get(stmts.size - 1)), stmts);
+                return new BlockStmt(between(lBrace, prevToken), stmts);
             }
             stmts.add(statement());
         }
@@ -173,9 +168,7 @@ public class Parser {
             elseBranch = block();
         }
 
-        Stmt end = elseBranch == null ? thenBranch : elseBranch;
-
-        return new IfStmt(between(start, end), condition, thenBranch, elseBranch);
+        return new IfStmt(between(start, prevToken), condition, thenBranch, elseBranch);
     }
 
     private Stmt matchStmt() {
@@ -202,10 +195,10 @@ public class Parser {
             }
 
             if(expect(LBRACE,
-                    e -> e.info(between(start, expr != null ? expr : var), "`for`语句")
+                    e -> e.info(between(start, prevToken), "`for`语句")
             ) == null) {
                 normalRecover();
-                return new ForStmt(between(start, expr != null ? expr : var), var, expr, null);
+                return new ForStmt(between(start, prevToken), var, expr, null);
             }
             Stmt body = block();
 
@@ -245,7 +238,6 @@ public class Parser {
 
     private Stmt functionStmt() {
         Token start = next();
-        Spanned end;
 
         Token name = consume(IDENTIFIER);
         if(name == null) {
@@ -253,14 +245,12 @@ public class Parser {
                 normalRecover();
                 return new FnStmt(start.span, null, null, null, null);
             }
-            end = next();
         } else {
             Token lparen = consume(LPAREN);
             if(lparen == null) {
                 normalRecover();
                 return new FnStmt(between(start, name), name, null, null, null);
             }
-            end = lparen;
         }
 
         Seq<Expr> parameters = new Seq<>();
@@ -270,51 +260,45 @@ public class Parser {
                 error("无法结束的`函数形参声明`")
                         .info(start, "函数声明开头")
                         .point(lookAhead(0), "末尾");
-                return new FnStmt(between(start, lookAhead(0)), name, null, null, null);
+                return new FnStmt(between(start, prevToken), name, null, null, null);
             }
             if(!check(IDENTIFIER)) {
-                recover(RPAREN);
                 break;
             }
             Expr parameter = annotation();
-            end = parameter;
             parameters.add(parameter);
             match(COMMA);
         }
 
         Seq<Expr> results = new Seq<>();
-        if(check(ARROW)) {
-            end = next();
+        if(match(ARROW)) {
             while(!check(LBRACE)) {
                 if(isAtEnd()) {
                     if(results.isEmpty()) {
                         error("无法找到`函数返回值声明`")
                                 .info(start, "函数开头")
-                                .point(lookAhead(0), "期望`标识符`");
-                        return new FnStmt(between(start, end), name, parameters, null, null);
+                                .point(lookAhead(0), "期望`标识符`或`_`");
+                        return new FnStmt(between(start, prevToken), name, parameters, null, null);
                     } else {
                         error("无法找到函数体")
                                 .info(start, "函数开头")
                                 .point(lookAhead(0), "期望`{`");
-                        return new FnStmt(between(start, end), name, parameters, results, null);
+                        return new FnStmt(between(start, prevToken), name, parameters, results, null);
                     }
                 }
                 if(!check(IDENTIFIER)) {
-                    recover(LBRACE);
                     break;
                 }
-                Expr result = annotation();
-                end = result;
-                results.add(result);
+                results.add(annotation());
                 match(COMMA);
             }
         }
-        Spanned finalEnd = end;
+
         if(expect(LBRACE, e ->
-                e.info(between(start, finalEnd), "`fn`语句")
+                e.info(between(start, prevToken), "`fn`语句")
         ) == null) {
             normalRecover();
-            return new FnStmt(between(start, end), name, parameters, results, null);
+            return new FnStmt(between(start, prevToken), name, parameters, results, null);
         } else {
             Stmt body = block();
             return new FnStmt(between(start, body), name, parameters, results, body);
@@ -718,11 +702,8 @@ public class Parser {
             return new Array(between(lBrace, rBrace), elements);
         }
 
-        Span span = next().span;
-        int start = span.start;
-
-        error("期望表达式").point(start, start,"");
-        return new ErrorExpr(new Span(span.index, start, start));
+        error("期望表达式").point(lookAhead(0), "");
+        return new ErrorExpr(prevToken.span);
     }
 
     /**
@@ -760,7 +741,8 @@ public class Parser {
      * 向前推进一个token
      */
     private Token next() {
-        return input.next();
+        prevToken = input.next();
+        return prevToken;
     }
 
     /**
@@ -917,7 +899,8 @@ public class Parser {
     private Token expect(TokenType type) {
         if(check(type)) return lookAhead(0);
 
-        error("未找到期望TokenType").point(lookAhead(0), type.toString());
+        error("未找到" + type.toString())
+                .point(lookAhead(0), type.toString());
         return null;
     }
 
@@ -927,7 +910,8 @@ public class Parser {
     private Token expect(TokenType type, Cons<Problem> cons) {
         if(check(type)) return lookAhead(0);
 
-        cons.get(error("未找到期望TokenType").point(lookAhead(0), type.toString()));
+        cons.get(error("未找到" + type.toString())
+                .point(lookAhead(0), type.toString()));
         return null;
     }
 
@@ -971,7 +955,7 @@ public class Parser {
     private Token consume(TokenType type) {
         if(check(type)) return next();
 
-        error("未找到期望TokenType")
+        error("未找到" + type.toString())
                 .point(lookAhead(0), type.toString());
         return null;
     }
@@ -982,7 +966,7 @@ public class Parser {
     private Token consume(TokenType type, Cons<Problem> cons) {
         if(check(type)) return next();
 
-        cons.get(error("未找到期望TokenType")
+        cons.get(error("未找到" + type.toString())
                 .point(lookAhead(0), type.toString())
         );
         return null;
@@ -1033,10 +1017,10 @@ public class Parser {
     }
 
     /**
-     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
+     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE, RBRACE))
      */
     private void normalRecover() {
-        recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE));
+        recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE, RBRACE));
     }
 
     // ---------- 类生成方法 ----------
