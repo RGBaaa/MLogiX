@@ -726,7 +726,7 @@ public class Parser {
     }
 
     /**
-     * 比较特殊，专门给FnStmt用的吗，只可能返回Identifier或Annotation
+     * 比较特殊，专门给FnStmt用的，只可能返回Identifier或Annotation
      */
     private Expr annotation() {
         Token id = next();
