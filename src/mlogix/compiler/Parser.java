@@ -718,8 +718,11 @@ public class Parser {
             return new Array(between(lBrace, rBrace), elements);
         }
 
-        error("期望表达式").point(lookAhead(0), "");
-        return new ErrorExpr(next().span);
+        Span span = next().span;
+        int start = span.start;
+
+        error("期望表达式").point(start, start,"");
+        return new ErrorExpr(new Span(span.index, start, start));
     }
 
     /**
