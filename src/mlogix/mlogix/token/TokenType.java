@@ -1,6 +1,10 @@
 package mlogix.mlogix.token;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public enum TokenType {
     // 关键字
@@ -113,54 +117,54 @@ public enum TokenType {
         // 否则根据枚举值返回对应的符号
         return switch(this) {
             // 运算符
-            case PLUS -> "+";
-            case MINUS -> "-";
-            case STAR -> "*";
-            case SLASH -> "/";
-            case STAR_STAR -> "**";
-            case PERCENT -> "%";
-            case PERCENT_PERCENT -> "%%";
-            case SLASH_SLASH -> "//";
-            case AND -> "&";
-            case OR -> "|";
-            case CARET -> "^";
-            case SHL -> "<<";
-            case SHR -> ">>";
-            case TILDE -> "~";
-            case PLUS_PLUS -> "++";
-            case MINUS_MINUS -> "--";
-            case ASSIGN -> "=";
-            case EQ_EQ -> "==";
-            case BANG_EQ -> "!=";
-            case EQ_EQ_EQ -> "===";
-            case BANG_EQ_EQ -> "!==";
-            case LESS -> "<";
-            case GREATER -> ">";
-            case LESS_EQ -> "<=";
-            case GREATER_EQ -> ">=";
-            case AND_AND -> "&&";
-            case OR_OR -> "||";
-            case BANG -> "!";
-            case COLON_LESS -> ":<";
-            case COLON_ASSIGN -> ":=";
+            case PLUS -> "`+`";
+            case MINUS -> "`-`";
+            case STAR -> "`*`";
+            case SLASH -> "`/`";
+            case STAR_STAR -> "`**`";
+            case PERCENT -> "`%`";
+            case PERCENT_PERCENT -> "`%%`";
+            case SLASH_SLASH -> "`//`";
+            case AND -> "`&`";
+            case OR -> "`|`";
+            case CARET -> "`^`";
+            case SHL -> "`<<`";
+            case SHR -> "`>>`";
+            case TILDE -> "`~`";
+            case PLUS_PLUS -> "`++`";
+            case MINUS_MINUS -> "`--`";
+            case ASSIGN -> "`=`";
+            case EQ_EQ -> "`==`";
+            case BANG_EQ -> "`!=`";
+            case EQ_EQ_EQ -> "`===`";
+            case BANG_EQ_EQ -> "`!==`";
+            case LESS -> "`<`";
+            case GREATER -> "`>`";
+            case LESS_EQ -> "`<=`";
+            case GREATER_EQ -> "`>=`";
+            case AND_AND -> "`&&`";
+            case OR_OR -> "`||`";
+            case BANG -> "`!`";
+            case COLON_LESS -> "`:<`";
+            case COLON_ASSIGN -> "`:=`";
 
             // 分隔符
-            case ARROW -> "->";
-            case COLON -> ":";
-            case SEMICOLON -> ";";
-            case COMMA -> ",";
-            case DOT -> ".";
-            case LPAREN -> "(";
-            case RPAREN -> ")";
-            case LBRACKET -> "[";
-            case RBRACKET -> "]";
-            case LBRACE -> "{";
-            case RBRACE -> "}";
-            case QUESTION_MARK -> "?";
+            case ARROW -> "`->`";
+            case COLON -> "`:`";
+            case SEMICOLON -> "`;`";
+            case COMMA -> "`,`";
+            case DOT -> "`.`";
+            case LPAREN -> "`(`";
+            case RPAREN -> "`)`";
+            case LBRACKET -> "`[`";
+            case RBRACKET -> "`]`";
+            case LBRACE -> "`{`";
+            case RBRACE -> "`}`";
+            case QUESTION_MARK -> "`?`";
 
             // 其他
-            case NEWLINE -> "\\n";
-            case EOF -> "\\0";
+            case NEWLINE -> "`\\n`";
+            case EOF -> "<eof>";
             default -> this.name().toLowerCase();
         };
     }
