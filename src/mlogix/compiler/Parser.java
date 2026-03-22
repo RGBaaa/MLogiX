@@ -1,6 +1,8 @@
 package mlogix.compiler;
 
+import arc.freetype.FreeType;
 import arc.func.Cons;
+import arc.struct.Bits;
 import arc.struct.Queue;
 import arc.struct.Seq;
 import mlogix.compiler.SourceMapManager.SourceMap;
@@ -13,6 +15,7 @@ import mlogix.problem.ProblemCollector;
 import mlogix.span.Span;
 import mlogix.span.Spanned;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 import static mlogix.mlogix.ast.Expr.*;
@@ -63,13 +66,13 @@ public class Parser {
         if(check(USE)) return useStmt();
 
         if(check(IF)) return ifStmt();
+        if(check(MATCH)) return matchStmt();
 
         if(check(FOR)) return forStmt();
         if(check(WHILE)) return whileStmt();
 
         if(check(FN)) return functionStmt();
 
-        //if (match(MATCH)) return matchStmt();
         if(check(LBRACE)) return block();
         return exprStmt();
     }
@@ -173,6 +176,12 @@ public class Parser {
         Stmt end = elseBranch == null ? thenBranch : elseBranch;
 
         return new IfStmt(between(start, end), condition, thenBranch, elseBranch);
+    }
+
+    private Stmt matchStmt() {
+        Token start = next();
+
+        return null;
     }
 
     private Stmt forStmt() {
@@ -995,22 +1004,32 @@ public class Parser {
     /**
      * 错误恢复，扫描直到期望的TokenType
      */
-    private void recover(TokenType... expectedTokenTypes) {
+    private void recover(TokenType expected) {
         while(!isAtEnd()) {
-            for(TokenType expected : expectedTokenTypes) {
-                if(check(expected)) {
-                    return;
-                }
+            if(check(expected)) {
+                return;
             }
             next();
         }
     }
 
     /**
-     * 等价于recover(USE, IF, FOR, WHILE, FN, LBRACE)
+     * 错误恢复，扫描直到期望的TokenType
+     */
+    private void recover(Set<TokenType> expecteds) {
+        while(!isAtEnd()) {
+            if(check(expecteds)) {
+                return;
+            }
+            next();
+        }
+    }
+
+    /**
+     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
      */
     private void normalRecover() {
-        recover(USE, IF, FOR, WHILE, FN, LBRACE);
+        recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE));
     }
 
     // ---------- 类生成方法 ----------
