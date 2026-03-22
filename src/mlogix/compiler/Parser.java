@@ -962,7 +962,7 @@ public class Parser {
     }
 
     /**
-     * 若下一个token不是指定类型的则抛出错误，否则返回该token并推进
+     * 若下一个token不是指定类型的则报告错误并返回null，否则返回该token并推进
      */
     private Token consume(TokenType type) {
         if(check(type)) return next();
@@ -973,7 +973,7 @@ public class Parser {
     }
 
     /**
-     * 若下一个token不是指定类型的则抛出错误，否则返回该token并推进
+     * 若下一个token不是指定类型的则报告错误并返回null，否则返回该token并推进
      */
     private Token consume(TokenType type, Cons<Problem> cons) {
         if(check(type)) return next();
