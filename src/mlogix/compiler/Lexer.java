@@ -1,12 +1,12 @@
 package mlogix.compiler;
 
 import arc.graphics.Color;
+import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.mlogix.token.Token;
 import mlogix.mlogix.token.TokenType;
 import mlogix.problem.Problem;
 import mlogix.problem.ProblemCollector;
 import mlogix.span.Span;
-import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.util.Ansi;
 import mlogix.util.Log;
 
@@ -575,14 +575,14 @@ public class Lexer {
     private Token token(TokenType type, Object literal) {
         Span span = new Span(sourceMap.index, start, current);
 
-        if(Log.isAllowed(Log.LogType.DEBUG)) {
-            int[] lineAndCol = sourceMap.getLineAndCol(start);
-            Log.debug(start + Ansi.CYAN + "┃"
-                    + Ansi.DEFAULT + "(" + lineAndCol[0] + "," + lineAndCol[1] + ")" + Ansi.CYAN + "┃"
-                    + Ansi.DEFAULT + type.name() + Ansi.CYAN + "┃"
-                    + Ansi.DEFAULT + sourceMap.subString(start, current) + ((literal == null) ? "" : Ansi.CYAN + "┃"
-                    + Ansi.DEFAULT + literal));
-        }
+//        if(Log.isAllowed(Log.LogType.DEBUG)) {
+//            int[] lineAndCol = sourceMap.getLineAndCol(start);
+//            Log.debug(start + Ansi.CYAN + "┃"
+//                    + Ansi.DEFAULT + "(" + lineAndCol[0] + "," + lineAndCol[1] + ")" + Ansi.CYAN + "┃"
+//                    + Ansi.DEFAULT + type.name() + Ansi.CYAN + "┃"
+//                    + Ansi.DEFAULT + sourceMap.subString(start, current) + ((literal == null) ? "" : Ansi.CYAN + "┃"
+//                    + Ansi.DEFAULT + literal));
+//        }
 
         return new Token(span, type, literal);
     }
