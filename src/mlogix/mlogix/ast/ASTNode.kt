@@ -1,13 +1,11 @@
-package mlogix.mlogix.ast;
+package mlogix.mlogix.ast
 
-import mlogix.span.Span;
-import mlogix.span.Spanned;
+import mlogix.span.Span
+import mlogix.span.Spanned
 
-public abstract sealed class ASTNode implements Spanned permits Expr, Stmt {
-    public Span span;
+abstract class ASTNode(var span: Span) : Spanned {
 
-    public Span span() {
-        return span;
+    override fun span(): Span {
+        return span
     }
 }
-

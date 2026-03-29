@@ -1,355 +1,374 @@
-package mlogix.compiler;
+package mlogix.compiler
 
-import arc.func.Cons;
-import arc.struct.Queue;
-import arc.struct.Seq;
-import mlogix.compiler.SourceMapManager.SourceMap;
-import mlogix.mlogix.ast.Expr;
-import mlogix.mlogix.ast.Stmt;
-import mlogix.mlogix.token.Token;
-import mlogix.mlogix.token.TokenType;
-import mlogix.problem.Problem;
-import mlogix.problem.ProblemCollector;
-import mlogix.span.Span;
-import mlogix.span.Spanned;
+import arc.func.Cons
+import arc.struct.Queue
+import arc.struct.Seq
+import mlogix.compiler.SourceMapManager.SourceMap
+import mlogix.mlogix.ast.Expr
+import mlogix.mlogix.ast.Expr.ErrorExpr
+import mlogix.mlogix.ast.Expr.Get
+import mlogix.mlogix.ast.Stmt
+import mlogix.mlogix.ast.Stmt.*
+import mlogix.mlogix.token.Token
+import mlogix.mlogix.token.TokenType
+import mlogix.problem.Problem
+import mlogix.problem.Problem.ParserProblem
+import mlogix.problem.ProblemCollector
+import mlogix.span.Span
+import mlogix.span.Spanned
+import java.util.*
 
-import java.util.EnumSet;
-import java.util.Set;
-
-import static mlogix.mlogix.ast.Expr.*;
-import static mlogix.mlogix.ast.Stmt.*;
-import static mlogix.mlogix.token.TokenType.*;
-
-public class Parser {
-    private final Lexer lexer;
-    private final ProblemCollector collector;
-    private SourceMap sourceMap;
-    private LookAheadWindow input;
-    private Token prevToken;
-
-    /**
-     * 一个项目 一次构造
-     */
-    Parser(Lexer lexer, ProblemCollector collector) {
-        this.lexer = lexer;
-        this.collector = collector;
-    }
+class Parser
+/**
+ * 一个项目 一次构造
+ */
+internal constructor(private val lexer: Lexer, private val collector: ProblemCollector) {
+    private lateinit var sourceMap: SourceMap
+    private lateinit var input: LookAheadWindow
+    private lateinit var prevToken: Token
 
     /**
      * 一个文件 一次调用
      * 联动重置lexer
      */
-    public Stmt parse(SourceMap sourceMap) {
-        this.sourceMap = sourceMap;
-        this.lexer.reset(sourceMap);
+    fun parse(sourceMap: SourceMap): Stmt {
+        this.sourceMap = sourceMap
+        this.lexer.reset(sourceMap)
+        this.input = LookAheadWindow()
+        this.prevToken = lookAhead(0)
 
-        this.input = new LookAheadWindow();
-
-        return program();
+        return program()
     }
 
     // ========== 主要解析部分 ==========
-
     // ---------- Stmt ----------
-    private Stmt program() {
-        Seq<Stmt> stmts = new Seq<>();
+    private fun program(): Stmt {
+        val stmts = Seq<Stmt>()
 
-        while(!isAtEnd()) {
-            stmts.add(statement());
+        while (!this.isAtEnd) {
+            val stmt = statement()
+            if (stmt != null) {
+                stmts.add(stmt)
+            }
         }
 
-        return new Program(new Span(sourceMap.index, 0, sourceMap.length()), stmts);
+        return Program(Span(sourceMap.index, 0, sourceMap.length()), stmts)
     }
 
-    private Stmt statement() {
-        if(check(USE)) return useStmt();
-
-        if(check(IF)) return ifStmt();
-        if(check(MATCH)) return matchStmt();
-
-        if(check(FOR)) return forStmt();
-        if(check(WHILE)) return whileStmt();
-
-        if(check(FN)) return functionStmt();
-
-        if(check(LBRACE)) return block();
-        return exprStmt();
+    private fun statement(): Stmt? {
+        return when {
+            check(TokenType.USE) -> useStmt()
+            check(TokenType.IF) -> ifStmt()
+            check(TokenType.MATCH) -> matchStmt()
+            check(TokenType.FOR) -> forStmt()
+            check(TokenType.WHILE) -> whileStmt()
+            check(TokenType.FN) -> functionStmt()
+            check(TokenType.LBRACE) -> block()
+            else -> exprStmt()
+        }
     }
 
-    private Stmt useStmt() {
-        Token start = next(); // consume 'use'
-        UseItem item = useItem();
-        if(item == null) return null;
-        return new UseStmt(between(start, item), item);
+    private fun useStmt(): Stmt? {
+        val start = next() // consume 'use'
+        val item = useItem() ?: return null
+        return UseStmt(between(start, item), item)
     }
 
-    /**
-     * @return 可能为null
-     */
-    private UseItem useItem() {
-        Seq<Identifier> path = new Seq<>();
-        while(true) {
-            if(check(IDENTIFIER)) {
-                path.add(new Identifier(next()));
+    private fun useItem(): UseStmt.UseItem? {
+        val path = Seq<Expr.Identifier>()
+        while (true) {
+            if (check(TokenType.IDENTIFIER)) {
+                path.add(Expr.Identifier(next()))
 
-            } else if(check(STAR)) {
-                return new UseItem.All(path.isEmpty() ? next().span : between(path.get(0), next()), path);
+            } else if (check(TokenType.STAR)) {
+                return UseStmt.All(if (path.isEmpty) next().span else between(path.get(0), next()), path)
 
-            } else if(check(STAR_STAR)) {
-                return new UseItem.Recursion(path.isEmpty() ? next().span : between(path.get(0), next()), path);
+            } else if (check(TokenType.STAR_STAR)) {
+                return UseStmt.Recursion(if (path.isEmpty) next().span else between(path.get(0), next()), path)
 
-            } else if(check(LBRACE)) {
-                Token lbrace = next();
+            } else if (check(TokenType.LBRACE)) {
+                val lbrace = next()
 
-                Seq<UseItem> items = new Seq<>();
-                while(true) {
-                    if(check(RBRACE)) {
-                        break;
+                val items = Seq<UseStmt.UseItem>()
+                while (true) {
+                    if (match(TokenType.RBRACE)) {
+                        break
                     }
-                    UseItem item = useItem();
-                    if(item == null) {
-                        break;
+                    val item = useItem()
+                    if (item == null) {
+                        break
                     } else {
-                        items.add(item);
+                        items.add(item)
                     }
-                    match(COMMA);
+                    match(TokenType.COMMA)
                 }
-                return new UseItem.Multi(between(path.isEmpty() ? lbrace : path.get(0), prevToken), path, items);
-
+                return UseStmt.Multi(between((if (path.isEmpty) lbrace else path.get(0)), prevToken), path, items)
             } else {
                 error("期望标识符、* 或 **")
-                        .point(lookAhead(0), "");
-                normalRecover();
-                return null;
+                    .point(lookAhead(0), "")
+                normalRecover()
+                return null
             }
-            if(!match(DOT)) {
-                return new UseItem.Single(between(path.get(0), prevToken), path);
+            if (!match(TokenType.DOT)) {
+                return UseStmt.Single(between(path.get(0), prevToken), path)
             }
         }
     }
 
-    private Stmt block() {
-        Token lBrace = next();
+    private fun block(): Stmt {
+        val lBrace = next()
 
-        Seq<Stmt> stmts = new Seq<>();
-        while(!check(RBRACE)) {
-            if(isAtEnd()) {
-                error("找不到`块`语句的`}`")
-                        .info(lBrace, "开头")
-                        .point(lookAhead(0), "当前");
-                return new BlockStmt(between(lBrace, prevToken), stmts);
+        val stmts = Seq<Stmt>()
+        while (!check(TokenType.RBRACE)) {
+            if (this.isAtEnd) {
+                error("期望`块`语句的`}`")
+                    .point(lBrace, "开头")
+                return BlockStmt(between(lBrace, prevToken), stmts)
             }
-            stmts.add(statement());
+            stmts.add(statement())
         }
-        Token rbrace = next();
+        val rbrace = next()
 
-        return new BlockStmt(between(lBrace, rbrace), stmts);
+        return BlockStmt(between(lBrace, rbrace), stmts)
     }
 
-    private Stmt ifStmt() {
-        Token start = next();
+    private fun ifStmt(): Stmt {
+        val start = next()
 
-        Expr condition = expression();
+        val condition = expression()
 
-        if(expect(LBRACE) == null) {
-            normalRecover();
-            return new IfStmt(between(start, condition), condition, null, null);
+        if (expect(TokenType.LBRACE) == null) {
+            return IfStmt(between(start, condition), condition, null, null)
         }
-        Stmt thenBranch = block();
+        val thenBranch = block()
 
-        Stmt elseBranch = null;
-        if(match(ELIF)) {
-            elseBranch = ifStmt();
-        } else if(match(ELSE)) {
-            if(expect(LBRACE) == null) {
-                normalRecover();
-                return new IfStmt(between(start, condition), condition, thenBranch, null);
+        var elseBranch: Stmt? = null
+        if (match(TokenType.ELIF)) {
+            elseBranch = ifStmt()
+        } else if (match(TokenType.ELSE)) {
+            if (expect(TokenType.LBRACE) == null) {
+                return IfStmt(between(start, condition), condition, thenBranch, null)
             }
-            elseBranch = block();
+            elseBranch = block()
         }
 
-        return new IfStmt(between(start, prevToken), condition, thenBranch, elseBranch);
+        return IfStmt(between(start, prevToken), condition, thenBranch, elseBranch)
     }
 
-    private Stmt matchStmt() {
-        Token start = next();
+    private fun matchStmt(): Stmt {
+        val start = next()
 
-        return null;
+        val scrutinee = expression()
+
+        if (consume(TokenType.LBRACE) == null) {
+            error("期望`match`语句的`{`")
+                .info(start, "语句开头")
+                .point(lookAhead(0), "当前")
+            return MatchStmt(between(start, scrutinee), scrutinee, null);
+        }
+
+        val branches = Seq<MatchStmt.MatchBranch>()
+        while (!match(TokenType.RBRACE)) {
+            if (this.isAtEnd) {
+                error("期望`match`语句的`}`")
+                    .info(start, "语句开头")
+                    .point(lookAhead(0), "当前")
+                return MatchStmt(
+                    between(start, (if (branches.isEmpty) start else branches.get(branches.size - 1))),
+                    scrutinee,
+                    branches
+                )
+            }
+            val pattern = expression()
+            if (consume(TokenType.ARROW) == null || consume(TokenType.LBRACE) == null) {
+                return MatchStmt(
+                    between(start, (if (branches.isEmpty) start else branches.get(branches.size - 1))),
+                    scrutinee,
+                    branches
+                )
+            }
+            val body = block()
+            branches.add(MatchStmt.MatchBranch(between(pattern, prevToken), pattern, body))
+        }
+        return MatchStmt(
+            between(start, prevToken),
+            scrutinee,
+            branches
+        )
     }
 
-    private Stmt forStmt() {
-        Token start = next();
+    private fun forStmt(): Stmt {
+        val start = next()
 
         // for id
-        if(check(IDENTIFIER)) {
-            Identifier var = new Identifier(next());
-
-            Expr expr;
-            // for id in expr
-            if(match("in")) {
-                expr = expression();
-
-                // for id
+        if (check(TokenType.IDENTIFIER)) {
+            val `var` = Expr.Identifier(next())
+            val expr: Expr? = if (match("in")) {
+                // for id in expr
+                expression()
             } else {
-                expr = null;
+                // for id
+                null
             }
 
-            if(expect(LBRACE,
-                    e -> e.info(between(start, prevToken), "`for`语句")
-            ) == null) {
-                normalRecover();
-                return new ForStmt(between(start, prevToken), var, expr, null);
+            if (expect(
+                    TokenType.LBRACE
+                ) { e: Problem -> e.info(between(start, prevToken), "`for`语句") }
+                == null
+            ) {
+                return ForStmt(between(start, prevToken), `var`, expr, null)
             }
-            Stmt body = block();
+            val body = block()
 
-            return new ForStmt(between(start, body), var, expr, body);
+            return ForStmt(between(start, body), `var`, expr, body)
 
             //for repeatNum
         } else {
-            Expr expr = expression();
+            val expr = expression()
 
-            if(expect(LBRACE,
-                    e -> e.info(between(start, expr), "`for`语句")
-            ) == null) {
-                normalRecover();
-                return new ForStmt(between(start, expr), null, expr, null);
+            if (expect(
+                    TokenType.LBRACE
+                ) { e: Problem -> e.info(between(start, expr), "`for`语句") } == null
+            ) {
+                return ForStmt(between(start, expr), null, expr, null)
             }
-            Stmt body = block();
+            val body = block()
 
-            return new ForStmt(between(start, body), null, expr, body);
+            return ForStmt(between(start, body), null, expr, body)
         }
     }
 
-    private Stmt whileStmt() {
-        Token start = next();
+    private fun whileStmt(): Stmt {
+        val start = next()
 
-        Expr expr = expression();
+        val expr = expression()
 
-        if(expect(LBRACE,
-                e -> e.info(between(start, expr), "`while`语句")
-        ) == null) {
-            normalRecover();
-            return new WhileStmt(between(start, expr), expr, null);
+        if (expect(
+                TokenType.LBRACE
+            ) { e: Problem -> e.info(between(start, expr), "`while`语句") } == null
+        ) {
+            return WhileStmt(between(start, expr), expr, null)
         } else {
-            Stmt body = block();
-            return new WhileStmt(between(start, body), expr, body);
+            val body = block()
+            return WhileStmt(between(start, body), expr, body)
         }
     }
 
-    private Stmt functionStmt() {
-        Token start = next();
+    private fun functionStmt(): Stmt {
+        val start = next()
 
-        Token name = consume(IDENTIFIER);
-        if(name == null) {
-            if(!check(LPAREN)) {
-                normalRecover();
-                return new FnStmt(start.span, null, null, null, null);
+        val name = consume(TokenType.IDENTIFIER)
+        val lparen: Token?
+        if (name == null) {
+            if (!check(TokenType.LPAREN)) {
+                return FnStmt(start.span, null, null, null, null)
             }
+            lparen = next()
         } else {
-            Token lparen = consume(LPAREN);
-            if(lparen == null) {
-                normalRecover();
-                return new FnStmt(between(start, name), name, null, null, null);
+            lparen = consume(TokenType.LPAREN)
+            if (lparen == null) {
+                return FnStmt(between(start, name), name, null, null, null)
             }
         }
 
-        Seq<Expr> parameters = new Seq<>();
+        val parameters = Seq<Expr>()
 
-        while(!match(RPAREN)) {
-            if(isAtEnd()) {
+        while (!match(TokenType.RPAREN)) {
+            if (this.isAtEnd) {
                 error("无法结束的`函数形参声明`")
-                        .info(start, "函数声明开头")
-                        .point(lookAhead(0), "末尾");
-                return new FnStmt(between(start, prevToken), name, null, null, null);
+                    .info(start, "函数声明开头")
+                    .point(lookAhead(0), "末尾")
+                return FnStmt(between(start, prevToken), name, null, null, null)
             }
-            if(!check(IDENTIFIER)) {
-                break;
+            if (!check(TokenType.IDENTIFIER)) {
+                error("期望`)`")
+                    .info(lparen, "开头")
+                    .point(lookAhead(0), "末尾")
+                break
             }
-            Expr parameter = annotation();
-            parameters.add(parameter);
-            match(COMMA);
+            val parameter = annotation()
+            parameters.add(parameter)
+            match(TokenType.COMMA)
         }
 
-        Seq<Expr> results = new Seq<>();
-        if(match(ARROW)) {
-            while(!check(LBRACE)) {
-                if(isAtEnd()) {
-                    if(results.isEmpty()) {
+        val results = Seq<Expr>()
+        if (match(TokenType.ARROW)) {
+            while (!check(TokenType.LBRACE)) {
+                if (this.isAtEnd) {
+                    if (results.isEmpty) {
                         error("无法找到`函数返回值声明`")
-                                .info(start, "函数开头")
-                                .point(lookAhead(0), "期望`标识符`或`_`");
-                        return new FnStmt(between(start, prevToken), name, parameters, null, null);
+                            .info(start, "函数开头")
+                            .point(lookAhead(0), "期望`标识符`或`_`")
+                        return FnStmt(between(start, prevToken), name, parameters, null, null)
                     } else {
                         error("无法找到函数体")
-                                .info(start, "函数开头")
-                                .point(lookAhead(0), "期望`{`");
-                        return new FnStmt(between(start, prevToken), name, parameters, results, null);
+                            .info(start, "函数开头")
+                            .point(lookAhead(0), "期望`{`")
+                        return FnStmt(between(start, prevToken), name, parameters, results, null)
                     }
                 }
-                if(!check(IDENTIFIER)) {
-                    break;
+                if (!check(TokenType.IDENTIFIER)) {
+                    break
                 }
-                results.add(annotation());
-                match(COMMA);
+                results.add(annotation())
+                match(TokenType.COMMA)
             }
         }
 
-        if(expect(LBRACE, e ->
-                e.info(between(start, prevToken), "`fn`语句")
-        ) == null) {
-            normalRecover();
-            return new FnStmt(between(start, prevToken), name, parameters, results, null);
+        if (expect(
+                TokenType.LBRACE
+            ) { e: Problem -> e.info(between(start, prevToken), "`fn`语句") } == null
+        ) {
+            return FnStmt(between(start, prevToken), name, parameters, results, null)
         } else {
-            Stmt body = block();
-            return new FnStmt(between(start, body), name, parameters, results, body);
+            val body = block()
+            return FnStmt(between(start, body), name, parameters, results, body)
         }
     }
 
-    private Stmt exprStmt() {
-        if(check(BREAK)) {
-            Token start = next();
-            consumeStmtEnd();
-            return new BreakStmt(start.span);
-
-        } else if(check(CONTINUE)) {
-            Token start = next();
-            consumeStmtEnd();
-            return new ContinueStmt(start.span);
-
-        } else if(check(RETURN)) {
-            Token start = next();
-            if(matchStmtEnd()) {
-                return new ReturnStmt(start.span, null);
+    private fun exprStmt(): Stmt? {
+        if (check(TokenType.BREAK)) {
+            val start = next()
+            consumeStmtEnd()
+            return BreakStmt(start.span)
+        } else if (check(TokenType.CONTINUE)) {
+            val start = next()
+            consumeStmtEnd()
+            return ContinueStmt(start.span)
+        } else if (check(TokenType.RETURN)) {
+            val start = next()
+            if (matchStmtEnd()) {
+                return ReturnStmt(start.span, null)
             }
-            Expr expr = expression();
-            consumeStmtEnd();
-            return new ReturnStmt(between(start, expr), expr);
+            val expr = expression()
+            consumeStmtEnd()
+            return ReturnStmt(between(start, expr), expr)
+        } else if (check(TokenType.SET)) {
+            val start = next()
 
-        } else if(check(SET)) {
-            Token start = next();
-
-            Expr var = expression();
-
-            Stmt assignStmt;
-            assignStmt = assignStmt(var);
-            if(assignStmt == null) {
-                consumeStmtEnd();
-                return new SetVarStmt(between(start, var), var, null);
+            val expr = expression()
+            val assignStmt = assignStmt(expr)
+            if (assignStmt == null) {
+                consumeStmtEnd()
+                return SetVarStmt(between(start, expr), expr, null)
             } else {
                 // assignStmt(_)消耗了StmtEnd
-                return new SetVarStmt(between(start, assignStmt), var, assignStmt);
+                return SetVarStmt(between(start, assignStmt), expr, assignStmt)
+            }
+        } else {
+            val expr = expression()
+            if (expr is ErrorExpr) {
+                normalRecover()
+                return null
             }
 
-        } else {
-            Expr var = expression();
+            val assignStmt = assignStmt(expr)
 
-            Stmt assignStmt = assignStmt(var);
-
-            if(assignStmt == null) {
-                consumeStmtEnd();
-                return new ExprStmt(var.span, var);
+            if (assignStmt == null) {
+                consumeStmtEnd()
+                return ExprStmt(expr.span, expr)
             } else {
-                return assignStmt;
+                return assignStmt
             }
         }
     }
@@ -360,559 +379,529 @@ public class Parser {
      * @param expr `=`或复合赋值运算符前的表达式
      * @return 没有`=`或者复合赋值运算符时返回null;有时返回AssignStmt
      */
-    private Stmt assignStmt(Expr expr) {
-        if(check(ASSIGN)) {
-            Token operator = next();
-            Expr value;
-            value = expression();
+    private fun assignStmt(expr: Expr): Stmt? {
+        if (check(TokenType.ASSIGN)) {
+            val operator = next()
+            val value = expression()
 
-            consumeStmtEnd();
-            return new AssignStmt(between(expr, value), expr, operator, value);
+            consumeStmtEnd()
+            return AssignStmt(between(expr, value), expr, operator, value)
+        } else if (check(TokenType.BINARY_OPERATORS)) {
+            val operator = next()
+            if (match(TokenType.ASSIGN)) {
+                val value = expression()
 
-        } else if(check(BINARY_OPERATORS)) {
-            Token operator = next();
-            if(match(ASSIGN)) {
-                Expr value = expression();
-
-                consumeStmtEnd();
-                return new AssignStmt(between(expr, value), expr, operator, value);
+                consumeStmtEnd()
+                return AssignStmt(between(expr, value), expr, operator, value)
             }
-            Expr right;
-            right = expression();
-            return new ExprStmt(between(expr, right), new Binary(expr, operator, right));
+            val right = expression()
+            return ExprStmt(between(expr, right), Expr.Binary(expr, operator, right))
         }
-        return null;
+        return null
     }
 
     // ---------- Expr ----------
-    // Expr解析函数只能返回Expr，不能是null，错误请用ErrorExpr
-    private Expr expression() {
-        return or();
+    private fun expression(): Expr {
+        return or()
     }
 
-    private Expr or() {
-        Expr expr = and();
+    private fun or(): Expr {
+        var expr = and()
 
-        while(check(OR_OR)) {
-            Token operator = next();
+        while (check(TokenType.OR_OR)) {
+            val operator = next()
 
-            Expr right = or();
-            if(right instanceof Binary && ((Binary) right).operator.type == AND_AND) {
+            val right = or()
+            if (right is Expr.Binary && right.operator.type == TokenType.AND_AND) {
                 error("不明确关系的逻辑运算表达式，请添加括号")
-                        .point(expr.span.start, right.span.end, "");
+                    .point(expr.span.start, right.span.end, "")
                 // 此处遵循优先级and > or
             }
-            expr = new Binary(expr, operator, right);
+            expr = Expr.Binary(expr, operator, right)
         }
 
-        return expr;
+        return expr
     }
 
-    private Expr and() {
-        Expr expr = equality();
+    private fun and(): Expr {
+        var expr = equality()
 
-        while(check(AND_AND)) {
-            Token operator = next();
+        while (check(TokenType.AND_AND)) {
+            val operator = next()
 
-            Expr right = or();
-            if(right instanceof Binary rightBin && rightBin.operator.type == OR_OR) {
+            val right = or()
+            if (right is Expr.Binary && right.operator.type == TokenType.OR_OR) {
                 error("不明确关系的逻辑运算表达式，请添加括号")
-                        .point(expr.span.start, right.span.end, "");
+                    .point(expr.span.start, right.span.end, "")
                 // expr && right.left || right.right
                 // 按照优先级and > or进行重构
                 // (expr && right.left) || right.right
-                expr = new Binary(
-                        new Binary(expr, operator, rightBin.left),
-                        rightBin.operator,
-                        rightBin.right
-                );
+                expr = Expr.Binary(
+                    Expr.Binary(expr, operator, right.left),
+                    right.operator,
+                    right.right
+                )
             } else {
-                expr = new Binary(expr, operator, right);
+                expr = Expr.Binary(expr, operator, right)
             }
         }
-        return expr;
+        return expr
     }
 
     /**
-     *  == != === !==
+     * == != === !==
      */
-    private Expr equality() {
-        Expr expr = comparison();
+    private fun equality(): Expr {
+        var expr = comparison()
 
-        if(check(EQ_EQ, BANG_EQ, EQ_EQ_EQ, BANG_EQ_EQ)) {
-            Token operator = next();
-            Expr right = comparison();
-            expr = new Binary(expr, operator, right);
+        if (check(TokenType.EQ_EQ, TokenType.BANG_EQ, TokenType.EQ_EQ_EQ, TokenType.BANG_EQ_EQ)) {
+            val operator = next()
+            val right = comparison()
+            expr = Expr.Binary(expr, operator, right)
         }
 
-        return expr;
+        return expr
     }
 
 
     /**
-     *  > >= < <=
+     * > >= < <=
      */
-    private Expr comparison() {
-        Expr expr = range();
+    private fun comparison(): Expr {
+        var expr = range()
 
-        if(check(GREATER, GREATER_EQ, LESS, LESS_EQ)) {
-            Token operator = next();
-            Expr right = range();
-            expr = new Binary(expr, operator, right);
+        if (check(TokenType.GREATER, TokenType.GREATER_EQ, TokenType.LESS, TokenType.LESS_EQ)) {
+            val operator = next()
+            val right = range()
+            expr = Expr.Binary(expr, operator, right)
         }
 
-        return expr;
+        return expr
     }
 
-    private Expr range() {
+    private fun range(): Expr {
         // :< ...    := ...
-        if(check(COLON_LESS, COLON_ASSIGN)) {
-            Token operator = next();
+        if (check(TokenType.COLON_LESS, TokenType.COLON_ASSIGN)) {
+            val operator = next()
 
             // :<    :=
-            if(!check(LITERALS) && !check(IDENTIFIER) && !check(LPAREN)) {
-                new Range(operator.span, null, operator, null);
+            if (!check(TokenType.LITERALS) && !check(TokenType.IDENTIFIER) && !check(TokenType.LPAREN)) {
+                Expr.Range(operator.span, null, operator, null)
             }
 
             // :< expr    := expr
-            Expr right;
-//            try {
-            right = addAndSub();
-//            } catch(Problem.ParserProblem e) {
-//                e.info(operator, "解析`范围表达式`时出现错误");
-//                right = new Literal(token(ERROR, lookAhead()));
-//            }
-            new Range(between(operator, right), null, operator, right);
+            val right = addAndSub()
+            Expr.Range(between(operator, right), null, operator, right)
         }
 
         // expr
-        Expr expr = addAndSub();
+        var expr = addAndSub()
 
         // expr :< ...    expr := ...
-        if(!isStmtEnd() && check(COLON_LESS, COLON_ASSIGN)) {
-            Token operator = next();
+        if (!this.isStmtEnd && check(TokenType.COLON_LESS, TokenType.COLON_ASSIGN)) {
+            val operator = next()
 
             // expr :<    expr :=
-            if(!check(LITERALS) && !check(IDENTIFIER) && !check(LPAREN)) {
-                new Range(between(operator, operator), null, operator, null);
+            if (!check(TokenType.LITERALS) && !check(TokenType.IDENTIFIER) && !check(TokenType.LPAREN)) {
+                Expr.Range(between(operator, operator), null, operator, null)
             }
 
             // expr :< expr    expr := expr
-            Expr right;
-//            try {
-            right = addAndSub();
-//            } catch(Problem.ParserProblem e) {
-//                e.info(operator, "解析`范围表达式`时出现错误");
-//                right = new Literal(token(ERROR, lookAhead()));
-//            }
-            expr = new Range(between(expr, right), expr, operator, right);
+            val right = addAndSub()
+            expr = Expr.Range(between(expr, right), expr, operator, right)
         }
 
-        return expr;
+        return expr
     }
 
-    private Expr addAndSub() {
-        Expr expr = mulAndDiv();
+    private fun addAndSub(): Expr {
+        var expr = mulAndDiv()
 
-        while(check(PLUS, MINUS)) {
-            Token operator = next();
-            Expr right = mulAndDiv();
-            expr = new Binary(expr, operator, right);
+        while (check(TokenType.PLUS, TokenType.MINUS)) {
+            val operator = next()
+            val right = mulAndDiv()
+            expr = Expr.Binary(expr, operator, right)
         }
 
-        return expr;
+        return expr
     }
 
-    private Expr mulAndDiv() {
-        Expr expr = pow();
+    private fun mulAndDiv(): Expr {
+        var expr = pow()
 
-        while(check(STAR, SLASH)) {
-            Token operator = next();
-            Expr right = pow();
-            expr = new Binary(expr, operator, right);
+        while (check(TokenType.STAR, TokenType.SLASH)) {
+            val operator = next()
+            val right = pow()
+            expr = Expr.Binary(expr, operator, right)
         }
 
-        return expr;
+        return expr
     }
 
-    private Expr pow() {
-        Expr expr = unary();
+    private fun pow(): Expr {
+        var expr = unary()
 
-        if(check(STAR_STAR)) {
-            Token operator = next();
-            Expr right = pow(); // 右结合
-            expr = new Binary(expr, operator, right);
+        if (check(TokenType.STAR_STAR)) {
+            val operator = next()
+            val right = pow() // 右结合
+            expr = Expr.Binary(expr, operator, right)
         }
 
-        return expr;
+        return expr
     }
 
-    private Expr unary() {
-        if(check(BANG, MINUS)) {
-            Token operator = next();
-            Expr right = unary();
-            return new Unary(operator, right);
+    private fun unary(): Expr {
+        if (check(TokenType.BANG, TokenType.MINUS)) {
+            val operator = next()
+            val right = unary()
+            return Expr.Unary(operator, right)
         }
 
-        return suffixExpr();
+        return suffixExpr()
     }
 
-    private Expr suffixExpr() {
-        Expr expr = primary();
+    private fun suffixExpr(): Expr {
+        var expr = primary()
 
-        while(true) {
+        while (true) {
 //            if(isStmtEnd()) return expr;
 
-            if(check(LBRACKET)) {//对列表的索引或切片
-                Token lBracket = next();
+            if (check(TokenType.LBRACKET)) { //对列表的索引或切片
+                val lBracket = next()
 
-                Expr index;
-//                try {
-                index = expression();
-//                } catch(Problem.ParserProblem e) {
-//                    e.info(lBracket, "解析`数组索引`时出现错误");
-//                    index = new Literal(token(ERROR, lookAhead()));
-//                }
+                val index = expression()
+                val rBracket =
+                    consume(TokenType.RBRACKET) { e: Problem -> e.info(lBracket, "解析`数组索引`时出现错误") }
 
-                Token rBracket = consume(RBRACKET, e -> e.info(lBracket, "解析`数组索引`时出现错误"));
-
-                if(rBracket != null) {
-                    expr = new Index(between(lBracket, rBracket), expr, index);
+                expr = if (rBracket != null) {
+                    Expr.Index(between(lBracket, rBracket), expr, index)
                 } else {
-                    expr = new Index(between(lBracket, index), expr, index);
+                    Expr.Index(between(lBracket, index), expr, index)
                 }
-                continue;
+                continue
+            } else if (check(TokenType.LPAREN)) { //函数调用
+                val lParen = next()
 
-            } else if(check(LPAREN)) {//函数调用
-                Token lParen = next();
-
-                Seq<Expr> arguments = new Seq<>();
-                while(true) {
-                    if(isAtEnd()) {
+                val arguments = Seq<Expr>()
+                while (true) {
+                    if (this.isAtEnd) {
                         error("无法结束的`函数传参`")
-                                .info(lParen, "参数开头")
-                                .point(lookAhead(0), "末尾");
-                        if(arguments.isEmpty()) {
-                            expr = new Call(expr.span, expr, arguments);
+                            .info(lParen, "参数开头")
+                            .point(lookAhead(0), "末尾")
+                        expr = if (arguments.isEmpty) {
+                            Expr.Call(expr.span, expr, arguments)
                         } else {
-                            expr = new Call(between(expr, arguments.get(arguments.size - 1)),
-                                    expr, arguments);
+                            Expr.Call(
+                                between(expr, arguments.get(arguments.size - 1)),
+                                expr, arguments
+                            )
                         }
-                        break;
+                        break
                     }
-                    if(check(RPAREN)) {
-                        expr = new Call(between(expr, next()), expr, arguments);
-                        break;
+                    if (check(TokenType.RPAREN)) {
+                        expr = Expr.Call(between(expr, next()), expr, arguments)
+                        break
                     }
 
-//                    try {
-                    arguments.add(expression());
-//                    } catch(Problem.ParserProblem e) {
-//                        e.info(lParen, "解析`函数调用`时出现错误");
-//                    }
-                    match(COMMA); // 可选逗号
+                    arguments.add(expression())
+                    match(TokenType.COMMA) // 可选逗号
                 }
-                continue;
+                continue
+            } else if (check(TokenType.DOT)) { //访问类的元素
+                val dot = next()
 
-            } else if(check(DOT)) {//访问类的元素
-                Token dot = next();
+                val id =
+                    consume(TokenType.IDENTIFIER) { e: Problem -> e.info(dot, "解析`类元素访问`时出现错误") }
+                if (id == null) return expr
+                val field: Expr = Expr.Identifier(id)
 
-                Token id = consume(IDENTIFIER, e -> e.info(dot, "解析`类元素访问`时出现错误"));
-                if(id == null) return expr;
-                Expr field = new Identifier(id);
-
-                expr = new Get(expr, field);
-                continue;
+                expr = Get(expr, field)
+                continue
             }
 
-            return expr;
+            return expr
         }
     }
 
-    private Expr primary() {
-        if(check(LITERALS)) {
-            Token literal = next();
+    private fun primary(): Expr {
+        if (check(TokenType.LITERALS)) {
+            val literal = next()
 
             // lit :
-            if(!isStmtEnd() && match(COLON)) {
-                Seq<Expr> annotations = new Seq<>();
+            if (!this.isStmtEnd && match(TokenType.COLON)) {
+                val annotations = Seq<Expr>()
 
                 // lit : ?
-                if(check(QUESTION_MARK)) {
-                    annotations.add(new Literal(new Token(next().span, NULL)));
+                if (check(TokenType.QUESTION_MARK)) {
+                    annotations.add(Expr.Literal(Token(next().span, TokenType.NULL)))
                 }
 
                 // lit : anno1 | anno2 ...
-                while(!isAtEnd()) {
-                    annotations.add(unary());
-                    if(!match(OR)) break;
+                while (!this.isAtEnd) {
+                    annotations.add(unary())
+                    if (!match(TokenType.OR)) break
                 }
-                if(annotations.isEmpty())
-                    return new Annotation(new Literal(literal), annotations);
+                if (annotations.isEmpty) return Expr.Annotation(Expr.Literal(literal), annotations)
                 // 如果标注数量为0，视作Literal
             }
-            return new Literal(literal);
-
-        } else if(check(IDENTIFIER)) {
-            Token id = next();
+            return Expr.Literal(literal)
+        } else if (check(TokenType.IDENTIFIER)) {
+            val id = next()
 
             // id :
-            if(!isStmtEnd() && match(COLON)) {
-                Seq<Expr> annotations = new Seq<>();
+            if (!this.isStmtEnd && match(TokenType.COLON)) {
+                val annotations = Seq<Expr>()
 
                 // id : ?
-                if(check(QUESTION_MARK)) {
-                    annotations.add(new Literal(new Token(next().span, NULL)));
+                if (check(TokenType.QUESTION_MARK)) {
+                    annotations.add(Expr.Literal(Token(next().span, TokenType.NULL)))
                 }
 
                 // id : anno1 | anno2 ...
-                while(!isAtEnd()) {
-                    annotations.add(unary());
-                    if(!match(OR)) break;
+                while (!this.isAtEnd) {
+                    annotations.add(unary())
+                    if (!match(TokenType.OR)) break
                 }
-                if(annotations.isEmpty())
-                    return new Annotation(new Identifier(id), annotations);
+                if (annotations.isEmpty) return Expr.Annotation(Expr.Identifier(id), annotations)
                 // 如果标注数量为0，视作Identifier
             }
-            return new Identifier(id);
-
-        } else if(match(LPAREN)) {
-            Expr expr = expression();
-            consume(RPAREN);
-            return expr;
-
-        } else if(check(LBRACE)) {
-            Token lBrace = next();
-            Seq<Expr> elements = new Seq<>();
-            while(!check(RBRACE)) {
-                if(isAtEnd()) {
+            return Expr.Identifier(id)
+        } else if (match(TokenType.LPAREN)) {
+            val expr = expression()
+            consume(TokenType.RPAREN)
+            return expr
+        } else if (check(TokenType.LBRACE)) {
+            val lBrace = next()
+            val elements = Seq<Expr>()
+            while (!check(TokenType.RBRACE)) {
+                if (this.isAtEnd) {
                     error("无法结束的数组")
-                            .info(lBrace, "数组开头")
-                            .point(lookAhead(0), "末尾");
+                        .info(lBrace, "数组开头")
+                        .point(lookAhead(0), "末尾")
                 }
-//                try {
-                elements.add(expression());
-//                } catch(Problem.ParserProblem e) {
+                //                try {
+                elements.add(expression())
+                //                } catch(Problem.ParserProblem e) {
 //                    e.info(lBrace, "解析`数组`时出现错误");
 //                    elements.add(new Literal(token(ERROR, lookAhead())));
 //                }
-                match(COMMA); // 可选逗号
+                match(TokenType.COMMA) // 可选逗号
             }
-            Token rBrace = next();
-            return new Array(between(lBrace, rBrace), elements);
+            val rBrace = next()
+            return Expr.Array(between(lBrace, rBrace), elements)
         }
 
-        error("期望表达式").point(lookAhead(0), "");
-        return new ErrorExpr(prevToken.span);
+        error("期望表达式").point(lookAhead(0), "")
+        return ErrorExpr(prevToken.span)
     }
 
     /**
      * 比较特殊，专门给FnStmt用的，只可能返回Identifier或Annotation
      */
-    private Expr annotation() {
-        Token id = next();
+    private fun annotation(): Expr {
+        val id = next()
 
         // id :
-        if(!isStmtEnd() && match(COLON)) {
-            Seq<Expr> annotations = new Seq<>();
+        if (!this.isStmtEnd && match(TokenType.COLON)) {
+            val annotations = Seq<Expr>()
 
             // id : ?
-            if(check(QUESTION_MARK)) {
-                annotations.add(new Literal(new Token(next().span, NULL)));
+            if (check(TokenType.QUESTION_MARK)) {
+                annotations.add(Expr.Literal(Token(next().span, TokenType.NULL)))
             }
 
             // id : anno1 | anno2 ...
-            while(!isAtEnd()) {
-                annotations.add(unary());
-                if(!match(OR)) break;
+            while (!this.isAtEnd) {
+                annotations.add(unary())
+                if (!match(TokenType.OR)) break
             }
-            if(!annotations.isEmpty())
-                return new Annotation(new Identifier(id), annotations);
+            if (!annotations.isEmpty) return Expr.Annotation(Expr.Identifier(id), annotations)
             // 如果标注数量为0，视作Identifier
         }
-        return new Identifier(id);
+        return Expr.Identifier(id)
     }
 
     // ========== 工具方法 ==========
-
     // ---------- Token基础方法 ----------
-
     /**
      * 向前推进一个token
      */
-    private Token next() {
-        prevToken = input.next();
-        return prevToken;
+    private fun next(): Token {
+        prevToken = input.next()
+        return prevToken
     }
 
     /**
      * 前瞻下一个token
      */
-    private Token lookAhead(int index) {
-        return input.lookAhead(index);
+    private fun lookAhead(index: Int): Token {
+        return input.lookAhead(index)
     }
 
     /**
      * 检查是否为文件结尾
      * @return 下一个Token为`EOF`时返回true，自动消耗NEWLINE
      */
-    private boolean isAtEnd() {
-        TokenType nextType = lookAhead(0).type;
-        if(nextType == NEWLINE) {
-            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            if(lookAhead(1).type == EOF) {
-                next(); // 跳过NEWLINE
-                return true;
+    private val isAtEnd: Boolean
+        get() {
+            val nextType = lookAhead(0).type
+            if (nextType == TokenType.NEWLINE) {
+                // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+                if (lookAhead(1).type == TokenType.EOF) {
+                    next() // 跳过NEWLINE
+                    return true
+                }
+                return false
             }
-            return false;
+            return nextType == TokenType.EOF
         }
-        return nextType == EOF;
-    }
 
     /**
      * 检查是否为语句结尾
      * @return 下一个Token为`NEWLINE`或`SEMICOLON`或`EOF`时返回true
      */
-    private boolean isStmtEnd() {
-        TokenType peekType = lookAhead(0).type;
-        return peekType == NEWLINE || peekType == SEMICOLON || peekType == EOF;
-    }
-
-    /**
-     * 不支持NEWLINE
-     */
-    private boolean check(TokenType type) {
-        TokenType nextType = lookAhead(0).type;
-        if(nextType == NEWLINE) {
-            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            if(lookAhead(1).type == type) {
-                next(); // 跳过NEWLINE
-                return true;
-            }
-            return false;
+    private val isStmtEnd: Boolean
+        get() {
+            val peekType = lookAhead(0).type
+            return peekType == TokenType.NEWLINE || peekType == TokenType.SEMICOLON || peekType == TokenType.EOF
         }
-        return nextType == type;
-    }
 
     /**
      * 不支持NEWLINE
      */
-    private boolean check(Set<TokenType> types) {
-        TokenType nextType = lookAhead(0).type;
-        if(nextType == NEWLINE) {
+    private fun check(type: TokenType): Boolean {
+        val nextType = lookAhead(0).type
+        if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            if(types.contains(lookAhead(1).type)) {
-                next(); // 跳过NEWLINE
-                return true;
+            if (lookAhead(1).type == type) {
+                next() // 跳过NEWLINE
+                return true
             }
-            return false;
+            return false
         }
-        return types.contains(nextType);
+        return nextType == type
     }
 
     /**
      * 不支持NEWLINE
      */
-    private boolean check(String text) {
-        Token next = lookAhead(0);
-        if(next.type == NEWLINE) {
+    private fun check(types: MutableSet<TokenType>): Boolean {
+        val nextType = lookAhead(0).type
+        if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            if(text.equals(lookAhead(1).literal)) {
-                next(); // 跳过NEWLINE
-                return true;
+            if (types.contains(lookAhead(1).type)) {
+                next() // 跳过NEWLINE
+                return true
             }
-            return false;
+            return false
         }
-        return text.equals(next.literal);
+        return types.contains(nextType)
     }
 
     /**
      * 不支持NEWLINE
      */
-    private boolean check(TokenType... types) {
-        TokenType nextType0 = lookAhead(0).type;
-        if(nextType0 == NEWLINE) {
+    private fun check(text: String): Boolean {
+        val next = lookAhead(0)
+        if (next.type == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            TokenType nextType1 = lookAhead(1).type;
-            for(TokenType expected : types) {
-                if(nextType1 == expected) {
-                    next(); // 跳过NEWLINE
-                    return true;
+            if (text == lookAhead(1).literal) {
+                next() // 跳过NEWLINE
+                return true
+            }
+            return false
+        }
+        return text == next.literal
+    }
+
+    /**
+     * 不支持NEWLINE
+     */
+    private fun check(vararg types: TokenType): Boolean {
+        val nextType0 = lookAhead(0).type
+        if (nextType0 == TokenType.NEWLINE) {
+            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+            val nextType1 = lookAhead(1).type
+            for (expected in types) {
+                if (nextType1 == expected) {
+                    next() // 跳过NEWLINE
+                    return true
                 }
             }
-            return false;
+            return false
         }
-        for(TokenType expected : types) {
-            if(nextType0 == expected) return true;
+        for (expected in types) {
+            if (nextType0 == expected) return true
         }
-        return false;
+        return false
     }
 
-    private boolean match(TokenType type) {
-        if(check(type)) {
-            next();
-            return true;
+    private fun match(type: TokenType): Boolean {
+        if (check(type)) {
+            next()
+            return true
         }
-        return false;
+        return false
     }
 
-    private boolean match(Set<TokenType> types) {
-        if(check(types)) {
-            next();
-            return true;
+    private fun match(types: MutableSet<TokenType>): Boolean {
+        if (check(types)) {
+            next()
+            return true
         }
-        return false;
+        return false
     }
 
-    private boolean match(TokenType... types) {
-        if(check(types)) {
-            next();
-            return true;
+    private fun match(vararg types: TokenType): Boolean {
+        if (check(*types)) {
+            next()
+            return true
         }
-        return false;
+        return false
     }
 
-    private boolean match(String text) {
-        if(check(text)) {
-            next();
-            return true;
+    private fun match(text: String): Boolean {
+        if (check(text)) {
+            next()
+            return true
         }
-        return false;
+        return false
     }
 
-    private boolean match(String... texts) {
-        for(String text : texts) {
-            if(check(text)) {
-                next();
-                return true;
+    private fun match(vararg texts: String): Boolean {
+        for (text in texts) {
+            if (check(text)) {
+                next()
+                return true
             }
         }
-        return false;
+        return false
     }
 
 
     // ---------- Token高级方法 ----------
-
     /**
      * 若下一个token不是指定类型的则返回null并报告错误，否则返回该token。
      */
-    private Token expect(TokenType type) {
-        if(check(type)) return lookAhead(0);
+    private fun expect(type: TokenType): Token? {
+        if (check(type)) return lookAhead(0)
 
-        error("未找到" + type.toString())
-                .point(lookAhead(0), type.toString());
-        return null;
+        error("期望$type")
+            .point(lookAhead(0), type.toString())
+        return null
     }
 
     /**
      * 若下一个token不是指定类型的则返回null并报告错误并将错误输入Cons，否则返回该token。
      */
-    private Token expect(TokenType type, Cons<Problem> cons) {
-        if(check(type)) return lookAhead(0);
+    private fun expect(type: TokenType, cons: Cons<Problem>): Token? {
+        if (check(type)) return lookAhead(0)
 
-        cons.get(error("未找到" + type.toString())
-                .point(lookAhead(0), type.toString()));
-        return null;
+        cons.get(
+            error("期望$type")
+                .point(lookAhead(0), type.toString())
+        )
+        return null
     }
 
     /**
@@ -920,14 +909,14 @@ public class Parser {
      * 检查 { } 作为语句结束符，不推进；
      * 不报错。
      */
-    private boolean matchStmtEnd() {
-        TokenType peekType = lookAhead(0).type;
-        if(peekType == NEWLINE || peekType == SEMICOLON || peekType == EOF) {
-            next();
-            return true;
+    private fun matchStmtEnd(): Boolean {
+        val peekType = lookAhead(0).type
+        if (peekType == TokenType.NEWLINE || peekType == TokenType.SEMICOLON || peekType == TokenType.EOF) {
+            next()
+            return true
         }
         // 检查 { } 作为语句结束符，不推进
-        return peekType == LBRACE || peekType == RBRACE;
+        return peekType == TokenType.LBRACE || peekType == TokenType.RBRACE
     }
 
     /**
@@ -935,97 +924,106 @@ public class Parser {
      * 检查 { } 作为语句结束符，不推进；
      * 都没有则报错。
      */
-    private void consumeStmtEnd() {
-        TokenType peekType = lookAhead(0).type;
-        if(peekType == NEWLINE || peekType == SEMICOLON || peekType == EOF) {
-            next();
-            return;
+    private fun consumeStmtEnd() {
+        val peekType = lookAhead(0).type
+        if (peekType == TokenType.NEWLINE || peekType == TokenType.SEMICOLON || peekType == TokenType.EOF) {
+            next()
+            return
         }
-        if(peekType == LBRACE || peekType == RBRACE) {
-            return;
+        if (peekType == TokenType.LBRACE || peekType == TokenType.RBRACE) {
+            return
         }
         // 如果没有找到，报告错误
         error("缺少换行或分号作为语句结束符")
-                .point(lookAhead(0), "");
+            .point(lookAhead(0), "")
     }
 
     /**
      * 若下一个token不是指定类型的则报告错误并返回null，否则返回该token并推进
      */
-    private Token consume(TokenType type) {
-        if(check(type)) return next();
+    private fun consume(type: TokenType): Token? {
+        if (check(type)) return next()
 
-        error("未找到" + type.toString())
-                .point(lookAhead(0), type.toString());
-        return null;
+        error("期望$type")
+            .point(lookAhead(0), type.toString())
+        return null
     }
 
     /**
      * 若下一个token不是指定类型的则报告错误并返回null，否则返回该token并推进
      */
-    private Token consume(TokenType type, Cons<Problem> cons) {
-        if(check(type)) return next();
+    private fun consume(type: TokenType, cons: Cons<Problem>): Token? {
+        if (check(type)) return next()
 
-        cons.get(error("未找到" + type.toString())
+        cons.get(
+            error("期望$type")
                 .point(lookAhead(0), type.toString())
-        );
-        return null;
+        )
+        return null
     }
 
-//    private Res<Token> consume(Set<TokenType> types) {
-//        if(check(types)) return new Ok<> (next());
-//        StringBuilder sbd = new StringBuilder();
-//        for(TokenType type : types) {
-//            sbd.append(type.toString()).append(" ");
-//        }
-//        return new Err<>(error("未找到期望TokenType")
-//                .point(lookAhead(), sbd.toString())
-//        );
-//    }
-//
-//    private Res<Token> consume(TokenType type, Runnable r) {
-//        if(check(type)) return new Ok<>(next());
-//        Problem.ParserProblem e = (Problem.ParserProblem) error("未找到期望字符").point(lookAhead(), type.toString());
-//        r.run();
-//        return new Err<>(e);
-//    }
-
+    //    private Res<Token> consume(Set<TokenType> types) {
+    //        if(check(types)) return new Ok<> (next());
+    //        StringBuilder sbd = new StringBuilder();
+    //        for(TokenType type : types) {
+    //            sbd.append(type.toString()).append(" ");
+    //        }
+    //        return new Err<>(error("期望TokenType")
+    //                .point(lookAhead(), sbd.toString())
+    //        );
+    //    }
+    //
+    //    private Res<Token> consume(TokenType type, Runnable r) {
+    //        if(check(type)) return new Ok<>(next());
+    //        Problem.ParserProblem e = (Problem.ParserProblem) error("期望字符").point(lookAhead(), type.toString());
+    //        r.run();
+    //        return new Err<>(e);
+    //    }
     // ---------- 错误恢复方法 ----------
-
     /**
      * 错误恢复，扫描直到期望的TokenType
      */
-    private void recover(TokenType expected) {
-        while(!isAtEnd()) {
-            if(check(expected)) {
-                return;
+    private fun recover(expected: TokenType) {
+        while (!this.isAtEnd) {
+            if (check(expected)) {
+                return
             }
-            next();
+            next()
         }
     }
 
     /**
      * 错误恢复，扫描直到期望的TokenType
      */
-    private void recover(Set<TokenType> expecteds) {
-        while(!isAtEnd()) {
-            if(check(expecteds)) {
-                return;
+    private fun recover(expecteds: MutableSet<TokenType>) {
+        while (!this.isAtEnd) {
+            if (check(expecteds)) {
+                return
             }
-            next();
+            next()
         }
     }
 
     /**
-     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE, RBRACE))
+     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
      */
-    private void normalRecover() {
-        recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE, RBRACE));
+    private fun normalRecover() {
+        recover(
+            EnumSet.of(
+                TokenType.USE,
+                TokenType.IF,
+                TokenType.MATCH,
+                TokenType.FOR,
+                TokenType.WHILE,
+                TokenType.FN,
+                TokenType.LBRACE
+            )
+        )
     }
 
     // ---------- 类生成方法 ----------
-    private Token token(TokenType type, Token from) {
-        return new Token(from.span, type);
+    private fun token(type: TokenType, from: Token): Token {
+        return Token(from.span, type)
     }
 
     /**
@@ -1033,44 +1031,38 @@ public class Parser {
      * @param from 起始
      * @param to 末尾
      */
-    private Span between(Spanned from, Spanned to) {
-        return new Span(sourceMap.index, from.span().start, to.span().end);
+    private fun between(from: Spanned, to: Spanned): Span {
+        return Span(sourceMap.index, from.span().start, to.span().end)
     }
 
-    private Problem.ParserProblem error(String text) {
-        Problem.ParserProblem e = new Problem.ParserProblem(sourceMap, text, Problem.ProblemLevel.ERROR);
-        collector.addError(e);
-        return e;
+    private fun error(text: String): ParserProblem {
+        val e = ParserProblem(sourceMap, text, Problem.ProblemLevel.ERROR)
+        collector.addError(e)
+        return e
     }
 
-    private Problem.ParserProblem warning(String text) {
-        Problem.ParserProblem w = new Problem.ParserProblem(sourceMap, text, Problem.ProblemLevel.WARNING);
-        collector.addWarning(w);
-        return w;
+    private fun warning(text: String): ParserProblem {
+        val w = ParserProblem(sourceMap, text, Problem.ProblemLevel.WARNING)
+        collector.addWarning(w)
+        return w
     }
 
     // ========== 工具类 ==========
+    private inner class LookAheadWindow {
+        private val capacity: Byte = 2
+        private val buffer = Queue<Token>(capacity.toInt())
 
-    private class LookAheadWindow {
-        private final byte capacity = 2;
-        private final Queue<Token> buffer = new Queue<>(capacity);
-
-        public LookAheadWindow() {
+        fun next(): Token {
+            if (buffer.size < 1) return lexer.scanToken()
+            return buffer.removeFirst()
         }
 
-        public Token next() {
-            if(buffer.size < 1)
-                return lexer.scanToken();
-            return buffer.removeFirst();
-        }
-
-        public Token lookAhead(int index) {
-            for(int i = 0; i <= index - buffer.size; i++) {
-                buffer.addLast(lexer.scanToken());
+        fun lookAhead(index: Int): Token {
+            for (i in 0..index - buffer.size) {
+                buffer.addLast(lexer.scanToken())
             }
-            return buffer.get(index);
+            return buffer.get(index)
         }
-
     }
 }
 

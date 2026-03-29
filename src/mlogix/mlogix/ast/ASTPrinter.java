@@ -47,8 +47,10 @@ public class ASTPrinter {
             printNode(stmt, indent, isLast, STMT_COLOR);
         } else if(node instanceof Expr expr) {
             printNode(expr, indent, isLast, EXPR_COLOR);
-        } else if(node instanceof Stmt.UseItem item) {
+        } else if(node instanceof Stmt.UseStmt.UseItem item) {
             printNode(item, indent, isLast, EXPR_COLOR);
+        } else if(node instanceof Stmt.MatchStmt.MatchBranch branch) {
+            printNode(branch, indent, isLast, EXPR_COLOR);
         } else if(node instanceof Token) {
             printLine(indent, isLast, TOKEN_COLOR + ((Token) node).toSimpleString() + DEFAULT);
         } else if(node instanceof Seq) {

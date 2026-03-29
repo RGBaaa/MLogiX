@@ -1,305 +1,272 @@
-package mlogix.compiler;
+package mlogix.compiler
 
-import mlogix.mlogix.ast.Expr;
-import mlogix.mlogix.ast.Stmt;
-import mlogix.mlogix.token.TokenType;
-import mlogix.problem.ProblemCollector;
-import mlogix.util.Log;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import mlogix.mlogix.ast.Expr
+import mlogix.mlogix.ast.Stmt
+import mlogix.mlogix.ast.Stmt.*
+import mlogix.mlogix.token.TokenType
+import mlogix.problem.ProblemCollector
+import mlogix.util.Log
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import kotlin.math.min
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-public class ParserTest {
-    private SourceMapManager sourceMapManager;
-    private ProblemCollector problemCollector;
-
-    public static void main(String[] args) {
-        ParserTest test = new ParserTest();
-        test.setUp();
-
-        Log.info("Running MLogiX Parser Structure Tests...");
-
-        try {
-            test.testEmptyProgram();
-            test.testSingleExpressionStatement();
-            test.testVariableAssignment();
-            test.testIfStatementStructure();
-            test.testWhileLoopStructure();
-            test.testForLoopStructure();
-            test.testFunctionDeclarationStructure();
-            test.testUnaryExpressionStructure();
-            test.testBinaryExpressionStructure();
-            test.testArrayExpressionStructure();
-            test.testIndexExpressionStructure();
-            test.testNestedBlockStructure();
-            test.testComplexMixedStatements();
-            test.testErrorRecoveryStructure();
-            test.testOperatorPrecedenceStructure();
-            test.testComparisonOperatorsStructure();
-        } catch(Exception e) {
-            Log.error("Test execution failed: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        Log.info("All parser structure tests completed.");
-    }
+class ParserTest {
+    private var sourceMapManager: SourceMapManager? = null
+    private var problemCollector: ProblemCollector? = null
 
     @BeforeEach
-    void setUp() {
-        sourceMapManager = new SourceMapManager();
-        problemCollector = new ProblemCollector();
-        Log.setLevel(Log.LogType.INFO);
+    fun setUp() {
+        sourceMapManager = SourceMapManager()
+        problemCollector = ProblemCollector()
+        Log.setLevel(Log.LogType.INFO)
     }
 
     @Test
-    void testEmptyProgram() {
-        Log.info("Testing empty program parsing...");
-        Stmt stmt = parse("");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertNotNull(program.stmts);
-        assertEquals(0, program.stmts.size);
-        Log.info("Empty program test passed.");
+    fun testEmptyProgram() {
+        Log.info("Testing empty program parsing...")
+        val stmt = parse("")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertNotNull(program.stmts)
+        Assertions.assertEquals(0, program.stmts.size)
+        Log.info("Empty program test passed.")
     }
 
     @Test
-    void testSingleExpressionStatement() {
-        Log.info("Testing single expression statement...");
-        Stmt stmt = parse("42");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, program.stmts.first());
+    fun testSingleExpressionStatement() {
+        Log.info("Testing single expression statement...")
+        val stmt = parse("42")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(ExprStmt::class.java, program.stmts.first())
 
-        Stmt.ExprStmt exprStmt = (Stmt.ExprStmt) program.stmts.first();
-        assertInstanceOf(Expr.Literal.class, exprStmt.expr);
-        Expr.Literal literal = (Expr.Literal) exprStmt.expr;
-        assertEquals(TokenType.INT, literal.token.type);
-        assertEquals(42.0, literal.token.literal);
-        Log.info("Single expression statement test passed.");
+        val exprStmt = program.stmts.first() as ExprStmt
+        Assertions.assertInstanceOf(Expr.Literal::class.java, exprStmt.expr)
+        val literal = exprStmt.expr as Expr.Literal
+        Assertions.assertEquals(TokenType.INT, literal.token.type)
+        Assertions.assertEquals(42.0, literal.token.literal)
+        Log.info("Single expression statement test passed.")
     }
 
     @Test
-    void testVariableAssignment() {
-        Log.info("Testing variable assignment...");
-        Stmt stmt = parse("x = 42");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.AssignStmt.class, program.stmts.first());
+    fun testVariableAssignment() {
+        Log.info("Testing variable assignment...")
+        val stmt = parse("x = 42")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(AssignStmt::class.java, program.stmts.first())
 
-        Stmt.AssignStmt assignStmt = (Stmt.AssignStmt) program.stmts.first();
-        assertInstanceOf(Expr.Identifier.class, assignStmt.var);
-        assertEquals(TokenType.ASSIGN, assignStmt.operator.type);
-        assertInstanceOf(Expr.Literal.class, assignStmt.value);
-        Expr.Literal valueLiteral = (Expr.Literal) assignStmt.value;
-        assertEquals(TokenType.INT, valueLiteral.token.type);
-        assertEquals(42.0, valueLiteral.token.literal);
-        Log.info("Variable assignment test passed.");
+        val assignStmt = program.stmts.first() as AssignStmt
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, assignStmt.`var`)
+        Assertions.assertEquals(TokenType.ASSIGN, assignStmt.operator.type)
+        Assertions.assertInstanceOf(Expr.Literal::class.java, assignStmt.value)
+        val valueLiteral = assignStmt.value as Expr.Literal
+        Assertions.assertEquals(TokenType.INT, valueLiteral.token.type)
+        Assertions.assertEquals(42.0, valueLiteral.token.literal)
+        Log.info("Variable assignment test passed.")
     }
 
     @Test
-    void testIfStatementStructure() {
-        Log.info("Testing if statement structure...");
-        Stmt stmt = parse("if x > 5 { y = 10 } else { y = 0 }");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.IfStmt.class, program.stmts.first());
+    fun testIfStatementStructure() {
+        Log.info("Testing if statement structure...")
+        val stmt = parse("if x > 5 { y = 10 } else { y = 0 }")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(IfStmt::class.java, program.stmts.first())
 
-        Stmt.IfStmt ifStmt = (Stmt.IfStmt) program.stmts.first();
-        assertInstanceOf(Expr.Binary.class, ifStmt.condition);
-        Expr.Binary condition = (Expr.Binary) ifStmt.condition;
-        assertEquals(TokenType.GREATER, condition.operator.type);
+        val ifStmt = program.stmts.first() as IfStmt
+        Assertions.assertInstanceOf(Expr.Binary::class.java, ifStmt.condition)
+        val condition = ifStmt.condition as Expr.Binary
+        Assertions.assertEquals(TokenType.GREATER, condition.operator.type)
 
-        assertInstanceOf(Stmt.BlockStmt.class, ifStmt.thenBranch);
-        Stmt.BlockStmt thenBlock = (Stmt.BlockStmt) ifStmt.thenBranch;
-        assertEquals(1, thenBlock.stmts.size);
-        assertInstanceOf(Stmt.AssignStmt.class, thenBlock.stmts.first());
+        Assertions.assertInstanceOf(BlockStmt::class.java, ifStmt.thenBranch)
+        val thenBlock = ifStmt.thenBranch as BlockStmt
+        Assertions.assertEquals(1, thenBlock.stmts.size)
+        Assertions.assertInstanceOf(AssignStmt::class.java, thenBlock.stmts.first())
 
-        assertInstanceOf(Stmt.BlockStmt.class, ifStmt.elseBranch);
-        Stmt.BlockStmt elseBlock = (Stmt.BlockStmt) ifStmt.elseBranch;
-        assertEquals(1, elseBlock.stmts.size);
-        assertInstanceOf(Stmt.AssignStmt.class, elseBlock.stmts.first());
-        Log.info("If statement structure test passed.");
+        Assertions.assertInstanceOf(BlockStmt::class.java, ifStmt.elseBranch)
+        val elseBlock = ifStmt.elseBranch as BlockStmt
+        Assertions.assertEquals(1, elseBlock.stmts.size)
+        Assertions.assertInstanceOf(AssignStmt::class.java, elseBlock.stmts.first())
+        Log.info("If statement structure test passed.")
     }
 
     @Test
-    void testWhileLoopStructure() {
-        Log.info("Testing while loop structure...");
-        Stmt stmt = parse("while x < 10 { x = x + 1 }");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.WhileStmt.class, program.stmts.first());
+    fun testWhileLoopStructure() {
+        Log.info("Testing while loop structure...")
+        val stmt = parse("while x < 10 { x = x + 1 }")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(WhileStmt::class.java, program.stmts.first())
 
-        Stmt.WhileStmt whileStmt = (Stmt.WhileStmt) program.stmts.first();
-        assertInstanceOf(Expr.Binary.class, whileStmt.expr);
-        Expr.Binary condition = (Expr.Binary) whileStmt.expr;
-        assertEquals(TokenType.LESS, condition.operator.type);
+        val whileStmt = program.stmts.first() as WhileStmt
+        Assertions.assertInstanceOf(Expr.Binary::class.java, whileStmt.expr)
+        val condition = whileStmt.expr as Expr.Binary
+        Assertions.assertEquals(TokenType.LESS, condition.operator.type)
 
-        assertInstanceOf(Stmt.BlockStmt.class, whileStmt.body);
-        Stmt.BlockStmt blockStmt = (Stmt.BlockStmt) whileStmt.body;
-        assertEquals(1, blockStmt.stmts.size);
-        assertInstanceOf(Stmt.AssignStmt.class, blockStmt.stmts.first());
+        Assertions.assertInstanceOf(BlockStmt::class.java, whileStmt.body)
+        val blockStmt = whileStmt.body as BlockStmt
+        Assertions.assertEquals(1, blockStmt.stmts.size)
+        Assertions.assertInstanceOf(AssignStmt::class.java, blockStmt.stmts.first())
 
-        Stmt.AssignStmt assignStmt = (Stmt.AssignStmt) blockStmt.stmts.first();
-        assertInstanceOf(Expr.Identifier.class, assignStmt.var);
-        assertInstanceOf(Expr.Binary.class, assignStmt.value);
-        Log.info("While loop structure test passed.");
+        val assignStmt = blockStmt.stmts.first() as AssignStmt
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, assignStmt.`var`)
+        Assertions.assertInstanceOf(Expr.Binary::class.java, assignStmt.value)
+        Log.info("While loop structure test passed.")
     }
 
     @Test
-    void testForLoopStructure() {
-        Log.info("Testing for loop structure...");
-        Stmt stmt = parse("for i in range(10) { print(i) }");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.ForStmt.class, program.stmts.first());
+    fun testForLoopStructure() {
+        Log.info("Testing for loop structure...")
+        val stmt = parse("for i in range(10) { print(i) }")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(ForStmt::class.java, program.stmts.first())
 
-        Stmt.ForStmt forStmt = (Stmt.ForStmt) program.stmts.first();
-        assertInstanceOf(Expr.Identifier.class, forStmt.varDecl);
-        assertInstanceOf(Expr.Call.class, forStmt.expr);
-        assertInstanceOf(Stmt.BlockStmt.class, forStmt.body);
+        val forStmt = program.stmts.first() as ForStmt
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, forStmt.varDecl)
+        Assertions.assertInstanceOf(Expr.Call::class.java, forStmt.expr)
+        Assertions.assertInstanceOf(BlockStmt::class.java, forStmt.body)
 
-        Stmt.BlockStmt blockStmt = (Stmt.BlockStmt) forStmt.body;
-        assertEquals(1, blockStmt.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, blockStmt.stmts.first());
-        Log.info("For loop structure test passed.");
+        val blockStmt = forStmt.body as BlockStmt
+        Assertions.assertEquals(1, blockStmt.stmts.size)
+        Assertions.assertInstanceOf(ExprStmt::class.java, blockStmt.stmts.first())
+        Log.info("For loop structure test passed.")
     }
 
     @Test
-    void testFunctionDeclarationStructure() {
-        Log.info("Testing function declaration structure...");
-        Stmt stmt = parse("fn add(x, y) -> int { return x + y }");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.FnStmt.class, program.stmts.first());
+    fun testFunctionDeclarationStructure() {
+        Log.info("Testing function declaration structure...")
+        val stmt = parse("fn add(x, y) -> int { return x + y }")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(FnStmt::class.java, program.stmts.first())
 
-        Stmt.FnStmt fnStmt = (Stmt.FnStmt) program.stmts.first();
-        assertEquals("add", fnStmt.name.literal);
-        assertEquals(2, fnStmt.parameters.size);
-        assertEquals(1, fnStmt.results.size);
-        assertInstanceOf(Stmt.BlockStmt.class, fnStmt.body);
+        val fnStmt = program.stmts.first() as FnStmt
+        Assertions.assertEquals("add", fnStmt.name!!.literal)
+        Assertions.assertEquals(2, fnStmt.parameters!!.size)
+        Assertions.assertEquals(1, fnStmt.results!!.size)
+        Assertions.assertInstanceOf(BlockStmt::class.java, fnStmt.body)
 
-        Stmt.BlockStmt blockStmt = (Stmt.BlockStmt) fnStmt.body;
-        assertEquals(1, blockStmt.stmts.size);
-        assertInstanceOf(Stmt.ReturnStmt.class, blockStmt.stmts.first());
+        val blockStmt = fnStmt.body as BlockStmt
+        Assertions.assertEquals(1, blockStmt.stmts.size)
+        Assertions.assertInstanceOf(ReturnStmt::class.java, blockStmt.stmts.first())
 
-        Stmt.ReturnStmt returnStmt = (Stmt.ReturnStmt) blockStmt.stmts.first();
-        assertInstanceOf(Expr.Binary.class, returnStmt.expr);
-        Log.info("Function declaration structure test passed.");
+        val returnStmt = blockStmt.stmts.first() as ReturnStmt
+        Assertions.assertInstanceOf(Expr.Binary::class.java, returnStmt.expr)
+        Log.info("Function declaration structure test passed.")
     }
 
     @Test
-    void testUnaryExpressionStructure() {
-        Log.info("Testing unary expression structure...");
-        Stmt stmt = parse("-x");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, program.stmts.first());
+    fun testUnaryExpressionStructure() {
+        Log.info("Testing unary expression structure...")
+        val stmt = parse("-x")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(ExprStmt::class.java, program.stmts.first())
 
-        Stmt.ExprStmt exprStmt = (Stmt.ExprStmt) program.stmts.first();
-        assertInstanceOf(Expr.Unary.class, exprStmt.expr);
-        Expr.Unary unary = (Expr.Unary) exprStmt.expr;
-        assertEquals(TokenType.MINUS, unary.operator.type);
-        assertInstanceOf(Expr.Identifier.class, unary.expr);
-        Log.info("Unary expression structure test passed.");
+        val exprStmt = program.stmts.first() as ExprStmt
+        Assertions.assertInstanceOf(Expr.Unary::class.java, exprStmt.expr)
+        val unary = exprStmt.expr as Expr.Unary
+        Assertions.assertEquals(TokenType.MINUS, unary.operator.type)
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, unary.expr)
+        Log.info("Unary expression structure test passed.")
     }
 
     @Test
-    void testBinaryExpressionStructure() {
-        Log.info("Testing binary expression structure...");
-        Stmt stmt = parse("a + b * c");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, program.stmts.first());
+    fun testBinaryExpressionStructure() {
+        Log.info("Testing binary expression structure...")
+        val stmt = parse("a + b * c")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(ExprStmt::class.java, program.stmts.first())
 
-        Stmt.ExprStmt exprStmt = (Stmt.ExprStmt) program.stmts.first();
-        assertInstanceOf(Expr.Binary.class, exprStmt.expr);
-        Expr.Binary binary = (Expr.Binary) exprStmt.expr;
-        assertEquals(TokenType.PLUS, binary.operator.type);
-        assertInstanceOf(Expr.Identifier.class, binary.left);
-        assertInstanceOf(Expr.Binary.class, binary.right);
+        val exprStmt = program.stmts.first() as ExprStmt
+        Assertions.assertInstanceOf(Expr.Binary::class.java, exprStmt.expr)
+        val binary = exprStmt.expr as Expr.Binary
+        Assertions.assertEquals(TokenType.PLUS, binary.operator.type)
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, binary.left)
+        Assertions.assertInstanceOf(Expr.Binary::class.java, binary.right)
 
-        Expr.Binary rightBinary = (Expr.Binary) binary.right;
-        assertEquals(TokenType.STAR, rightBinary.operator.type);
-        assertInstanceOf(Expr.Identifier.class, rightBinary.left);
-        assertInstanceOf(Expr.Identifier.class, rightBinary.right);
-        Log.info("Binary expression structure test passed.");
+        val rightBinary = binary.right as Expr.Binary
+        Assertions.assertEquals(TokenType.STAR, rightBinary.operator.type)
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, rightBinary.left)
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, rightBinary.right)
+        Log.info("Binary expression structure test passed.")
     }
 
     @Test
-    void testArrayExpressionStructure() {
-        Log.info("Testing array expression structure...");
-        Stmt stmt = parse("({1, 2, 3})");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, program.stmts.first());
+    fun testArrayExpressionStructure() {
+        Log.info("Testing array expression structure...")
+        val stmt = parse("({1, 2, 3})")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(ExprStmt::class.java, program.stmts.first())
 
-        Stmt.ExprStmt exprStmt = (Stmt.ExprStmt) program.stmts.first();
-        assertInstanceOf(Expr.Array.class, exprStmt.expr);
-        Expr.Array array = (Expr.Array) exprStmt.expr;
-        assertEquals(3, array.elements.size);
+        val exprStmt = program.stmts.first() as ExprStmt
+        Assertions.assertInstanceOf(Expr.Array::class.java, exprStmt.expr)
+        val array = exprStmt.expr as Expr.Array
+        Assertions.assertEquals(3, array.elements.size)
 
-        for(int i = 0; i < array.elements.size; i++) {
-            assertInstanceOf(Expr.Literal.class, array.elements.get(i));
-            Expr.Literal literal = (Expr.Literal) array.elements.get(i);
-            assertEquals(TokenType.INT, literal.token.type);
+        for (i in 0..<array.elements.size) {
+            Assertions.assertInstanceOf(Expr.Literal::class.java, array.elements.get(i))
+            val literal = array.elements.get(i) as Expr.Literal
+            Assertions.assertEquals(TokenType.INT, literal.token.type)
         }
-        Log.info("Array expression structure test passed.");
+        Log.info("Array expression structure test passed.")
     }
 
     @Test
-    void testIndexExpressionStructure() {
-        Log.info("Testing index expression structure...");
-        Stmt stmt = parse("arr[5]");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, program.stmts.first());
+    fun testIndexExpressionStructure() {
+        Log.info("Testing index expression structure...")
+        val stmt = parse("arr[5]")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(ExprStmt::class.java, program.stmts.first())
 
-        Stmt.ExprStmt exprStmt = (Stmt.ExprStmt) program.stmts.first();
-        assertInstanceOf(Expr.Index.class, exprStmt.expr);
-        Expr.Index index = (Expr.Index) exprStmt.expr;
-        assertInstanceOf(Expr.Identifier.class, index.list);
-        assertInstanceOf(Expr.Literal.class, index.index);
-        Log.info("Index expression structure test passed.");
+        val exprStmt = program.stmts.first() as ExprStmt
+        Assertions.assertInstanceOf(Expr.Index::class.java, exprStmt.expr)
+        val index = exprStmt.expr as Expr.Index
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, index.list)
+        Assertions.assertInstanceOf(Expr.Literal::class.java, index.index)
+        Log.info("Index expression structure test passed.")
     }
 
     @Test
-    void testNestedBlockStructure() {
-        Log.info("Testing nested block structure...");
-        Stmt stmt = parse("{ x = 1; { y = 2; } }");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.BlockStmt.class, program.stmts.first());
+    fun testNestedBlockStructure() {
+        Log.info("Testing nested block structure...")
+        val stmt = parse("{ x = 1; { y = 2; } }")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(BlockStmt::class.java, program.stmts.first())
 
-        Stmt.BlockStmt outerBlock = (Stmt.BlockStmt) program.stmts.first();
-        assertEquals(2, outerBlock.stmts.size);
-        assertInstanceOf(Stmt.AssignStmt.class, outerBlock.stmts.get(0));
-        assertInstanceOf(Stmt.BlockStmt.class, outerBlock.stmts.get(1));
+        val outerBlock = program.stmts.first() as BlockStmt
+        Assertions.assertEquals(2, outerBlock.stmts.size)
+        Assertions.assertInstanceOf(AssignStmt::class.java, outerBlock.stmts.get(0))
+        Assertions.assertInstanceOf(BlockStmt::class.java, outerBlock.stmts.get(1))
 
-        Stmt.BlockStmt innerBlock = (Stmt.BlockStmt) outerBlock.stmts.get(1);
-        assertEquals(1, innerBlock.stmts.size);
-        assertInstanceOf(Stmt.AssignStmt.class, innerBlock.stmts.first());
-        Log.info("Nested block structure test passed.");
+        val innerBlock = outerBlock.stmts.get(1) as BlockStmt
+        Assertions.assertEquals(1, innerBlock.stmts.size)
+        Assertions.assertInstanceOf(AssignStmt::class.java, innerBlock.stmts.first())
+        Log.info("Nested block structure test passed.")
     }
 
     @Test
-    void testComplexMixedStatements() {
-        Log.info("Testing complex mixed statements...");
-        String input = """
+    fun testComplexMixedStatements() {
+        Log.info("Testing complex mixed statements...")
+        val input = """
                 x = 10
                 if x > 5 {
                     y = x * 2
@@ -316,126 +283,167 @@ public class ParserTest {
                 }
                 
                 result = square(5)
-                """;
+                
+                """.trimIndent()
 
-        Stmt stmt = parse(input);
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertTrue(program.stmts.size >= 4); // At least 4 statements
+        val stmt = parse(input)
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertTrue(program.stmts.size >= 4) // At least 4 statements
 
         // Check that all statement types are correctly parsed
-        boolean hasAssign = false, hasIf = false, hasFor = false, hasFn = false;
-        for(Stmt s : program.stmts) {
-            if(s instanceof Stmt.AssignStmt) hasAssign = true;
-            else if(s instanceof Stmt.IfStmt) hasIf = true;
-            else if(s instanceof Stmt.ForStmt) hasFor = true;
-            else if(s instanceof Stmt.FnStmt) hasFn = true;
+        var hasAssign = false
+        var hasIf = false
+        var hasFor = false
+        var hasFn = false
+        for (s in program.stmts) {
+            when (s) {
+                is AssignStmt -> hasAssign = true
+                is IfStmt -> hasIf = true
+                is ForStmt -> hasFor = true
+                is FnStmt -> hasFn = true
+            }
         }
 
-        assertTrue(hasAssign);
-        assertTrue(hasIf);
-        assertTrue(hasFor);
-        assertTrue(hasFn);
-        Log.info("Complex mixed statements test passed.");
+        Assertions.assertTrue(hasAssign)
+        Assertions.assertTrue(hasIf)
+        Assertions.assertTrue(hasFor)
+        Assertions.assertTrue(hasFn)
+        Log.info("Complex mixed statements test passed.")
     }
 
     @Test
-    void testErrorRecoveryStructure() {
-        Log.info("Testing error recovery structure...");
-        String input = """
+    fun testErrorRecoveryStructure() {
+        Log.info("Testing error recovery structure...")
+        val input = """
                 x = 10
                 invalid syntax here
                 y = 20
                 if true {
                     z = 30
                 }
-                """;
+                
+                """.trimIndent()
 
-        Stmt stmt = parse(input);
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
+        val stmt = parse(input)
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
         // Even with errors, should still have some valid statements
-        assertTrue(program.stmts.size >= 2); // x=10 and if statement should be parsed
-        Log.info("Error recovery structure test completed.");
+        Assertions.assertTrue(program.stmts.size >= 2) // x=10 and if statement should be parsed
+        Log.info("Error recovery structure test completed.")
     }
 
     @Test
-    void testOperatorPrecedenceStructure() {
-        Log.info("Testing operator precedence structure...");
-        Stmt stmt = parse("a + b * c - d / e");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, program.stmts.first());
+    fun testOperatorPrecedenceStructure() {
+        Log.info("Testing operator precedence structure...")
+        val stmt = parse("a + b * c - d / e")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(ExprStmt::class.java, program.stmts.first())
 
-        Stmt.ExprStmt exprStmt = (Stmt.ExprStmt) program.stmts.first();
-        assertInstanceOf(Expr.Binary.class, exprStmt.expr);
-        Expr.Binary root = (Expr.Binary) exprStmt.expr;
-        assertEquals(TokenType.MINUS, root.operator.type);
+        val exprStmt = program.stmts.first() as ExprStmt
+        Assertions.assertInstanceOf(Expr.Binary::class.java, exprStmt.expr)
+        val root = exprStmt.expr as Expr.Binary
+        Assertions.assertEquals(TokenType.MINUS, root.operator.type)
 
         // Left side: a + (b * c)
-        assertInstanceOf(Expr.Binary.class, root.left);
-        Expr.Binary left = (Expr.Binary) root.left;
-        assertEquals(TokenType.PLUS, left.operator.type);
+        Assertions.assertInstanceOf(Expr.Binary::class.java, root.left)
+        val left = root.left as Expr.Binary
+        Assertions.assertEquals(TokenType.PLUS, left.operator.type)
 
-        assertInstanceOf(Expr.Identifier.class, left.left);
-        assertInstanceOf(Expr.Binary.class, left.right);
-        Expr.Binary right = (Expr.Binary) left.right;
-        assertEquals(TokenType.STAR, right.operator.type);
+        Assertions.assertInstanceOf(Expr.Identifier::class.java, left.left)
+        Assertions.assertInstanceOf(Expr.Binary::class.java, left.right)
+        val right = left.right as Expr.Binary
+        Assertions.assertEquals(TokenType.STAR, right.operator.type)
 
         // Right side: d / e
-        assertInstanceOf(Expr.Binary.class, root.right);
-        Expr.Binary div = (Expr.Binary) root.right;
-        assertEquals(TokenType.SLASH, div.operator.type);
-        Log.info("Operator precedence structure test passed.");
+        Assertions.assertInstanceOf(Expr.Binary::class.java, root.right)
+        val div = root.right as Expr.Binary
+        Assertions.assertEquals(TokenType.SLASH, div.operator.type)
+        Log.info("Operator precedence structure test passed.")
     }
 
     @Test
-    void testComparisonOperatorsStructure() {
-        Log.info("Testing comparison operators structure...");
-        Stmt stmt = parse("x == y && a != b || c > d");
-        assertInstanceOf(Stmt.Program.class, stmt);
-        Stmt.Program program = (Stmt.Program) stmt;
-        assertEquals(1, program.stmts.size);
-        assertInstanceOf(Stmt.ExprStmt.class, program.stmts.first());
+    fun testComparisonOperatorsStructure() {
+        Log.info("Testing comparison operators structure...")
+        val stmt = parse("x == y && a != b || c > d")
+        Assertions.assertInstanceOf(Program::class.java, stmt)
+        val program = stmt as Program
+        Assertions.assertEquals(1, program.stmts.size)
+        Assertions.assertInstanceOf(ExprStmt::class.java, program.stmts.first())
 
-        Stmt.ExprStmt exprStmt = (Stmt.ExprStmt) program.stmts.first();
-        assertInstanceOf(Expr.Binary.class, exprStmt.expr);
-        Expr.Binary orOp = (Expr.Binary) exprStmt.expr;
-        assertEquals(TokenType.OR_OR, orOp.operator.type);
+        val exprStmt = program.stmts.first() as ExprStmt
+        Assertions.assertInstanceOf(Expr.Binary::class.java, exprStmt.expr)
+        val orOp = exprStmt.expr as Expr.Binary
+        Assertions.assertEquals(TokenType.OR_OR, orOp.operator.type)
 
         // Left side: x == y && a != b
-        assertInstanceOf(Expr.Binary.class, orOp.left);
-        Expr.Binary andOp = (Expr.Binary) orOp.left;
-        assertEquals(TokenType.AND_AND, andOp.operator.type);
+        Assertions.assertInstanceOf(Expr.Binary::class.java, orOp.left)
+        val andOp = orOp.left as Expr.Binary
+        Assertions.assertEquals(TokenType.AND_AND, andOp.operator.type)
 
-        assertInstanceOf(Expr.Binary.class, andOp.left);
-        assertInstanceOf(Expr.Binary.class, andOp.right);
+        Assertions.assertInstanceOf(Expr.Binary::class.java, andOp.left)
+        Assertions.assertInstanceOf(Expr.Binary::class.java, andOp.right)
 
         // Right side: c > d
-        assertInstanceOf(Expr.Binary.class, orOp.right);
-        Expr.Binary compOp = (Expr.Binary) orOp.right;
-        assertEquals(TokenType.GREATER, compOp.operator.type);
-        Log.info("Comparison operators structure test passed.");
+        Assertions.assertInstanceOf(Expr.Binary::class.java, orOp.right)
+        val compOp = orOp.right as Expr.Binary
+        Assertions.assertEquals(TokenType.GREATER, compOp.operator.type)
+        Log.info("Comparison operators structure test passed.")
     }
 
     // Helper method to parse input and return AST
-    private Stmt parse(String input) {
-        SourceMapManager.SourceMap sourceMap = sourceMapManager.loadSourceMap(input);
-        Lexer lexer = new Lexer(problemCollector);
-        Parser parser = new Parser(lexer, problemCollector);
+    private fun parse(input: String): Stmt {
+        val sourceMap = sourceMapManager!!.loadSourceMap(input)
+        val lexer = Lexer(problemCollector)
+        val parser = Parser(lexer, problemCollector!!)
 
-        Stmt result = parser.parse(sourceMap);
+        val result = parser.parse(sourceMap)
 
-        if(!problemCollector.hasError()) {
-            Log.info("Parsed successfully: " + input.substring(0, Math.min(input.length(), 50)));
+        if (!problemCollector!!.hasError()) {
+            Log.info("Parsed successfully: " + input.substring(0, min(input.length, 50)))
         } else {
-            Log.warning("Parse errors occurred:");
-            for(var error : problemCollector.errors) {
-                Log.warning(error.toString());
+            Log.warning("Parse errors occurred:")
+            for (error in problemCollector!!.errors) {
+                Log.warning(error.toString())
             }
         }
 
-        return result;
+        return result
+    }
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val test = ParserTest()
+            test.setUp()
+
+            Log.info("Running MLogiX Parser Structure Tests...")
+
+            try {
+                test.testEmptyProgram()
+                test.testSingleExpressionStatement()
+                test.testVariableAssignment()
+                test.testIfStatementStructure()
+                test.testWhileLoopStructure()
+                test.testForLoopStructure()
+                test.testFunctionDeclarationStructure()
+                test.testUnaryExpressionStructure()
+                test.testBinaryExpressionStructure()
+                test.testArrayExpressionStructure()
+                test.testIndexExpressionStructure()
+                test.testNestedBlockStructure()
+                test.testComplexMixedStatements()
+                test.testErrorRecoveryStructure()
+                test.testOperatorPrecedenceStructure()
+                test.testComparisonOperatorsStructure()
+            } catch (e: Exception) {
+                Log.error("Test execution failed: " + e.message)
+                e.printStackTrace()
+            }
+
+            Log.info("All parser structure tests completed.")
+        }
     }
 }

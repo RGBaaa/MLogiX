@@ -1,271 +1,72 @@
-package mlogix.mlogix.ast;
+package mlogix.mlogix.ast
 
-import arc.struct.Seq;
-import mlogix.compiler.SemanticAnalyzer;
-import mlogix.mlogix.ast.Expr.Identifier;
-import mlogix.mlogix.token.Token;
-import mlogix.span.Span;
-import mlogix.span.Spanned;
+import arc.struct.Seq
+import mlogix.mlogix.token.Token
+import mlogix.span.Span
+import mlogix.span.Spanned
 
 //Statement
-public abstract non-sealed class Stmt extends ASTNode {
-    protected Stmt(Span span) {
-        this.span = span;
+abstract class Stmt(span: Span) : ASTNode(span) {
+    init {
+        this.span = span
     }
 
-    public abstract void accept(SemanticAnalyzer.SemanticVisitor visitor);
+    class Program(span: Span, val stmts: Seq<Stmt>) : Stmt(span)
 
-    public static class Program extends Stmt {
-        public final Seq<Stmt> stmts;
+    class UseStmt(span: Span, val item: UseItem) : Stmt(span) {
 
-        public Program(Span span, Seq<Stmt> stmts) {
-            super(span);
-            this.stmts = stmts;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class UseStmt extends Stmt {
-        public final UseItem item;
-
-        public UseStmt(Span span, UseItem item) {
-            super(span);
-            this.item = item;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static abstract sealed class UseItem implements Spanned
-            permits UseItem.Single, UseItem.All, UseItem.Multi, UseItem.Recursion {
-        public final Span span;
-
-        public UseItem(Span span) {
-            this.span = span;
-        }
-
-        @Override
-        public Span span() {
-            return this.span;
-        }
-
-        public static final class Single extends UseItem {
-            public final Seq<Identifier> path;
-
-            public Single(Span span, Seq<Identifier> path) {
-                super(span);
-                this.path = path;
+        abstract class UseItem(val span: Span) : Spanned {
+            override fun span(): Span {
+                return this.span
             }
+
         }
+
+        class Single(span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
 
         // *
-        public static final class All extends UseItem {
-            public final Seq<Identifier> path;
-
-            public All(Span span, Seq<Identifier> path) {
-                super(span);
-                this.path = path;
-            }
-        }
+        class All(span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
 
         // **
-        public static final class Recursion extends UseItem {
-            public final Seq<Identifier> path;
-
-            public Recursion(Span span, Seq<Identifier> path) {
-                super(span);
-                this.path = path;
-            }
-        }
+        class Recursion(span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
 
         // {...}
-        public static final class Multi extends UseItem {
-            public final Seq<Identifier> path;
-            public final Seq<UseItem> items;
+        class Multi(span: Span, val path: Seq<Expr.Identifier>, val items: Seq<UseItem>) : UseItem(span)
+    }
 
-            public Multi(Span span, Seq<Identifier> path, Seq<UseItem> items) {
-                super(span);
-                this.items = items;
-                this.path = path;
+    class BlockStmt(span: Span, val stmts: Seq<Stmt>) : Stmt(span)
+
+    class ExprStmt(span: Span, val expr: Expr) : Stmt(span)
+
+    class IfStmt(span: Span, val condition: Expr, val thenBranch: Stmt?, val elseBranch: Stmt?) : Stmt(span)
+
+    class MatchStmt(span: Span, val scrutinee: Expr, val branches: Seq<MatchBranch>?) : Stmt(span) {
+        class MatchBranch(val span: Span, val pattern: Expr, val body: Stmt) : Spanned {
+            override fun span(): Span {
+                return this.span
             }
         }
     }
 
+    class ForStmt(span: Span, val varDecl: Expr.Identifier?, val expr: Expr?, val body: Stmt?) : Stmt(span)
 
-    public static class BlockStmt extends Stmt {
-        public final Seq<Stmt> stmts;
+    class WhileStmt(span: Span, val expr: Expr, val body: Stmt?) : Stmt(span)
 
-        public BlockStmt(Span span, Seq<Stmt> stmts) {
-            super(span);
-            this.stmts = stmts;
-        }
+    class BreakStmt(span: Span) : Stmt(span)
 
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
+    class ContinueStmt(span: Span) : Stmt(span)
 
-    public static class ExprStmt extends Stmt {
-        public final Expr expr;
+    class FnStmt(
+        span: Span,
+        val name: Token?,
+        val parameters: Seq<Expr>?,
+        val results: Seq<Expr>?,
+        val body: Stmt?
+    ) : Stmt(span)
 
-        public ExprStmt(Span span, Expr expr) {
-            super(span);
-            this.expr = expr;
-        }
+    class ReturnStmt(span: Span, val expr: Expr?) : Stmt(span)
 
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
+    class AssignStmt(span: Span, val `var`: Expr, val operator: Token, val value: Expr) : Stmt(span)
 
-    public static class IfStmt extends Stmt {
-        public final Expr condition;
-        public final Stmt thenBranch;
-        public final Stmt elseBranch;
-
-        public IfStmt(Span span, Expr condition, Stmt thenBranch, Stmt elseBranch) {
-            super(span);
-            this.condition = condition;
-            this.thenBranch = thenBranch;
-            this.elseBranch = elseBranch;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class ForStmt extends Stmt {
-        public final Identifier varDecl;
-        public final Expr expr;
-        public final Stmt body;
-
-        public ForStmt(Span span, Identifier varDecl, Expr expr, Stmt body) {
-            super(span);
-            this.varDecl = varDecl;
-            this.expr = expr;
-            this.body = body;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class WhileStmt extends Stmt {
-        public final Expr expr;
-        public final Stmt body;
-
-        public WhileStmt(Span span, Expr expr, Stmt body) {
-            super(span);
-            this.expr = expr;
-            this.body = body;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class BreakStmt extends Stmt {
-        public BreakStmt(Span span) {
-            super(span);
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class ContinueStmt extends Stmt {
-        public ContinueStmt(Span span) {
-            super(span);
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class FnStmt extends Stmt {
-        public final Token name;
-        public final Seq<Expr> parameters;
-        public final Seq<Expr> results;
-        public final Stmt body;
-
-        public FnStmt(Span span, Token name, Seq<Expr> parameters, Seq<Expr> results, Stmt body) {
-            super(span);
-            this.name = name;
-            this.parameters = parameters;
-            this.results = results;
-            this.body = body;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class ReturnStmt extends Stmt {
-        public final Expr expr;
-
-        public ReturnStmt(Span span, Expr expr) {
-            super(span);
-            this.expr = expr;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class AssignStmt extends Stmt {
-        public final Expr var;
-        public final Token operator;
-        public final Expr value;
-
-        public AssignStmt(Span span, Expr var, Token operator, Expr value) {
-            super(span);
-            this.var = var;
-            this.operator = operator;
-            this.value = value;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
-
-    public static class SetVarStmt extends Stmt {
-        public final Expr var;
-        public final Stmt assignStmt;
-
-        public SetVarStmt(Span span, Expr var, Stmt assignStmt) {
-            super(span);
-            this.var = var;
-            this.assignStmt = assignStmt;
-        }
-
-        @Override
-        public void accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            visitor.visit(this);
-        }
-    }
+    class SetVarStmt(span: Span, val `var`: Expr, val assignStmt: Stmt?) : Stmt(span)
 }

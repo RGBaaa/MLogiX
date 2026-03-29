@@ -1,12 +1,12 @@
 package mlogix.compiler;
 
-import mlogix.mlogix.type.BuiltinType;
+import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.mlogix.ast.Stmt;
-import mlogix.mlogix.type.Type;
 import mlogix.mlogix.token.Token;
+import mlogix.mlogix.type.BuiltinType;
+import mlogix.mlogix.type.Type;
 import mlogix.problem.Problem;
 import mlogix.problem.ProblemCollector;
-import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.span.Span;
 
 import java.util.HashMap;
@@ -126,9 +126,9 @@ public class SemanticAnalyzer {
         void visit(Program node);
         void visit(BlockStmt node);
         void visit(UseStmt node);
-        void visit(UseItem node);
         void visit(ExprStmt node);
         void visit(IfStmt node);
+        void visit(MatchStmt node);
         void visit(ForStmt node);
         void visit(WhileStmt node);
         void visit(BreakStmt node);

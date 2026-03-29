@@ -1,199 +1,52 @@
-package mlogix.mlogix.ast;
+package mlogix.mlogix.ast
 
-import arc.struct.Seq;
-import mlogix.compiler.SemanticAnalyzer;
-import mlogix.mlogix.token.Token;
-import mlogix.mlogix.type.Type;
-import mlogix.span.Span;
+import arc.struct.Seq
+import mlogix.mlogix.token.Token
+import mlogix.span.Span
 
 //Expression
-public abstract non-sealed class Expr extends ASTNode {
-    protected Expr(Span span) {
-        this.span = span;
+abstract class Expr constructor(span: Span) : ASTNode(span) {
+    init {
+        this.span = span
     }
-
-    public abstract Type accept(SemanticAnalyzer.SemanticVisitor visitor);
 
     /* 字面量 */
-    public static class Literal extends Expr {
-        public final Token token;
-
-        public Literal(Token token) {
-            super(token.span);
-            this.token = token;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class Literal(val token: Token) : Expr(token.span)
 
     /* 标识符 */
-    public static class Identifier extends Expr {
-        public final Token token;
+    class Identifier(val token: Token) : Expr(token.span)
 
-        public Identifier(Token token) {
-            super(token.span);
-            this.token = token;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
-
-    public static class Annotation extends Expr {
-        public final Expr expr;
-        public final Seq<Expr> annotations;
-
-        /**
-         *需要保证annotations.size > 0
-         */
-        public Annotation(Expr expr, Seq<Expr> annotations) {
-            super(Span.between(expr, annotations.get(annotations.size - 1)));
-            this.expr = expr;
-            this.annotations = annotations;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class Annotation
+    /**
+     * 需要保证annotations.size > 0
+     */(val expr: Expr, val annotations: Seq<Expr>) : Expr(Span.between(expr, annotations.get(annotations.size - 1)))
 
     /* 一元运算 */
-    public static class Unary extends Expr {
-        public final Token operator;
-        public final Expr expr;
-
-        public Unary(Token operator, Expr expr) {
-            super(Span.between(operator.span, expr.span));
-            this.operator = operator;
-            this.expr = expr;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class Unary(val operator: Token, val expr: Expr) : Expr(Span.between(operator.span, expr.span))
 
     /* 二元运算 */
-    public static class Binary extends Expr {
-        public final Expr left;
-        public final Token operator;
-        public final Expr right;
-
-        public Binary(Expr left, Token operator, Expr right) {
-            super(Span.between(left.span, right.span));
-            this.left = left;
-            this.operator = operator;
-            this.right = right;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr(
+        Span.between(
+            left.span, right.span
+        )
+    )
 
     /* 数组 */
-    public static class Array extends Expr {
-        public final Seq<Expr> elements;
-
-        public Array(Span span, Seq<Expr> elements) {
-            super(span);
-            this.elements = elements;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class Array(span: Span, val elements: Seq<Expr>) : Expr(span)
 
     /* 索引 */
-    public static class Index extends Expr {
-        public final Expr list;
-        public final Expr index;
+    class Index(span: Span, val list: Expr, val index: Expr) : Expr(span)
 
-        public Index(Span span, Expr list, Expr index) {
-            super(span);
-            this.list = list;
-            this.index = index;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
-
-    public static class Range extends Expr {
-        public final Expr left;
-        public final Token operator;
-        public final Expr right;
-
-        public Range(Span span, Expr left, Token operator, Expr right) {
-            super(span);
-            this.left = left;
-            this.operator = operator;
-            this.right = right;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class Range(span: Span, val left: Expr?, val operator: Token, val right: Expr?) : Expr(span)
 
     /* 函数调用 func(...) */
-    public static class Call extends Expr {
-        public final Expr callee;
-        public final Seq<Expr> arguments;
-
-        public Call(Span span, Expr callee, Seq<Expr> arguments) {
-            super(span);
-            this.callee = callee;
-            this.arguments = arguments;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class Call(span: Span, val callee: Expr, val arguments: Seq<Expr>) : Expr(span)
 
     /* 获取字段 type.field  type.func */
-    public static class Get extends Expr {
-        public final Expr object;
-        public final Expr field;
-
-        public Get(Expr object, Expr field) {
-            super(Span.between(object.span, field.span));
-            this.object = object;
-            this.field = field;
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class Get(val obj: Expr, val field: Expr) : Expr(Span.between(obj.span, field.span))
 
     /**
      * 错误恢复占位符
      */
-    public static class ErrorExpr extends Expr {
-        public ErrorExpr(Span span) {
-            super(span);
-        }
-
-        @Override
-        public Type accept(SemanticAnalyzer.SemanticVisitor visitor) {
-            return visitor.visit(this);
-        }
-    }
+    class ErrorExpr(span: Span) : Expr(span)
 }
