@@ -1,7 +1,13 @@
 .idea/
 .gradle/
+.kotlin/
+.settings/
 out/
 bin/
 build/
 
+.factorypath
+.project
+gradle.properties
+kls_database.db
 test.mlx

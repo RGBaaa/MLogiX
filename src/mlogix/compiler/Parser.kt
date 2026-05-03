@@ -18,11 +18,13 @@ import mlogix.span.Span
 import mlogix.span.Spanned
 import java.util.*
 
-class Parser
 /**
  * 一个项目 一次构造
  */
-internal constructor(private val lexer: Lexer, private val collector: ProblemCollector) {
+class Parser(
+    private val lexer: Lexer,
+    private val collector: ProblemCollector,
+) {
     private lateinit var sourceMap: SourceMap
     private lateinit var input: LookAheadWindow
     private lateinit var prevToken: Token
@@ -55,17 +57,15 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
         return Program(Span(sourceMap.index, 0, sourceMap.length()), stmts)
     }
 
-    private fun statement(): Stmt? {
-        return when {
-            check(TokenType.USE) -> useStmt()
-            check(TokenType.IF) -> ifStmt()
-            check(TokenType.MATCH) -> matchStmt()
-            check(TokenType.FOR) -> forStmt()
-            check(TokenType.WHILE) -> whileStmt()
-            check(TokenType.FN) -> functionStmt()
-            check(TokenType.LBRACE) -> block()
-            else -> exprStmt()
-        }
+    private fun statement(): Stmt? = when {
+        check(TokenType.USE) -> useStmt()
+        check(TokenType.IF) -> ifStmt()
+        check(TokenType.MATCH) -> matchStmt()
+        check(TokenType.FOR) -> forStmt()
+        check(TokenType.WHILE) -> whileStmt()
+        check(TokenType.FN) -> functionStmt()
+        check(TokenType.LBRACE) -> block()
+        else -> exprStmt()
     }
 
     private fun useStmt(): Stmt? {
@@ -79,13 +79,10 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
         while (true) {
             if (check(TokenType.IDENTIFIER)) {
                 path.add(Expr.Identifier(next()))
-
             } else if (check(TokenType.STAR)) {
                 return UseStmt.All(if (path.isEmpty) next().span else between(path.get(0), next()), path)
-
             } else if (check(TokenType.STAR_STAR)) {
                 return UseStmt.Recursion(if (path.isEmpty) next().span else between(path.get(0), next()), path)
-
             } else if (check(TokenType.LBRACE)) {
                 val lbrace = next()
 
@@ -164,7 +161,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
             error("期望`match`语句的`{`")
                 .info(start, "语句开头")
                 .point(lookAhead(0), "当前")
-            return MatchStmt(between(start, scrutinee), scrutinee, null);
+            return MatchStmt(between(start, scrutinee), scrutinee, null)
         }
 
         val branches = Seq<MatchStmt.MatchBranch>()
@@ -176,7 +173,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
                 return MatchStmt(
                     between(start, (if (branches.isEmpty) start else branches.get(branches.size - 1))),
                     scrutinee,
-                    branches
+                    branches,
                 )
             }
             val pattern = expression()
@@ -184,7 +181,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
                 return MatchStmt(
                     between(start, (if (branches.isEmpty) start else branches.get(branches.size - 1))),
                     scrutinee,
-                    branches
+                    branches,
                 )
             }
             val body = block()
@@ -193,7 +190,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
         return MatchStmt(
             between(start, prevToken),
             scrutinee,
-            branches
+            branches,
         )
     }
 
@@ -212,7 +209,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
             }
 
             if (expect(
-                    TokenType.LBRACE
+                    TokenType.LBRACE,
                 ) { e: Problem -> e.info(between(start, prevToken), "`for`语句") }
                 == null
             ) {
@@ -222,12 +219,12 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
 
             return ForStmt(between(start, body), `var`, expr, body)
 
-            //for repeatNum
+            // for repeatNum
         } else {
             val expr = expression()
 
             if (expect(
-                    TokenType.LBRACE
+                    TokenType.LBRACE,
                 ) { e: Problem -> e.info(between(start, expr), "`for`语句") } == null
             ) {
                 return ForStmt(between(start, expr), null, expr, null)
@@ -244,7 +241,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
         val expr = expression()
 
         if (expect(
-                TokenType.LBRACE
+                TokenType.LBRACE,
             ) { e: Problem -> e.info(between(start, expr), "`while`语句") } == null
         ) {
             return WhileStmt(between(start, expr), expr, null)
@@ -316,7 +313,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
         }
 
         if (expect(
-                TokenType.LBRACE
+                TokenType.LBRACE,
             ) { e: Problem -> e.info(between(start, prevToken), "`fn`语句") } == null
         ) {
             return FnStmt(between(start, prevToken), name, parameters, results, null)
@@ -401,9 +398,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
     }
 
     // ---------- Expr ----------
-    private fun expression(): Expr {
-        return or()
-    }
+    private fun expression(): Expr = or()
 
     private fun or(): Expr {
         var expr = and()
@@ -439,7 +434,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
                 expr = Expr.Binary(
                     Expr.Binary(expr, operator, right.left),
                     right.operator,
-                    right.right
+                    right.right,
                 )
             } else {
                 expr = Expr.Binary(expr, operator, right)
@@ -462,7 +457,6 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
 
         return expr
     }
-
 
     /**
      * > >= < <=
@@ -566,7 +560,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
         while (true) {
 //            if(isStmtEnd()) return expr;
 
-            if (check(TokenType.LBRACKET)) { //对列表的索引或切片
+            if (check(TokenType.LBRACKET)) { // 对列表的索引或切片
                 val lBracket = next()
 
                 val index = expression()
@@ -579,7 +573,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
                     Expr.Index(between(lBracket, index), expr, index)
                 }
                 continue
-            } else if (check(TokenType.LPAREN)) { //函数调用
+            } else if (check(TokenType.LPAREN)) { // 函数调用
                 val lParen = next()
 
                 val arguments = Seq<Expr>()
@@ -593,7 +587,8 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
                         } else {
                             Expr.Call(
                                 between(expr, arguments.get(arguments.size - 1)),
-                                expr, arguments
+                                expr,
+                                arguments,
                             )
                         }
                         break
@@ -607,7 +602,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
                     match(TokenType.COMMA) // 可选逗号
                 }
                 continue
-            } else if (check(TokenType.DOT)) { //访问类的元素
+            } else if (check(TokenType.DOT)) { // 访问类的元素
                 val dot = next()
 
                 val id =
@@ -723,6 +718,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
 
     // ========== 工具方法 ==========
     // ---------- Token基础方法 ----------
+
     /**
      * 向前推进一个token
      */
@@ -734,9 +730,8 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
     /**
      * 前瞻下一个token
      */
-    private fun lookAhead(index: Int): Token {
-        return input.lookAhead(index)
-    }
+    private fun lookAhead(index: Int): Token =
+        input.lookAhead(index)
 
     /**
      * 检查是否为文件结尾
@@ -878,8 +873,8 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
         return false
     }
 
-
     // ---------- Token高级方法 ----------
+
     /**
      * 若下一个token不是指定类型的则返回null并报告错误，否则返回该token。
      */
@@ -899,7 +894,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
 
         cons.get(
             error("期望$type")
-                .point(lookAhead(0), type.toString())
+                .point(lookAhead(0), type.toString()),
         )
         return null
     }
@@ -957,7 +952,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
 
         cons.get(
             error("期望$type")
-                .point(lookAhead(0), type.toString())
+                .point(lookAhead(0), type.toString()),
         )
         return null
     }
@@ -980,6 +975,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
     //        return new Err<>(e);
     //    }
     // ---------- 错误恢复方法 ----------
+
     /**
      * 错误恢复，扫描直到期望的TokenType
      */
@@ -1016,7 +1012,7 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
                 TokenType.FOR,
                 TokenType.WHILE,
                 TokenType.FN,
-                TokenType.LBRACE
+                TokenType.LBRACE,
             )
         )
     }
@@ -1065,4 +1061,3 @@ internal constructor(private val lexer: Lexer, private val collector: ProblemCol
         }
     }
 }
-

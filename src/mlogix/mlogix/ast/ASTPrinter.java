@@ -80,14 +80,14 @@ public class ASTPrinter {
         sb.append(color).append(node.getClass().getSimpleName());
         sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append(")").append(" ");
         sb.append(DEFAULT).append(startLine);
-        sb.append(B_CYAN).append(startLineString, 0, startCol);
+        sb.append(BLACK).append(B_CYAN).append(startLineString, 0, startCol);
         if(startLine == endLine) {
             sb.append(B_YELLOW).append(startLineString, startCol, endCol);
             sb.append(B_CYAN).append(startLineString, endCol, startLineString.length());
         } else {
             sb.append(B_YELLOW).append(startLineString, startCol, startLineString.length());
             sb.append(DEFAULT).append(" ").append(endLine);
-            sb.append(B_YELLOW).append(endLineString, 0, endCol);
+            sb.append(BLACK).append(B_YELLOW).append(endLineString, 0, endCol);
             sb.append(B_CYAN).append(endLineString, endCol, endLineString.length());
         }
         sb.append(DEFAULT);
