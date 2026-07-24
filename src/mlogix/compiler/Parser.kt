@@ -730,7 +730,7 @@ class Parser(
     /**
      * 前瞻下一个token
      */
-    private fun lookAhead(index: Int): Token =
+    private fun lookAhead(index: Byte): Token =
         input.lookAhead(index)
 
     /**
@@ -741,7 +741,7 @@ class Parser(
         get() {
             val nextType = lookAhead(0).type
             if (nextType == TokenType.NEWLINE) {
-                // 第二个不会是NEWLINE，由Lexer.scanToken()证明
+                // 第二个不会是NEWLINE，由Lexer.scanToken()保证
                 if (lookAhead(1).type == TokenType.EOF) {
                     next() // 跳过NEWLINE
                     return true
@@ -767,68 +767,86 @@ class Parser(
     private fun check(type: TokenType): Boolean {
         val nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
-            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            if (lookAhead(1).type == type) {
-                next() // 跳过NEWLINE
-                return true
-            }
-            return false
+            // 第二个不会是NEWLINE，由Lexer.scanToken()保证
+            next()
+            nextType = lookAhead(0).type
         }
         return nextType == type
     }
 
     /**
+     * 下一个Token的类型在参数中，则返回true
      * 不支持NEWLINE
      */
     private fun check(types: MutableSet<TokenType>): Boolean {
         val nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
-            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            if (types.contains(lookAhead(1).type)) {
-                next() // 跳过NEWLINE
-                return true
-            }
-            return false
+            // 第二个不会是NEWLINE，由Lexer.scanToken()保证
+            next()
+            nextType = lookAhead(0).type
         }
         return types.contains(nextType)
     }
 
     /**
+     * 下一个Token.literal等于参数，则返回true
      * 不支持NEWLINE
      */
     private fun check(text: String): Boolean {
         val next = lookAhead(0)
         if (next.type == TokenType.NEWLINE) {
-            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            if (text == lookAhead(1).literal) {
-                next() // 跳过NEWLINE
-                return true
-            }
-            return false
+            // 第二个不会是NEWLINE，由Lexer.scanToken()保证
+            next()
+            next = lookAhead(0)
         }
         return text == next.literal
     }
 
     /**
+     * 下一个Token类型是参数之一时，则返回true
      * 不支持NEWLINE
      */
     private fun check(vararg types: TokenType): Boolean {
-        val nextType0 = lookAhead(0).type
-        if (nextType0 == TokenType.NEWLINE) {
-            // 第二个不会是NEWLINE，由Lexer.scanToken()证明
-            val nextType1 = lookAhead(1).type
-            for (expected in types) {
-                if (nextType1 == expected) {
-                    next() // 跳过NEWLINE
-                    return true
-                }
-            }
-            return false
+        val nextType = lookAhead(0).type
+        if (nextType == TokenType.NEWLINE) {
+            // 第二个不会是NEWLINE，由Lexer.scanToken()保证
+            next()
+            nextType = lookAhead(0).type
         }
         for (expected in types) {
-            if (nextType0 == expected) return true
+            if (nextType == expected) return true
         }
         return false
+    }
+
+    private fun checkLoopFlag(): Identifier? {
+        val id = lookAhead(0)
+        if (id.type == NEWLINE) {
+            // 第二个不会是NEWLINE，由Lexer.scanToken()保证
+            next()
+            id = lookAhead(0)
+        }
+        if (id.type != IDENTIFIER) return null
+
+        var i = 1
+
+        val colon = lookAhead(i)
+        if (colon.type == NEWLINE) {
+            i++
+            colon = lookAhead(i)
+        }
+        if (colon.type != COLON) return null
+        i++
+
+        val loopHead = lookAhead(i)
+        if (loopHead.type == NEWLINE) {
+            loopHead = lookAhead(i + 1)
+        }
+        if (loopHead.type != FOR || 
+            loopHead.type != WHILE
+        ) return null
+
+        return id
     }
 
     private fun match(type: TokenType): Boolean {
@@ -871,6 +889,10 @@ class Parser(
             }
         }
         return false
+    }
+
+    private fun match(vararg types: TokenType): Boolean {
+
     }
 
     // ---------- Token高级方法 ----------
@@ -1004,6 +1026,18 @@ class Parser(
      * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
      */
     private fun normalRecover() {
+     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
+     */
+    private fun normalRecover() {
+     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
+     */
+    private fun normalRecover() {
+        recover(
+            EnumSet.of(
+                TokenType.USE,
+     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
+     */
+    private fun normalRecover() {
         recover(
             EnumSet.of(
                 TokenType.USE,
@@ -1045,7 +1079,7 @@ class Parser(
 
     // ========== 工具类 ==========
     private inner class LookAheadWindow {
-        private val capacity: Byte = 2
+        private val capacity: Byte = 5
         private val buffer = Queue<Token>(capacity.toInt())
 
         fun next(): Token {
@@ -1053,7 +1087,7 @@ class Parser(
             return buffer.removeFirst()
         }
 
-        fun lookAhead(index: Int): Token {
+        fun lookAhead(index: Byte): Token {
             for (i in 0..index - buffer.size) {
                 buffer.addLast(lexer.scanToken())
             }
