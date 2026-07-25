@@ -775,7 +775,7 @@ class Parser(
      * 不支持NEWLINE
      */
     private fun check(type: TokenType): Boolean {
-        val nextType = lookAhead(0).type
+        var nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
             next()
@@ -789,7 +789,7 @@ class Parser(
      * 不支持NEWLINE
      */
     private fun check(types: MutableSet<TokenType>): Boolean {
-        val nextType = lookAhead(0).type
+        var nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
             next()
@@ -803,7 +803,7 @@ class Parser(
      * 不支持NEWLINE
      */
     private fun check(text: String): Boolean {
-        val next = lookAhead(0)
+        var next = lookAhead(0)
         if (next.type == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
             next()
@@ -817,7 +817,7 @@ class Parser(
      * 不支持NEWLINE
      */
     private fun check(vararg types: TokenType): Boolean {
-        val nextType = lookAhead(0).type
+        var nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
             next()
