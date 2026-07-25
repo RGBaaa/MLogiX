@@ -901,10 +901,6 @@ class Parser(
         return false
     }
 
-    private fun match(vararg types: TokenType): Boolean {
-
-    }
-
     // ---------- Token高级方法 ----------
 
     /**
@@ -1033,18 +1029,6 @@ class Parser(
     }
 
     /**
-     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
-     */
-    private fun normalRecover() {
-     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
-     */
-    private fun normalRecover() {
-     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
-     */
-    private fun normalRecover() {
-        recover(
-            EnumSet.of(
-                TokenType.USE,
      * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
      */
     private fun normalRecover() {
