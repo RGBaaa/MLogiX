@@ -728,9 +728,10 @@ class Parser(
     }
 
     /**
-     * 前瞻下一个token
+     * 前瞻token
+     * @param index 0表示当前token，1表示下一个token，2表示下下个token，依次类推
      */
-    private fun lookAhead(index: Byte): Token =
+    private fun lookAhead(index: Int): Token =
         input.lookAhead(index)
 
     /**
@@ -1079,15 +1080,16 @@ class Parser(
 
     // ========== 工具类 ==========
     private inner class LookAheadWindow {
-        private val capacity: Byte = 5
-        private val buffer = Queue<Token>(capacity.toInt())
+        private val capacity: Int = 5
+        private val buffer = Queue<Token>(capacity)
 
         fun next(): Token {
             if (buffer.size < 1) return lexer.scanToken()
             return buffer.removeFirst()
         }
 
-        fun lookAhead(index: Byte): Token {
+        fun lookAhead(index: Int): Token {
+            require(index in 0 until capacity) { "index must be between 0 and ${capacity - 1}" }
             for (i in 0..index - buffer.size) {
                 buffer.addLast(lexer.scanToken())
             }
