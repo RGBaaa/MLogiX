@@ -61,11 +61,17 @@ class Parser(
         check(TokenType.USE) -> useStmt()
         check(TokenType.IF) -> ifStmt()
         check(TokenType.MATCH) -> matchStmt()
-        check(TokenType.FOR) -> forStmt()
-        check(TokenType.WHILE) -> whileStmt()
+        check(TokenType.FOR) -> forStmt(null)
+        check(TokenType.WHILE) -> whileStmt(null)
         check(TokenType.FN) -> functionStmt()
         check(TokenType.LBRACE) -> block()
-        else -> exprStmt()
+        check(TokenType.BREAK) -> breakStmt()
+        check(TokenType.CONTINUE) -> continueStmt()
+        check(TokenType.RETURN) -> returnStmt()
+        check(TokenType.SET) -> setStmt()
+        else -> {
+            loopStmtWithFlag() ?: exprStmt()
+        }
     }
 
     private fun useStmt(): Stmt? {
@@ -140,7 +146,7 @@ class Parser(
         val thenBranch = block()
 
         var elseBranch: Stmt? = null
-        if (match(TokenType.ELIF)) {
+        if (check(TokenType.ELIF)) {
             elseBranch = ifStmt()
         } else if (match(TokenType.ELSE)) {
             if (expect(TokenType.LBRACE) == null) {
@@ -194,7 +200,7 @@ class Parser(
         )
     }
 
-    private fun forStmt(): Stmt {
+    private fun forStmt(flag: Expr.Identifier?): Stmt {
         val start = next()
 
         // for id
@@ -213,11 +219,11 @@ class Parser(
                 ) { e: Problem -> e.info(between(start, prevToken), "`for`语句") }
                 == null
             ) {
-                return ForStmt(between(start, prevToken), `var`, expr, null)
+                return ForStmt(between(start, prevToken), `var`, expr, null, flag)
             }
             val body = block()
 
-            return ForStmt(between(start, body), `var`, expr, body)
+            return ForStmt(between(start, body), `var`, expr, body, flag)
 
             // for repeatNum
         } else {
@@ -227,15 +233,15 @@ class Parser(
                     TokenType.LBRACE,
                 ) { e: Problem -> e.info(between(start, expr), "`for`语句") } == null
             ) {
-                return ForStmt(between(start, expr), null, expr, null)
+                return ForStmt(between(start, expr), null, expr, null, flag)
             }
             val body = block()
 
-            return ForStmt(between(start, body), null, expr, body)
+            return ForStmt(between(start, body), null, expr, body, flag)
         }
     }
 
-    private fun whileStmt(): Stmt {
+    private fun whileStmt(flag: Expr.Identifier?): Stmt {
         val start = next()
 
         val expr = expression()
@@ -244,12 +250,51 @@ class Parser(
                 TokenType.LBRACE,
             ) { e: Problem -> e.info(between(start, expr), "`while`语句") } == null
         ) {
-            return WhileStmt(between(start, expr), expr, null)
+            return WhileStmt(between(start, expr), expr, null, flag)
         } else {
             val body = block()
-            return WhileStmt(between(start, body), expr, body)
+            return WhileStmt(between(start, body), expr, body, flag)
         }
     }
+
+
+    private fun loopStmtWithFlag(): Stmt? {
+        var i = 0
+
+        var flag = lookAhead(i)
+        if (flag.type == TokenType.NEWLINE) {
+            // 第二个不会是NEWLINE，由Lexer.scanToken()保证
+            next()
+            flag = lookAhead(i)
+        }
+        if (flag.type != TokenType.IDENTIFIER) return null
+        i++
+
+        var colon = lookAhead(i)
+        if (colon.type == TokenType.NEWLINE) {
+            i++
+            colon = lookAhead(i)
+        }
+        if (colon.type != TokenType.COLON) return null
+        i++
+
+        var loopHead = lookAhead(i)
+        if (loopHead.type == TokenType.NEWLINE) {
+            i++
+            loopHead = lookAhead(i)
+        }
+        if (loopHead.type == TokenType.FOR) {
+            next(i)
+            return forStmt(Expr.Identifier(flag))
+        }
+        if (loopHead.type == TokenType.WHILE) {
+            next(i)
+            return whileStmt(Expr.Identifier(flag))
+        }
+
+        return null
+    }
+
 
     private fun functionStmt(): Stmt {
         val start = next()
@@ -323,58 +368,65 @@ class Parser(
         }
     }
 
-    private fun exprStmt(): Stmt? {
-        if (check(TokenType.BREAK)) {
-            val start = next()
-            consumeStmtEnd()
-            return BreakStmt(start.span)
-        } else if (check(TokenType.CONTINUE)) {
-            val start = next()
-            consumeStmtEnd()
-            return ContinueStmt(start.span)
-        } else if (check(TokenType.RETURN)) {
-            val start = next()
-            if (matchStmtEnd()) {
-                return ReturnStmt(start.span, null)
-            }
-            val expr = expression()
-            consumeStmtEnd()
-            return ReturnStmt(between(start, expr), expr)
-        } else if (check(TokenType.SET)) {
-            val start = next()
+    private fun breakStmt(): Stmt {
+        val start = next()
+        if (matchStmtEnd()) return BreakStmt(start.span, null)
+        val flag = consume(TokenType.IDENTIFIER) ?: return BreakStmt(start.span, null)
+        consumeStmtEnd()
+        return BreakStmt(between(start, flag), Expr.Identifier(flag))
+    }
 
-            val expr = expression()
-            val assignStmt = assignStmt(expr)
-            if (assignStmt == null) {
-                consumeStmtEnd()
-                return SetVarStmt(between(start, expr), expr, null)
-            } else {
-                // assignStmt(_)消耗了StmtEnd
-                return SetVarStmt(between(start, assignStmt), expr, assignStmt)
-            }
+    private fun continueStmt(): Stmt {
+        val start = next()
+        if (matchStmtEnd()) return ContinueStmt(start.span, null)
+        val flag = consume(TokenType.IDENTIFIER) ?: return ContinueStmt(start.span, null)
+        consumeStmtEnd()
+        return ContinueStmt(between(start, flag), Expr.Identifier(flag))
+    }
+
+    private fun returnStmt(): Stmt {
+        val start = next()
+        if (matchStmtEnd()) return ReturnStmt(start.span, null)
+        val expr = expression()
+        consumeStmtEnd()
+        return ReturnStmt(between(start, expr), expr)
+    }
+
+    private fun setStmt(): Stmt {
+        val start = next()
+
+        val expr = expression()
+        val assignStmt = assignStmt(expr)
+        if (assignStmt == null) {
+            consumeStmtEnd()
+            return SetVarStmt(between(start, expr), expr, null)
         } else {
-            val expr = expression()
-            if (expr is ErrorExpr) {
-                normalRecover()
-                return null
-            }
+            // assignStmt(_)消耗了StmtEnd
+            return SetVarStmt(between(start, assignStmt), expr, assignStmt)
+        }
+    }
 
-            val assignStmt = assignStmt(expr)
+    private fun exprStmt(): Stmt? {
+        val expr = expression()
+        if (expr is ErrorExpr) {
+            normalRecover()
+            return null
+        }
 
-            if (assignStmt == null) {
-                consumeStmtEnd()
-                return ExprStmt(expr.span, expr)
-            } else {
-                return assignStmt
-            }
+        val assignStmt = assignStmt(expr)
+
+        if (assignStmt == null) {
+            consumeStmtEnd()
+            return ExprStmt(expr.span, expr)
+        } else {
+            return assignStmt
         }
     }
 
     /**
-     * `=` ...
-     * 复合赋值运算符`+=` ...
+     * 解析 赋值 `= ...` 或 复合赋值 `+= ...`
      * @param expr `=`或复合赋值运算符前的表达式
-     * @return 没有`=`或者复合赋值运算符时返回null;有时返回AssignStmt
+     * @return 没有`=`或者复合赋值运算符时返回null;有时返回AssignStmt并推进
      */
     private fun assignStmt(expr: Expr): Stmt? {
         if (check(TokenType.ASSIGN)) {
@@ -606,8 +658,9 @@ class Parser(
                 val dot = next()
 
                 val id =
-                    consume(TokenType.IDENTIFIER) { e: Problem -> e.info(dot, "解析`类元素访问`时出现错误") }
-                if (id == null) return expr
+                    consume(TokenType.IDENTIFIER) { e: Problem ->
+                        e.info(dot, "解析`类元素访问`时出现错误")
+                    } ?: return expr
                 val field: Expr = Expr.Identifier(id)
 
                 expr = Get(expr, field)
@@ -731,7 +784,7 @@ class Parser(
      * 向前推进几个token
      * @param step must be in [1,LookAheadWindow.capacity]
      */
-    private fun next(step:Int): Token {
+    private fun next(step: Int): Token {
         prevToken = input.next(step)
         return prevToken
     }
@@ -775,11 +828,14 @@ class Parser(
      * 不支持NEWLINE
      */
     private fun check(type: TokenType): Boolean {
-        var nextType = lookAhead(0).type
+        val nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
-            next()
-            nextType = lookAhead(0).type
+            if (lookAhead(1).type == type) {
+                next() // 跳过NEWLINE
+                return true
+            }
+            return false
         }
         return nextType == type
     }
@@ -789,11 +845,14 @@ class Parser(
      * 不支持NEWLINE
      */
     private fun check(types: MutableSet<TokenType>): Boolean {
-        var nextType = lookAhead(0).type
+        val nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
-            next()
-            nextType = lookAhead(0).type
+            if (types.contains(lookAhead(1).type)) {
+                next() // 跳过NEWLINE
+                return true
+            }
+            return false
         }
         return types.contains(nextType)
     }
@@ -803,11 +862,14 @@ class Parser(
      * 不支持NEWLINE
      */
     private fun check(text: String): Boolean {
-        var next = lookAhead(0)
+        val next = lookAhead(0)
         if (next.type == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
-            next()
-            next = lookAhead(0)
+            if (text == lookAhead(1).literal) {
+                next() // 跳过NEWLINE
+                return true
+            }
+            return false
         }
         return text == next.literal
     }
@@ -817,46 +879,22 @@ class Parser(
      * 不支持NEWLINE
      */
     private fun check(vararg types: TokenType): Boolean {
-        var nextType = lookAhead(0).type
-        if (nextType == TokenType.NEWLINE) {
+        val nextType0 = lookAhead(0).type
+        if (nextType0 == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
-            next()
-            nextType = lookAhead(0).type
+            val nextType1 = lookAhead(1).type
+            for (expected in types) {
+                if (nextType1 == expected) {
+                    next() // 跳过NEWLINE
+                    return true
+                }
+            }
+            return false
         }
         for (expected in types) {
-            if (nextType == expected) return true
+            if (nextType0 == expected) return true
         }
         return false
-    }
-
-    private fun checkLoopFlag(): Identifier? {
-        val id = lookAhead(0)
-        if (id.type == NEWLINE) {
-            // 第二个不会是NEWLINE，由Lexer.scanToken()保证
-            next()
-            id = lookAhead(0)
-        }
-        if (id.type != IDENTIFIER) return null
-
-        var i = 1
-
-        val colon = lookAhead(i)
-        if (colon.type == NEWLINE) {
-            i++
-            colon = lookAhead(i)
-        }
-        if (colon.type != COLON) return null
-        i++
-
-        val loopHead = lookAhead(i)
-        if (loopHead.type == NEWLINE) {
-            loopHead = lookAhead(i + 1)
-        }
-        if (loopHead.type != FOR || 
-            loopHead.type != WHILE
-        ) return null
-
-        return id
     }
 
     private fun match(type: TokenType): Boolean {
@@ -1076,21 +1114,23 @@ class Parser(
         private val capacity: Int = 5
         private val buffer = Queue<Token>(capacity)
 
+        /**
+         * 返回当下的Token并推进一步
+         */
         fun next(): Token {
             if (buffer.size < 1) return lexer.scanToken()
             return buffer.removeFirst()
         }
 
+        /**
+         * 返回lookAhead(step)并推进到其后一个
+         */
         fun next(step: Int): Token {
-            require(step in 1..capacity) { "step must be between 1 and $capacity" }
-            // 确保缓冲区至少有 step 个元素（索引 step-1 存在）
-            lookAhead(step - 1)
-            // 跳过前 step-1 个元素，保留第 step 个作为第一个
+            if (step == 0) return next()
             repeat(step - 1) {
-                buffer.removeFirst()
+                next()
             }
-            // 返回当前第一个元素（即原来的第 step 个），并从缓冲区移除
-            return buffer.removeFirst()
+            return next()
         }
 
         fun lookAhead(index: Int): Token {
