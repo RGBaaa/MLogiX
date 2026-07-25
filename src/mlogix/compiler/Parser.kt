@@ -728,6 +728,15 @@ class Parser(
     }
 
     /**
+     * 向前推进几个token
+     * @param step must be in [1,LookAheadWindow.capacity]
+     */
+    private fun next(step:Int): Token {
+        prevToken = input.next(step)
+        return prevToken
+    }
+
+    /**
      * 前瞻token
      * @param index 0表示当前token，1表示下一个token，2表示下下个token，依次类推
      */
@@ -1085,6 +1094,18 @@ class Parser(
 
         fun next(): Token {
             if (buffer.size < 1) return lexer.scanToken()
+            return buffer.removeFirst()
+        }
+
+        fun next(step: Int): Token {
+            require(step in 1..capacity) { "step must be between 1 and $capacity" }
+            // 确保缓冲区至少有 step 个元素（索引 step-1 存在）
+            lookAhead(step - 1)
+            // 跳过前 step-1 个元素，保留第 step 个作为第一个
+            repeat(step - 1) {
+                buffer.removeFirst()
+            }
+            // 返回当前第一个元素（即原来的第 step 个），并从缓冲区移除
             return buffer.removeFirst()
         }
 
