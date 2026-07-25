@@ -48,9 +48,15 @@ abstract class Stmt(span: Span) : ASTNode(span) {
         }
     }
 
-    class ForStmt(span: Span, val varDecl: Expr.Identifier?, val expr: Expr?, val body: Stmt?, val flag: Expr.Identifier?) : Stmt(span)
+    class ForStmt(
+        span: Span,
+        val flag: Expr.Identifier?,
+        val varDecl: Expr.Identifier?,
+        val body: Stmt?,
+        val expr: Expr?
+    ) : Stmt(span)
 
-    class WhileStmt(span: Span, val expr: Expr, val body: Stmt?, val flag: Expr.Identifier?) : Stmt(span)
+    class WhileStmt(span: Span, val flag: Expr.Identifier?, val body: Stmt?, val expr: Expr) : Stmt(span)
 
     class BreakStmt(span: Span, flag: Expr.Identifier?) : Stmt(span)
 

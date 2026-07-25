@@ -219,11 +219,11 @@ class Parser(
                 ) { e: Problem -> e.info(between(start, prevToken), "`for`语句") }
                 == null
             ) {
-                return ForStmt(between(start, prevToken), `var`, expr, null, flag)
+                return ForStmt(between(start, prevToken), flag, `var`, null, expr)
             }
             val body = block()
 
-            return ForStmt(between(start, body), `var`, expr, body, flag)
+            return ForStmt(between(start, body), flag, `var`, body, expr)
 
             // for repeatNum
         } else {
@@ -233,11 +233,11 @@ class Parser(
                     TokenType.LBRACE,
                 ) { e: Problem -> e.info(between(start, expr), "`for`语句") } == null
             ) {
-                return ForStmt(between(start, expr), null, expr, null, flag)
+                return ForStmt(between(start, expr), flag, null, null, expr)
             }
             val body = block()
 
-            return ForStmt(between(start, body), null, expr, body, flag)
+            return ForStmt(between(start, body), flag, null, body, expr)
         }
     }
 
@@ -250,10 +250,10 @@ class Parser(
                 TokenType.LBRACE,
             ) { e: Problem -> e.info(between(start, expr), "`while`语句") } == null
         ) {
-            return WhileStmt(between(start, expr), expr, null, flag)
+            return WhileStmt(between(start, expr), flag, null, expr)
         } else {
             val body = block()
-            return WhileStmt(between(start, body), expr, body, flag)
+            return WhileStmt(between(start, body), flag, body, expr)
         }
     }
 
