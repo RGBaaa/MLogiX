@@ -16,7 +16,7 @@ kotlin {
 sourceSets {
     main {
         java.srcDirs = ['src']
-        kotlin.srcDirs = ['src']       // 让 Kotlin 也能编译 src 下的文件
+        kotlin.srcDirs = ['src']
     }
     test {
         java.srcDirs = ['test']
@@ -31,15 +31,15 @@ repositories {
 }
 
 ext {
-    mindustryVersion = 'v157.7'
+    mindustryVersion = 'v159.7'
 }
 
 dependencies {
     implementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    // implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
-    // testImplementation(platform('org.junit:junit-bom:5.10.1'))
-    // testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation(platform('org.junit:junit-bom:5.10.1'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
 }
 
 test {
@@ -47,19 +47,19 @@ test {
 }
 
 // 强制 Arc 版本统一
-// configurations.configureEach {
-//     resolutionStrategy.eachDependency { details ->
-//         if (details.requested.group == 'com.github.Anuken.Arc') {
-//             details.useVersion "$mindustryVersion"
-//         }
-//     }
-// }
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'com.github.Anuken.Arc') {
+            details.useVersion "$mindustryVersion"
+        }
+    }
+}
 
 tasks.register('run', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'mlogix.Main'
     args 'c'
-    ignoreExitValue = true
+    ignoreExitValue = true as JavaExecSpec
     errorOutput = System.err
     doLast {
         if (executionResult.get().exitValue != 0) {
@@ -72,7 +72,7 @@ tasks.register('run-debug', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'mlogix.Main'
     args 'c', 'd'
-    ignoreExitValue = true
+    ignoreExitValue = true as JavaExecSpec
     errorOutput = System.err
     doLast {
         if (executionResult.get().exitValue != 0) {
