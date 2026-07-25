@@ -3,68 +3,67 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.3.21'
 }
 
-//version '0.1'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+}
 
 sourceSets {
     main {
-        java {
-            srcDirs = ['src']
-        }
+        java.srcDirs = ['src']
+        kotlin.srcDirs = ['src']       // 让 Kotlin 也能编译 src 下的文件
     }
     test {
-        java {
-            srcDirs = ['test']
-        }
+        java.srcDirs = ['test']
+        kotlin.srcDirs = ['test']
     }
 }
-
 
 repositories {
     mavenCentral()
-    maven{ url = "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository" }
-    maven{ url = 'https://www.jitpack.io' }
+    maven { url = "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository" }
+    maven { url = 'https://www.jitpack.io' }
 }
 
 ext {
-    mindustryVersion = 'v157.4'
-    jabelVersion = "93fde537c7"
+    mindustryVersion = 'v157.7'
 }
 
 dependencies {
     implementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    // implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
-    annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
-
-    testImplementation(platform('org.junit:junit-bom:5.8.1'))
-    testImplementation('org.junit.jupiter:junit-jupiter')
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.fork = true
-    options.forkOptions.jvmArgs.addAll([
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED',
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED',
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED',
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED',
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED',
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED',
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
-            '--add-exports', 'jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED'
-    ])
+    // testImplementation(platform('org.junit:junit-bom:5.10.1'))
+    // testImplementation('org.junit.jupiter:junit-jupiter')
 }
 
 test {
     useJUnitPlatform()
 }
 
-//force arc version
-configurations.configureEach{
-    resolutionStrategy.eachDependency { details ->
-        if(details.requested.group == 'com.github.Anuken.Arc'){
-            details.useVersion "$mindustryVersion"
+// 强制 Arc 版本统一
+// configurations.configureEach {
+//     resolutionStrategy.eachDependency { details ->
+//         if (details.requested.group == 'com.github.Anuken.Arc') {
+//             details.useVersion "$mindustryVersion"
+//         }
+//     }
+// }
+
+tasks.register('run', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'mlogix.Main'
+    args 'c'
+    ignoreExitValue = true
+    errorOutput = System.err
+    doLast {
+        if (executionResult.get().exitValue != 0) {
+            println "程序执行失败，退出码: ${executionResult.get().exitValue}"
         }
     }
 }
@@ -72,38 +71,12 @@ configurations.configureEach{
 tasks.register('run-debug', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'mlogix.Main'
-
     args 'c', 'd'
-
-    ignoreExitValue = true as JavaExecSpec  // 不因为退出码而失败
-
-    // 重定向错误输出
+    ignoreExitValue = true
     errorOutput = System.err
-
     doLast {
         if (executionResult.get().exitValue != 0) {
             println "程序执行失败，退出码: ${executionResult.get().exitValue}"
         }
     }
-}
-
-tasks.register('run', JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'mlogix.Main'
-
-    args 'c'
-
-    ignoreExitValue = true as JavaExecSpec  // 不因为退出码而失败
-
-    // 重定向错误输出
-    errorOutput = System.err
-
-    doLast {
-        if (executionResult.get().exitValue != 0) {
-            println "程序执行失败，退出码: ${executionResult.get().exitValue}"
-        }
-    }
-}
-kotlin {
-    jvmToolchain(17)
 }
