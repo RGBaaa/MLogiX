@@ -1,12 +1,8 @@
-package mlogix.mlogix.token;
+package mlogix.mlogix.token
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*
 
-public enum TokenType {
+enum class TokenType(private val keyword: String? = null) {
     // 关键字
     USE("use"),
     SET("set"), MACRO("macro"), CONST("const"),
@@ -27,32 +23,44 @@ public enum TokenType {
     // 运算符
     // +  -      *     /      **         %        %%               //
     PLUS, MINUS, STAR, SLASH, STAR_STAR, PERCENT, PERCENT_PERCENT, SLASH_SLASH,
+
     //&  |   ^      <<   >>   ~
     AND, OR, CARET, SHL, SHR, TILDE,
+
     // ++      --
     PLUS_PLUS, MINUS_MINUS,
+
     // =
     ASSIGN,
+
     // ==  !=       ===       !==
     EQ_EQ, BANG_EQ, EQ_EQ_EQ, BANG_EQ_EQ,
+
     // <  >        <=       >=
     LESS, GREATER, LESS_EQ, GREATER_EQ,
+
     // &&    ||     !
     AND_AND, OR_OR, BANG,
+
     // :<      :=
     COLON_LESS, COLON_ASSIGN,
 
     // 分隔符
     // ->
     ARROW,
+
     // :   ;          ,      .
     COLON, SEMICOLON, COMMA, DOT,
+
     // (    )
     LPAREN, RPAREN,
+
     // [      ]
     LBRACKET, RBRACKET,
+
     // {    }
     LBRACE, RBRACE,
+
     // ?
     QUESTION_MARK,
 
@@ -60,112 +68,117 @@ public enum TokenType {
     DOC_COMMENT,
 
     // 其他
-    NEWLINE, // 换行符
-    UNKNOWN,//未知 似乎没用
-    ERROR,//错误
+    NEWLINE,  // 换行符
+    UNKNOWN,  //未知
+    ERROR,  //错误
     EOF; // 标识源码结尾
 
-    // 方便Lexer判断是否为关键字
-    public static final Map<String, TokenType> KEYWORDS_MAP;
+    override fun toString(): String {
+        // 如果有对应的关键字，直接返回
+        if (this.keyword != null) {
+            return this.keyword
+        }
 
-    public static final Set<TokenType> LITERALS = EnumSet.of(
+        // 否则根据枚举值返回对应的符号
+        return when (this) {
+            PLUS -> "`+`"
+            MINUS -> "`-`"
+            STAR -> "`*`"
+            SLASH -> "`/`"
+            STAR_STAR -> "`**`"
+            PERCENT -> "`%`"
+            PERCENT_PERCENT -> "`%%`"
+            SLASH_SLASH -> "`//`"
+            AND -> "`&`"
+            OR -> "`|`"
+            CARET -> "`^`"
+            SHL -> "`<<`"
+            SHR -> "`>>`"
+            TILDE -> "`~`"
+            PLUS_PLUS -> "`++`"
+            MINUS_MINUS -> "`--`"
+            ASSIGN -> "`=`"
+            EQ_EQ -> "`==`"
+            BANG_EQ -> "`!=`"
+            EQ_EQ_EQ -> "`===`"
+            BANG_EQ_EQ -> "`!==`"
+            LESS -> "`<`"
+            GREATER -> "`>`"
+            LESS_EQ -> "`<=`"
+            GREATER_EQ -> "`>=`"
+            AND_AND -> "`&&`"
+            OR_OR -> "`||`"
+            BANG -> "`!`"
+            COLON_LESS -> "`:<`"
+            COLON_ASSIGN -> "`:=`"
+            ARROW -> "`->`"
+            COLON -> "`:`"
+            SEMICOLON -> "`;`"
+            COMMA -> "`,`"
+            DOT -> "`.`"
+            LPAREN -> "`(`"
+            RPAREN -> "`)`"
+            LBRACKET -> "`[`"
+            RBRACKET -> "`]`"
+            LBRACE -> "`{`"
+            RBRACE -> "`}`"
+            QUESTION_MARK -> "`?`"
+            NEWLINE -> "`\\n`"
+            EOF -> "<eof>"
+            else -> this.name.lowercase(Locale.getDefault())
+        }
+    }
+
+    companion object {
+        val LITERALS: Set<TokenType> = EnumSet.of(
             NUM, INT, COL, STR, TRUE, FALSE, NULL
-    );
+        )
 
-    public static final Set<TokenType> BINARY_OPERATORS = EnumSet.of(
+        val EQ_OPERATORS: Set<TokenType> = EnumSet.of(
+            EQ_EQ, BANG_EQ, EQ_EQ_EQ, BANG_EQ_EQ
+        )
+
+        val COMPARISON_OPERATORS: Set<TokenType> = EnumSet.of(
+            LESS, GREATER, LESS_EQ, GREATER_EQ
+        )
+
+        val RANGE_OPERATORS: Set<TokenType> = EnumSet.of(
+            COLON_LESS, COLON_ASSIGN
+        )
+
+        val MUL_DIV_OPERATORS: Set<TokenType> = EnumSet.of(
+            STAR, SLASH, PERCENT, PERCENT_PERCENT, SLASH_SLASH
+        )
+
+        val UNARY_OPERATORS: Set<TokenType> = EnumSet.of(
+            MINUS, TILDE, BANG
+        )
+
+        val BINARY_OPERATORS: Set<TokenType> = EnumSet.of(
             PLUS, MINUS, STAR, SLASH, STAR_STAR, PERCENT, PERCENT_PERCENT, SLASH_SLASH,
             AND, OR, CARET, SHL, SHR,
             AND_AND, OR_OR
-    );
+        )
 
-    public static final Set<TokenType> SEPARATORS = EnumSet.of(
+
+        val ADD_SUB_OPERATORS: Set<TokenType> = EnumSet.of(
+            PLUS, MINUS
+        )
+
+        val SEPARATORS: Set<TokenType> = EnumSet.of(
             COLON, SEMICOLON, COMMA, DOT,
             LPAREN, RPAREN,
             LBRACKET, RBRACKET,
             LBRACE, RBRACE
-    );
+        )
 
-    static {
-        Map<String, TokenType> tempMap = new HashMap<>();
-        for (TokenType type : TokenType.values()) {
-            if (type.keyword != null) {
-                tempMap.put(type.keyword, type);
+        // 方便Lexer判断是否为关键字
+        val KEYWORDS_MAP: Map<String, TokenType> = buildMap {
+            for (type in TokenType.entries) {
+                if (type.keyword != null) {
+                    put(type.keyword, type)
+                }
             }
         }
-        KEYWORDS_MAP = Collections.unmodifiableMap(tempMap); // 设置为不可修改的 Map
-    }
-
-    // 关键字字段
-    private final String keyword;
-
-    // 带参数的构造函数（用于关键字）
-    TokenType(String keyword) {
-        this.keyword = keyword;
-    }
-
-    // 无参构造函数
-    TokenType() {
-        this.keyword = null; // 没有关键字
-    }
-
-    public String toString() {
-        // 如果有对应的关键字，直接返回
-        if (this.keyword != null) {
-            return this.keyword;
-        }
-
-        // 否则根据枚举值返回对应的符号
-        return switch(this) {
-            // 运算符
-            case PLUS -> "`+`";
-            case MINUS -> "`-`";
-            case STAR -> "`*`";
-            case SLASH -> "`/`";
-            case STAR_STAR -> "`**`";
-            case PERCENT -> "`%`";
-            case PERCENT_PERCENT -> "`%%`";
-            case SLASH_SLASH -> "`//`";
-            case AND -> "`&`";
-            case OR -> "`|`";
-            case CARET -> "`^`";
-            case SHL -> "`<<`";
-            case SHR -> "`>>`";
-            case TILDE -> "`~`";
-            case PLUS_PLUS -> "`++`";
-            case MINUS_MINUS -> "`--`";
-            case ASSIGN -> "`=`";
-            case EQ_EQ -> "`==`";
-            case BANG_EQ -> "`!=`";
-            case EQ_EQ_EQ -> "`===`";
-            case BANG_EQ_EQ -> "`!==`";
-            case LESS -> "`<`";
-            case GREATER -> "`>`";
-            case LESS_EQ -> "`<=`";
-            case GREATER_EQ -> "`>=`";
-            case AND_AND -> "`&&`";
-            case OR_OR -> "`||`";
-            case BANG -> "`!`";
-            case COLON_LESS -> "`:<`";
-            case COLON_ASSIGN -> "`:=`";
-
-            // 分隔符
-            case ARROW -> "`->`";
-            case COLON -> "`:`";
-            case SEMICOLON -> "`;`";
-            case COMMA -> "`,`";
-            case DOT -> "`.`";
-            case LPAREN -> "`(`";
-            case RPAREN -> "`)`";
-            case LBRACKET -> "`[`";
-            case RBRACKET -> "`]`";
-            case LBRACE -> "`{`";
-            case RBRACE -> "`}`";
-            case QUESTION_MARK -> "`?`";
-
-            // 其他
-            case NEWLINE -> "`\\n`";
-            case EOF -> "<eof>";
-            default -> this.name().toLowerCase();
-        };
     }
 }

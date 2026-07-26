@@ -1,619 +1,605 @@
-package mlogix.compiler;
+package mlogix.compiler
 
-import arc.graphics.Color;
-import mlogix.compiler.SourceMapManager.SourceMap;
-import mlogix.mlogix.token.Token;
-import mlogix.mlogix.token.TokenType;
-import mlogix.problem.Problem;
-import mlogix.problem.ProblemCollector;
-import mlogix.span.Span;
-import mlogix.util.Ansi;
-import mlogix.util.Log;
+import arc.graphics.Color
+import mlogix.compiler.SourceMapManager.SourceMap
+import mlogix.mlogix.token.Token
+import mlogix.mlogix.token.TokenType
+import mlogix.problem.Problem
+import mlogix.problem.Problem.LexerProblem
+import mlogix.problem.ProblemCollector
+import mlogix.span.Span
+import mlogix.util.Ansi
+import mlogix.util.Log
+import java.util.function.Predicate
+import kotlin.math.min
 
-import java.util.Set;
-import java.util.function.Predicate;
+/**
+ * 一个项目 构造一次
+ */
+class Lexer(private val collector: ProblemCollector) {
 
-import static mlogix.mlogix.token.TokenType.*;
-import static mlogix.problem.Problem.LexerProblem;
+    private lateinit var sourceMap: SourceMap
 
-public class Lexer {
-    private final ProblemCollector collector;
-    private SourceMap sourceMap;
-    private int length;
-    private int start;
-    private int current;
+    private var length: Int = 0
+    private var start: Int = 0
+    private var current: Int = 0
 
-    private boolean lastIsNewline;
+    private var lastIsNewline: Boolean = false
 
-    /**
-     * 一个项目 构造一次
-     */
-    public Lexer(ProblemCollector collector) {
-        this.collector = collector;
-    }
+    private val recoverTerminators: Set<Char> = setOf(
+        ' ', '\n', '\r', ':', ';', ',', '.', '(', ')', '[', ']', '{', '}'
+    )
 
     /**
      * 一个文件 重置一次
      * 重置后才能调用其他方法
      */
-    public void reset(SourceMap sourceMap) {
-        this.sourceMap = sourceMap;
-        this.length = sourceMap.length();
+    fun reset(sourceMap: SourceMap) {
+        this.sourceMap = sourceMap
+        this.length = sourceMap.length()
 
-        this.lastIsNewline = false;
+        this.lastIsNewline = false
 
-        this.start = 0;
-        this.current = 0;
+        this.start = 0
+        this.current = 0
     }
 
     /**
      * 扫描下一个Token
      */
-    public Token scanToken() {
-        while(true) {
-            start = current;
+    fun scanToken(): Token {
+        while (true) {
+            start = current
 
-            if(isAtEnd()) return eofToken();
-            if(lastIsNewline) {
-                lastIsNewline = false;
-                recover(c -> c != '\n'); // 跳过newline防止重复出现
-                if(isAtEnd()) return eofToken();
-                start = current;
+            if (this.isAtEnd) return eofToken()
+            if (lastIsNewline) {
+                lastIsNewline = false
+                recover { c: Char? -> c != '\n' } // 跳过newline防止重复出现
+                if (this.isAtEnd) return eofToken()
+                start = current
             }
 
-            char c = advance();
-            switch(c) {
-                case '+':
-                    if(match('+')) {
-                        return token(PLUS_PLUS);
-                    } else {
-                        return token(PLUS);
-                    }
-                case '-':
-                    if(match('-')) {
-                        return token(MINUS_MINUS);
-                    } else if(match('>')) {
-                        return token(ARROW);
-                    } else {
-                        return token(MINUS);
-                    }
-                case '*':
-                    if(match('*')) {
-                        return token(STAR_STAR);
-                    } else {
-                        return token(STAR);
-                    }
-                case '/':
-                    if(match('/')) {
-                        return token(SLASH_SLASH);
-                    } else {
-                        return token(SLASH);
-                    }
-                case '^':
-                    return token(CARET);
-                case '%':
-                    if(match('%')) {
-                        return token(PERCENT_PERCENT);
-                    } else {
-                        return token(PERCENT);
-                    }
-                case '&':
-                    if(match('&')) {
-                        return token(AND_AND);
-                    } else {
-                        return token(AND);
-                    }
-                case '|':
-                    if(match('|')) {
-                        return token(OR_OR);
-                    } else {
-                        return token(OR);
-                    }
-                case '~':
-                    return token(TILDE);
-                case '!':
-                    if(match('=')) {
-                        if(match('=')) {
-                            return token(BANG_EQ_EQ);
-                        } else {
-                            return token(BANG_EQ);
-                        }
-                    } else {
-                        return token(BANG);
-                    }
-                case '<':
-                    if(match('<')) {
-                        return token(SHL);
-                    } else if(match('=')) {
-                        return token(LESS_EQ);
-                    } else {
-                        return token(LESS);
-                    }
-                case '>':
-                    if(match('>')) {
-                        return token(SHR);
-                    } else if(match('=')) {
-                        return token(GREATER_EQ);
-                    } else {
-                        return token(GREATER);
-                    }
-                case '=':
-                    if(match('=')) {
-                        if(match('=')) {
-                            return token(EQ_EQ_EQ);
-                        } else {
-                            return token(EQ_EQ);
-                        }
-                    } else {
-                        return token(ASSIGN);
-                    }
-                case '.':
-                    return token(DOT);
-                case ':':
-                    if(match('<')) {
-                        return token(COLON_LESS);
-                    } else if(match('=')) {
-                        return token(COLON_ASSIGN);
-                    } else {
-                        return token(COLON);
-                    }
-                case ';':
-                    return token(SEMICOLON);
-                case ',':
-                    return token(COMMA);
-                case '(':
-                    return token(LPAREN);
-                case ')':
-                    return token(RPAREN);
-                case '[':
-                    return token(LBRACKET);
-                case ']':
-                    return token(RBRACKET);
-                case '{':
-                    return token(LBRACE);
-                case '}':
-                    return token(RBRACE);
-                case '?':
-                    return token(QUESTION_MARK);
+            when (val c = advance()) {
+                '+' -> return if (match('+')) {
+                    token(TokenType.PLUS_PLUS)
+                } else {
+                    token(TokenType.PLUS)
+                }
 
-                case '"':
-                    return string();
+                '-' -> return if (match('-')) {
+                    token(TokenType.MINUS_MINUS)
+                } else if (match('>')) {
+                    token(TokenType.ARROW)
+                } else {
+                    token(TokenType.MINUS)
+                }
 
-                case '“': // 中文引号
+                '*' -> return if (match('*')) {
+                    token(TokenType.STAR_STAR)
+                } else {
+                    token(TokenType.STAR)
+                }
+
+                '/' -> return if (match('/')) {
+                    token(TokenType.SLASH_SLASH)
+                } else {
+                    token(TokenType.SLASH)
+                }
+
+                '^' -> return token(TokenType.CARET)
+
+                '%' -> return if (match('%')) {
+                    token(TokenType.PERCENT_PERCENT)
+                } else {
+                    token(TokenType.PERCENT)
+                }
+
+                '&' -> return if (match('&')) {
+                    token(TokenType.AND_AND)
+                } else {
+                    token(TokenType.AND)
+                }
+
+                '|' -> return if (match('|')) {
+                    token(TokenType.OR_OR)
+                } else {
+                    token(TokenType.OR)
+                }
+
+                '~' -> return token(TokenType.TILDE)
+
+                '!' -> return if (match('=')) {
+                    if (match('=')) {
+                        token(TokenType.BANG_EQ_EQ)
+                    } else {
+                        token(TokenType.BANG_EQ)
+                    }
+                } else {
+                    token(TokenType.BANG)
+                }
+
+                '<' -> return if (match('<')) {
+                    token(TokenType.SHL)
+                } else if (match('=')) {
+                    token(TokenType.LESS_EQ)
+                } else {
+                    token(TokenType.LESS)
+                }
+
+                '>' -> return if (match('>')) {
+                    token(TokenType.SHR)
+                } else if (match('=')) {
+                    token(TokenType.GREATER_EQ)
+                } else {
+                    token(TokenType.GREATER)
+                }
+
+                '=' -> return if (match('=')) {
+                    if (match('=')) {
+                        token(TokenType.EQ_EQ_EQ)
+                    } else {
+                        token(TokenType.EQ_EQ)
+                    }
+                } else {
+                    token(TokenType.ASSIGN)
+                }
+
+                '.' -> return token(TokenType.DOT)
+
+                ':' -> return if (match('<')) {
+                    token(TokenType.COLON_LESS)
+                } else if (match('=')) {
+                    token(TokenType.COLON_ASSIGN)
+                } else {
+                    token(TokenType.COLON)
+                }
+
+                ';' -> return token(TokenType.SEMICOLON)
+                ',' -> return token(TokenType.COMMA)
+                '(' -> return token(TokenType.LPAREN)
+                ')' -> return token(TokenType.RPAREN)
+                '[' -> return token(TokenType.LBRACKET)
+                ']' -> return token(TokenType.RBRACKET)
+                '{' -> return token(TokenType.LBRACE)
+                '}' -> return token(TokenType.RBRACE)
+                '?' -> return token(TokenType.QUESTION_MARK)
+
+                '"' -> return string()
+
+                '“' -> {
                     warning("字符串应该使用英文双引号`\"`")
-                            .point(start, start + 1, "\"");
-                    return string();
+                        .point(start, start + 1, "\"")
+                    return string()
+                }
 
-                case '#': {
-                    Token r = comment();
-                    if(r != null) {
-                        return r;
+                '#' -> {
+                    val r = comment()
+                    if (r != null) {
+                        return r
                     } else {
-                        continue;
+                        continue
                     }
                 }
 
-                case '@':
-                    return logicKeyword();
+                '@' -> return logicKeyword()
 
-                case '\n':
-                case '\r': {
-                    lastIsNewline = true;
-                    return token(NEWLINE);
+                '\n', '\r' -> {
+                    lastIsNewline = true
+                    return token(TokenType.NEWLINE)
                 }
 
-                case ' ':
-                case '\t':
-                    continue;
+                ' ', '\t' -> continue
 
-                case '\0':
-                    return token(EOF);
+                '\u0000' -> return token(TokenType.EOF)
 
-                default:
-                    if(isDigit(c)) {
-                        return number();
-                    } else if(isIdentifierStart(c)) {
-                        return identifier();
-                    } else {
-                        error("未知的字符")
-                                .point(start, start + 1, Integer.toHexString(c));
-                        recover(ch -> Set.of(':', ';', ',', '.', ' ', '\n',
-                                '(', ')',
-                                '[', ']',
-                                '{', '}'
-                        ).contains(ch));
-                        return token(ERROR, subString(start, current));
-                    }
+                else -> if (isDigit(c)) {
+                    return number()
+                } else if (isIdentifierStart(c)) {
+                    return identifier()
+                } else {
+                    error("未知的字符")
+                        .point(start, start + 1, Integer.toHexString(c.code))
+                    recover { ch: Char? -> ch != null && recoverTerminators.contains(ch) }
+                    return token(TokenType.ERROR, subString(start, current))
+                }
             }
         }
     }
 
     /* 标识符 关键字 */
-    private Token identifier() {
-        while(!isAtEnd() && isIdentifierPart(peek())) advance();
-        String text = subString(start, current);
-        if(text.startsWith("__")) {
+    private fun identifier(): Token {
+        while (!this.isAtEnd && isIdentifierPart(peek())) advance()
+        val text = subString(start, current)
+        if (text.startsWith("__")) {
             error("非法的标识符")
-                    .point(start, start + 2, "不能以`__`开头，将被替换为`_`");
-            return token(IDENTIFIER, text.substring(1));
+                .point(start, start + 2, "不能以`__`开头，将被替换为`_`")
+            return token(TokenType.IDENTIFIER, text.substring(1))
         }
-        TokenType type = KEYWORDS_MAP.get(text);
-        if(type == null) {
-            return token(IDENTIFIER, text);
+        val type = TokenType.KEYWORDS_MAP[text]
+        return if (type == null) {
+            token(TokenType.IDENTIFIER, text)
         } else {
-            return token(type);
+            token(type)
         }
     }
 
-    /* 逻辑关键字 */
     // TODO 舍弃
-    private Token logicKeyword() {
-        while(!isAtEnd() && (isAlpha(peek()) || isDigit(peek()))) advance();
-        String text = subString(start + 1, current);
-        return token(IDENTIFIER, text);
+    /* 逻辑关键字 */
+    private fun logicKeyword(): Token {
+        while (!this.isAtEnd && (isAlpha(peek()) || isDigit(peek()))) advance()
+        val text = subString(start + 1, current)
+        return token(TokenType.IDENTIFIER, text)
     }
 
-    private Token string() {
-        while(!match('"')) {
-            if(isAtEnd() || check('\n')) {
+    private fun string(): Token {
+        while (!match('"')) {
+            if (this.isAtEnd || check('\n')) {
                 error("未匹配到字符串末尾`\"`")
-                        .info(start, start + 1, "字符串头部")
-                        .point(current, current + 1, "匹配末尾");
-                return token(STR, subString(start + 1, current));
+                    .info(start, start + 1, "字符串头部")
+                    .point(current, current + 1, "匹配末尾")
+                return token(TokenType.STR, subString(start + 1, current))
             }
-            if(match('”')) {
+            if (match('”')) {
                 warning("字符串应该使用英文双引号`\"`")
-                        .point(start, start + 1, "\"");
-                break;
+                    .point(start, start + 1, "\"")
+                break
             }
-            advance();
+            advance()
         }
-        return token(STR, subString(start + 1, current - 1));
+        return token(TokenType.STR, subString(start + 1, current - 1))
     }
 
-    private Token number() {
+    private fun number(): Token {
         // 16进制整数 _分隔符
-        if(match('x')) {
-            if(peek(-2) != '0') {
+        if (match('x')) {
+            if (peek(-2) != '0') {
                 error("16进制数字应以`0x`开头")
-                        .point(start, start + 2, "");
-                recover(c -> !isDigit(c) && !isAlpha(c));
-                return token(ERROR);
+                    .point(start, start + 2, "")
+                recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+                return token(TokenType.ERROR)
             }
-            StringBuilder builder = new StringBuilder();
-            while(!isAtEnd()) {
-                if(isHexDigit(peek())) {
-                    builder.append(peek());
-                } else if(check('_')) {
+            val builder = StringBuilder()
+            while (!this.isAtEnd) {
+                if (isHexDigit(peek())) {
+                    builder.append(peek())
+                } else if (check('_')) {
                     // 忽略数字分隔符
-                } else if(isAlpha(peek())) {
+                } else if (isAlpha(peek())) {
                     // ['g' ~ 'z'] | ['G' ~ 'Z']
                     error("16进制数字不包括的字符")
-                            .point(current, current + 1, Integer.toHexString(peek()));
-                    recover(c -> !isDigit(c) && !isAlpha(c));
-                    return token(ERROR);
+                        .point(current, current + 1, Integer.toHexString(peek().code))
+                    recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+                    return token(TokenType.ERROR)
                 } else {
-                    break;
+                    break
                 }
-                advance();
+                advance()
             }
-            return token(INT, (double) Long.parseLong(builder.toString(), 16));
+            return token(TokenType.INT, builder.toString().toLong(16).toDouble())
 
             // 2进制整数 _分隔符
-        } else if(match('b')) {
-            if(peek(-2) != '0') {
+        } else if (match('b')) {
+            if (peek(-2) != '0') {
                 error("2进制数字应以`0b`开头")
-                        .point(start, start + 2, "");
-                recover(c -> !isDigit(c) && !isAlpha(c));
-                return token(ERROR);
+                    .point(start, start + 2, "")
+                recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+                return token(TokenType.ERROR)
             }
-            StringBuilder builder = new StringBuilder();
-            while(!isAtEnd()) {
-                if(isBinDigit(peek())) {
-                    builder.append(peek());
-                } else if(check('_')) {
+            val builder = StringBuilder()
+            while (!this.isAtEnd) {
+                if (isBinDigit(peek())) {
+                    builder.append(peek())
+                } else if (check('_')) {
                     // 忽略数字分隔符
-                } else if(isAlpha(peek())) {
+                } else if (isAlpha(peek())) {
                     error("2进制数字不包括的字符")
-                            .point(current, current + 1, Integer.toHexString(peek()));
-                    recover(c -> !isDigit(c) && !isAlpha(c));
-                    return token(ERROR);
+                        .point(current, current + 1, Integer.toHexString(peek().code))
+                    recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+                    return token(TokenType.ERROR)
                 } else {
-                    break;
+                    break
                 }
-                advance();
+                advance()
             }
-            return token(INT, (double) Long.parseLong(builder.toString(), 2));
+            return token(TokenType.INT, builder.toString().toLong(2).toDouble())
 
             // 颜色值
             // TODO 以内置颜色名称索引 0cRED
-        } else if(match('c')) {
-            if(peek(-2) != '0') {
+        } else if (match('c')) {
+            if (peek(-2) != '0') {
                 error("颜色值应以`0c`开头")
-                        .point(start, start + 2, "");
-                recover(c -> !isDigit(c) && !isAlpha(c));
-                return token(ERROR);
+                    .point(start, start + 2, "")
+                recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+                return token(TokenType.ERROR)
             }
-            StringBuilder builder = new StringBuilder();
-            while(!isAtEnd()) {
-                if(isHexDigit(peek())) {
-                    builder.append(peek());
-                } else if(check('_')) {
+            val builder = StringBuilder()
+            while (!this.isAtEnd) {
+                if (isHexDigit(peek())) {
+                    builder.append(peek())
+                } else if (check('_')) {
                     // 忽略数字分隔符
-                } else if(isAlpha(peek())) {
+                } else if (isAlpha(peek())) {
                     // ['g' ~ 'z'] | ['G' ~ 'Z']
                     error("16进制数字不包括的字符")
-                            .point(current, current + 1, Integer.toHexString(peek()));
-                    recover(c -> !isDigit(c) && !isAlpha(c));
-                    return token(ERROR);
+                        .point(current, current + 1, Integer.toHexString(peek().code))
+                    recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+                    return token(TokenType.ERROR)
                 } else {
-                    break;
+                    break
                 }
-                advance();
+                advance()
             }
 
-            if(builder.length() == 6) { // 0cRR_GG_BB
-                int r = Integer.valueOf(builder.substring(2, 4), 16);
-                int g = Integer.valueOf(builder.substring(4, 6), 16);
-                int b = Integer.valueOf(builder.substring(6, 8), 16);
-                int a = 0xFF;
-                return token(COL, Color.toDoubleBits(r, g, b, a));
-            } else if(builder.length() == 8) { // 0cRR_GG_BB_AA
-                int r = Integer.valueOf(builder.substring(2, 4), 16);
-                int g = Integer.valueOf(builder.substring(4, 6), 16);
-                int b = Integer.valueOf(builder.substring(6, 8), 16);
-                int a = Integer.valueOf(builder.substring(8, 10), 16);
-                return token(COL, Color.toDoubleBits(r, g, b, a));
-            } else {
-                error("`颜色值`长度应为6或8")
-                        .point(start, current, "长度 = " + (builder.length() - 2));
-                return token(ERROR);
+            when (builder.length) {
+                6 -> { // 0cRR_GG_BB
+                    val r = builder.substring(2, 4).toInt(16)
+                    val g = builder.substring(4, 6).toInt(16)
+                    val b = builder.substring(6, 8).toInt(16)
+                    val a = 0xFF
+                    return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
+                }
+
+                8 -> { // 0cRR_GG_BB_AA
+                    val r = builder.substring(2, 4).toInt(16)
+                    val g = builder.substring(4, 6).toInt(16)
+                    val b = builder.substring(6, 8).toInt(16)
+                    val a = builder.substring(8, 10).toInt(16)
+                    return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
+                }
+
+                else -> {
+                    error("`颜色值`长度应为6或8")
+                        .point(start, current, "长度 = " + (builder.length - 2))
+                    return token(TokenType.ERROR)
+                }
             }
 
 
             // 普通浮点数 科学计数法 _分隔符
         } else {
-            boolean isInt = true;
+            var isInt = true
 
-            StringBuilder builder = new StringBuilder();
-            builder.append(peek(-1));
+            val builder = StringBuilder()
+            builder.append(peek(-1))
 
-            while(!isAtEnd() && peek() == '_') advance();//防止normalNumber报错
-            normalNumber(builder);
+            while (!this.isAtEnd && peek() == '_') advance() //防止normalNumber报错
 
-            if(match('.')) {
-                isInt = false;
+            normalNumber(builder)
 
-                builder.append('.');
-                normalNumber(builder);
+            if (match('.')) {
+                isInt = false
+
+                builder.append('.')
+                normalNumber(builder)
             }
 
-            if(match('e') || match('E')) {
-                isInt = false;
+            if (match('e') || match('E')) {
+                isInt = false
 
-                builder.append('e');
-                if(match('+')) {
-                    builder.append('+');
-                } else if(match('-')) {
-                    builder.append('-');
+                builder.append('e')
+                if (match('+')) {
+                    builder.append('+')
+                } else if (match('-')) {
+                    builder.append('-')
                 }
 
-                normalNumber(builder);
+                normalNumber(builder)
 
                 //TODO 是否移除
-                if(match('.')) {
-                    builder.append('.');
-                    normalNumber(builder);
+                if (match('.')) {
+                    builder.append('.')
+                    normalNumber(builder)
                 }
             }
 
-            return token(isInt ? INT : NUM, Double.parseDouble(builder.toString()));
+            return token(if (isInt) TokenType.INT else TokenType.NUM, builder.toString().toDouble())
         }
     }
 
     /* 给number()用的，扫描下一段最普通的数字，123_456，不允许两侧分隔符 */
-    private void normalNumber(StringBuilder builder) {
-        if(isAtEnd()) return;
-        if(peek() == '_') {
+    private fun normalNumber(builder: StringBuilder) {
+        if (this.isAtEnd) return
+        if (peek() == '_') {
             error("数字两端不允许分隔符`_`")
-                    .point(current, current + 1, Integer.toHexString(peek()));
+                .point(current, current + 1, Integer.toHexString(peek().code))
         }
 
-        while(!isAtEnd()) {
-            if(isDigit(peek())) {
-                builder.append(peek());
-            } else if(check('_')) {
+        while (!this.isAtEnd) {
+            if (isDigit(peek())) {
+                builder.append(peek())
+            } else if (check('_')) {
                 //忽略分隔符
-            } else if(isAlpha(peek())) {
+            } else if (isAlpha(peek())) {
                 error("不期望的字符")
-                        .point(current, current + 1, Integer.toHexString(peek()));
-                recover(c -> !isDigit(c) && !isAlpha(c));
-                break;
+                    .point(current, current + 1, Integer.toHexString(peek().code))
+                recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+                break
             } else {
-                break;
+                break
             }
-            advance();
+            advance()
         }
 
-        if(builder.charAt(builder.length() - 1) == '_') {
+        if (builder[builder.length - 1] == '_') {
             error("数字两端不允许分隔符`_`")
-                    .point(current, current + 1, Integer.toHexString(peek()));
+                .point(current, current + 1, Integer.toHexString(peek().code))
         }
     }
 
-    private Token comment() {
-        StringBuilder docComment = new StringBuilder();
+    private fun comment(): Token? {
+        val docComment = StringBuilder()
 
-        if(match('/')) { // 多行文档注释开始 #/
-            while(!isAtEnd()) {
-                if(match("/#")) { // 多行文档注释结束 #/ ... /#
-                    return token(DOC_COMMENT, docComment.toString());
+        if (match('/')) { // 多行文档注释开始 #/
+            while (!this.isAtEnd) {
+                if (match("/#")) { // 多行文档注释结束 #/ ... /#
+                    return token(TokenType.DOC_COMMENT, docComment.toString())
                 }
-                docComment.append(advance());
+                docComment.append(advance())
             }
-            return token(DOC_COMMENT, docComment.toString());
-        } else if(match('|')) { // 文档注释开始 #|
+            return token(TokenType.DOC_COMMENT, docComment.toString())
+        } else if (match('|')) { // 文档注释开始 #|
             // int col = sourceMap.getCol(current - 1) - 1;
-            while(!isAtEnd()) {
-                if(match('\n')) {
-                    while(!isAtEnd() && isWhitespace(peek())) {
-                        advance();
+            while (!this.isAtEnd) {
+                if (match('\n')) {
+                    while (!this.isAtEnd && isWhitespace(peek())) {
+                        advance()
                     }
-                    if(!match('|')) { // 文档注释结束 #| ...\n |
-                        return token(DOC_COMMENT, docComment.toString());
+                    if (!match('|')) { // 文档注释结束 #| ...\n |
+                        return token(TokenType.DOC_COMMENT, docComment.toString())
                     }
-                    docComment.append('\n');
+                    docComment.append('\n')
                 }
-                docComment.append(advance());
+                docComment.append(advance())
             }
-            return token(DOC_COMMENT, docComment.toString());
-        } else if(match('*')) { // 多行注释开始 #*
-            while(!isAtEnd() && !match("*#")) { // #* ... *#
-                advance();
+            return token(TokenType.DOC_COMMENT, docComment.toString())
+        } else if (match('*')) { // 多行注释开始 #*
+            while (!this.isAtEnd && !match("*#")) { // #* ... *#
+                advance()
             }
-            return null;
+            return null
         } else { // 单行注释 # ...
-            while(!isAtEnd() && !match('\n')) {
-                advance();
+            while (!this.isAtEnd && !match('\n')) {
+                advance()
             }
-            return null;
+            return null
         }
     }
 
-    private boolean isAlpha(char c) {
-        return (c >= 'a' && c <= 'z')
-                || (c >= 'A' && c <= 'Z')
-                || (c == '_');
+    private fun isAlpha(c: Char): Boolean {
+        return (c in 'a'..'z')
+                || (c in 'A'..'Z')
+                || (c == '_')
     }
 
-    private boolean isDigit(char c) {
-        return c >= '0' && c <= '9';
+    private fun isDigit(c: Char): Boolean {
+        return c in '0'..'9'
     }
 
-    private boolean isHexDigit(char c) {
+    private fun isHexDigit(c: Char): Boolean {
         return isDigit(c)
-                || (c >= 'a' && c <= 'f')
-                || (c >= 'A' && c <= 'F');
+                || (c in 'a'..'f')
+                || (c in 'A'..'F')
     }
 
-    private boolean isBinDigit(char c) {
-        return c == '0' || c == '1';
+    private fun isBinDigit(c: Char): Boolean {
+        return c == '0' || c == '1'
     }
 
     // 标识符开头
-    private boolean isIdentifierStart(char c) {
+    private fun isIdentifierStart(c: Char): Boolean {
         return isAlpha(c)
-                || Character.isLetter(c);
+                || Character.isLetter(c)
     }
 
     // 标识符中间和末尾
-    private boolean isIdentifierPart(char c) {
-        return isIdentifierStart(c) || isDigit(c);
+    private fun isIdentifierPart(c: Char): Boolean {
+        return isIdentifierStart(c) || isDigit(c)
     }
 
-    private boolean isWhitespace(char c) {
-        return Character.isWhitespace(c);
+    private fun isWhitespace(c: Char): Boolean {
+        return Character.isWhitespace(c)
     }
 
-    private char charAt(int index) {
-        return sourceMap.charAt(index);
+    private fun charAt(index: Int): Char {
+        return sourceMap.charAt(index)
     }
 
-    private boolean match(char expected) {
-        if(isAtEnd()) return false;
-        if(charAt(current) != expected) return false;
-        current++;
-        return true;
+    private fun match(expected: Char): Boolean {
+        if (this.isAtEnd) return false
+        if (charAt(current) != expected) return false
+        current++
+        return true
     }
 
     /* 检查当前往后的字符串是否是期望字符串，是则推进至该字符串后1 */
-    private boolean match(String expected) {
-        if(isAtEnd()) return false;
-        if(expected.equals(subString(current, Math.min(current + expected.length(), length)))) {
-            advance(expected.length());
-            return true;
+    private fun match(expected: String): Boolean {
+        if (this.isAtEnd) return false
+        if (expected == subString(current, min(current + expected.length, length))) {
+            advance(expected.length)
+            return true
         }
-        return false;
+        return false
     }
 
 
-    private boolean check(char expected) {
-        if(isAtEnd()) return false;
-        return charAt(current) == expected;
+    private fun check(expected: Char): Boolean {
+        return !this.isAtEnd && charAt(current) == expected
     }
 
-    private boolean isAtEnd() {
-        return current >= length;
+    private val isAtEnd: Boolean
+        get() = current >= length
+
+    private fun advance(): Char {
+        current++
+        return charAt(current - 1)
     }
 
-    private char advance() {
-        current++;
-        return charAt(current - 1);
+    private fun advance(step: Int): Char {
+        current += step
+        return charAt(current - step)
     }
 
-    private char advance(int step) {
-        current += step;
-        return charAt(current - step);
+    private fun peek(): Char {
+        return charAt(current)
     }
 
-    private char peek() {
-        return charAt(current);
+    private fun peek(step: Int): Char {
+        return charAt(current + step)
     }
 
-    private char peek(int step) {
-        return charAt(current + step);
+    private fun subString(start: Int, end: Int): String {
+        return sourceMap.subString(start, end)
     }
 
-    private String subString(int start, int end) {
-        return sourceMap.subString(start, end);
-    }
+    private fun token(type: TokenType, literal: Any? = null): Token {
+        val span = Span(sourceMap.index, start, current)
 
-    private Token token(TokenType type) {
-        return token(type, null);
-    }
-
-    private Token token(TokenType type, Object literal) {
-        Span span = new Span(sourceMap.index, start, current);
-
-//        if(Log.isAllowed(Log.LogType.DEBUG)) {
-//            int[] lineAndCol = sourceMap.getLineAndCol(start);
-//            Log.debug(start + Ansi.CYAN + "┃"
-//                    + Ansi.DEFAULT + "(" + lineAndCol[0] + "," + lineAndCol[1] + ")" + Ansi.CYAN + "┃"
-//                    + Ansi.DEFAULT + type.name() + Ansi.CYAN + "┃"
-//                    + Ansi.DEFAULT + sourceMap.subString(start, current) + ((literal == null) ? "" : Ansi.CYAN + "┃"
-//                    + Ansi.DEFAULT + literal));
+//        if (Log.isAllowed(Log.LogType.DEBUG)) {
+//            val lineAndCol: IntArray? = sourceMap.getLineAndCol(start)
+//            Log.debug(
+//                start.toString() + Ansi.CYAN + "┃"
+//                        + Ansi.DEFAULT + "(" + lineAndCol!![0] + "," + lineAndCol[1] + ")" + Ansi.CYAN + "┃"
+//                        + Ansi.DEFAULT + type.toString() + Ansi.CYAN + "┃"
+//                        + Ansi.DEFAULT + sourceMap.subString(
+//                    start,
+//                    current
+//                ) + (if (literal == null) "" else (Ansi.CYAN + "┃"
+//                        + Ansi.DEFAULT + literal))
+//            )
 //        }
 
-        return new Token(span, type, literal);
+        return Token(span, type, literal)
     }
 
     // EOF特化
-    private Token eofToken() {
+    private fun eofToken(): Token {
         // 特化部分:current -> start + 1
-        Span span = new Span(sourceMap.index, start, start + 1);
+        val span = Span(sourceMap.index, start, start + 1)
 
-        if(Log.isAllowed(Log.LogType.DEBUG)) {
-            int[] lineAndCol = sourceMap.getLineAndCol(start);
-            Log.debug(start + Ansi.CYAN + "┃"
-                    + Ansi.DEFAULT + "(" + lineAndCol[0] + "," + lineAndCol[1] + ")" + Ansi.CYAN + "┃"
-                    + Ansi.DEFAULT + EOF.name() + Ansi.CYAN + "┃"
-                    + Ansi.DEFAULT);
+        if (Log.isAllowed(Log.LogType.DEBUG)) {
+            val lineAndCol = sourceMap.getLineAndCol(start)
+            Log.debug(
+                (start.toString() + Ansi.CYAN + "┃"
+                        + Ansi.DEFAULT + "(" + lineAndCol[0] + "," + lineAndCol[1] + ")" + Ansi.CYAN + "┃"
+                        + Ansi.DEFAULT + TokenType.EOF.name + Ansi.CYAN + "┃"
+                        + Ansi.DEFAULT)
+            )
         }
 
-        return new Token(span, EOF, null);
+        return Token(span, TokenType.EOF, null)
     }
 
     /**
      * 错误恢复，扫描直到期望的字符
      */
-    private void recover(char... expectedChars) {
-        while(!isAtEnd()) {
-            for(char expected : expectedChars) {
-                if(check(expected)) {
-                    return;
+    private fun recover(vararg expectedChars: Char) {
+        while (!this.isAtEnd) {
+            for (expected in expectedChars) {
+                if (check(expected)) {
+                    return
                 }
             }
-            advance();
+            advance()
         }
     }
 
@@ -621,26 +607,24 @@ public class Lexer {
      * 错误恢复，扫描直到期望的字符
      * @param predicate 满足该条件则退出
      */
-    private void recover(Predicate<Character> predicate) {
-        while(!isAtEnd()) {
-            if(predicate.test(peek())) {
-                return;
+    private fun recover(predicate: Predicate<Char?>) {
+        while (!this.isAtEnd) {
+            if (predicate.test(peek())) {
+                return
             }
-            advance();
+            advance()
         }
     }
 
-    private LexerProblem error(String text) {
-        LexerProblem e = new LexerProblem(sourceMap, text, Problem.ProblemLevel.ERROR);
-        collector.addError(e);
-        return e;
+    private fun error(text: String): LexerProblem {
+        val e = LexerProblem(sourceMap, text, Problem.ProblemLevel.ERROR)
+        collector.addError(e)
+        return e
     }
 
-    private LexerProblem warning(String text) {
-        LexerProblem w = new LexerProblem(sourceMap, text, Problem.ProblemLevel.WARNING);
-        collector.addWarning(w);
-        return w;
-    }
-
-//    public record LexerResult(List<LexerProblem> errorList, List<LexerProblem> warningList) {}
+    private fun warning(text: String): LexerProblem {
+        val w = LexerProblem(sourceMap, text, Problem.ProblemLevel.WARNING)
+        collector.addWarning(w)
+        return w
+    } //    public record LexerResult(List<LexerProblem> errorList, List<LexerProblem> warningList) {}
 }

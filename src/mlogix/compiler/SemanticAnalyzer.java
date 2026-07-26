@@ -83,7 +83,7 @@ public class SemanticAnalyzer {
 
     // 根据操作符和操作数类型确定结果类型
     private Type getResultType(Token operator, Type leftType, Type rightType) {
-        switch(operator.type) {
+        switch(operator.getType()) {
             case PLUS, MINUS, STAR, SLASH:
                 if(leftType == BuiltinType.Num || rightType == BuiltinType.Num) {
                     return BuiltinType.Num;

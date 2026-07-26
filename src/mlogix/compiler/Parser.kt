@@ -201,11 +201,12 @@ class Parser(
     }
 
     private fun forStmt(flag: Expr.Identifier?): Stmt {
-        val start = next()
+        val head = next()
+        val start = flag ?: head
 
         // for id
         if (check(TokenType.IDENTIFIER)) {
-            val `var` = Expr.Identifier(next())
+            val varDecl = Expr.Identifier(next())
             val expr: Expr? = if (match("in")) {
                 // for id in expr
                 expression()
@@ -219,11 +220,11 @@ class Parser(
                 ) { e: Problem -> e.info(between(start, prevToken), "`for`语句") }
                 == null
             ) {
-                return ForStmt(between(start, prevToken), flag, `var`, null, expr)
+                return ForStmt(between(start, prevToken), flag, varDecl, null, expr)
             }
             val body = block()
 
-            return ForStmt(between(start, body), flag, `var`, body, expr)
+            return ForStmt(between(start, body), flag, varDecl, body, expr)
 
             // for repeatNum
         } else {
@@ -242,7 +243,8 @@ class Parser(
     }
 
     private fun whileStmt(flag: Expr.Identifier?): Stmt {
-        val start = next()
+        val head = next()
+        val start = flag ?: head
 
         val expr = expression()
 
@@ -501,7 +503,7 @@ class Parser(
     private fun equality(): Expr {
         var expr = comparison()
 
-        if (check(TokenType.EQ_EQ, TokenType.BANG_EQ, TokenType.EQ_EQ_EQ, TokenType.BANG_EQ_EQ)) {
+        if (check(TokenType.EQ_OPERATORS)) {
             val operator = next()
             val right = comparison()
             expr = Expr.Binary(expr, operator, right)
@@ -516,7 +518,7 @@ class Parser(
     private fun comparison(): Expr {
         var expr = range()
 
-        if (check(TokenType.GREATER, TokenType.GREATER_EQ, TokenType.LESS, TokenType.LESS_EQ)) {
+        if (check(TokenType.COMPARISON_OPERATORS)) {
             val operator = next()
             val right = range()
             expr = Expr.Binary(expr, operator, right)
@@ -527,7 +529,7 @@ class Parser(
 
     private fun range(): Expr {
         // :< ...    := ...
-        if (check(TokenType.COLON_LESS, TokenType.COLON_ASSIGN)) {
+        if (check(TokenType.RANGE_OPERATORS)) {
             val operator = next()
 
             // :<    :=
@@ -544,7 +546,7 @@ class Parser(
         var expr = addAndSub()
 
         // expr :< ...    expr := ...
-        if (!this.isStmtEnd && check(TokenType.COLON_LESS, TokenType.COLON_ASSIGN)) {
+        if (!this.isStmtEnd && check(TokenType.RANGE_OPERATORS)) {
             val operator = next()
 
             // expr :<    expr :=
@@ -563,7 +565,7 @@ class Parser(
     private fun addAndSub(): Expr {
         var expr = mulAndDiv()
 
-        while (check(TokenType.PLUS, TokenType.MINUS)) {
+        while (check(TokenType.ADD_SUB_OPERATORS)) {
             val operator = next()
             val right = mulAndDiv()
             expr = Expr.Binary(expr, operator, right)
@@ -575,7 +577,7 @@ class Parser(
     private fun mulAndDiv(): Expr {
         var expr = pow()
 
-        while (check(TokenType.STAR, TokenType.SLASH)) {
+        while (check(TokenType.MUL_DIV_OPERATORS)) {
             val operator = next()
             val right = pow()
             expr = Expr.Binary(expr, operator, right)
@@ -597,7 +599,7 @@ class Parser(
     }
 
     private fun unary(): Expr {
-        if (check(TokenType.BANG, TokenType.MINUS)) {
+        if (check(TokenType.UNARY_OPERATORS)) {
             val operator = next()
             val right = unary()
             return Expr.Unary(operator, right)
@@ -844,7 +846,7 @@ class Parser(
      * 下一个Token的类型在参数中，则返回true
      * 不支持NEWLINE
      */
-    private fun check(types: MutableSet<TokenType>): Boolean {
+    private fun check(types: Set<TokenType>): Boolean {
         val nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
@@ -877,6 +879,7 @@ class Parser(
     /**
      * 下一个Token类型是参数之一时，则返回true
      * 不支持NEWLINE
+     * 如果可以请使用[check]<Set>，因为它更快
      */
     private fun check(vararg types: TokenType): Boolean {
         val nextType0 = lookAhead(0).type
@@ -905,16 +908,8 @@ class Parser(
         return false
     }
 
-    private fun match(types: MutableSet<TokenType>): Boolean {
+    private fun match(types: Set<TokenType>): Boolean {
         if (check(types)) {
-            next()
-            return true
-        }
-        return false
-    }
-
-    private fun match(vararg types: TokenType): Boolean {
-        if (check(*types)) {
             next()
             return true
         }
@@ -929,6 +924,11 @@ class Parser(
         return false
     }
 
+    /**
+     * 下一个Token类型是参数之一时，则返回true并推进
+     * 不支持NEWLINE
+     * 如果可以请使用[match]<Set>，因为它更快
+     */
     private fun match(vararg texts: String): Boolean {
         for (text in texts) {
             if (check(text)) {
@@ -1057,7 +1057,7 @@ class Parser(
     /**
      * 错误恢复，扫描直到期望的TokenType
      */
-    private fun recover(expecteds: MutableSet<TokenType>) {
+    private fun recover(expecteds: Set<TokenType>) {
         while (!this.isAtEnd) {
             if (check(expecteds)) {
                 return

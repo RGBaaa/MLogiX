@@ -1,68 +1,70 @@
-package mlogix.util;
+package mlogix.util
 
-public class Ansi {
-	public static String DEFAULT = "\033[0m";//默认
-	public static String BRIGHT = "\033[1m";//高亮
-	public static String BOLD = "\033[2m";//粗体
-	public static String UNDERLINE = "\033[4m";//下划线
-	public static String BLINK = "\033[5m";//闪烁
-	public static String REVERSED = "\033[7m";//反转
-	public static String INVISIBLE = "\033[8m";//不可见
-	public static String NON_BOLD = "\033[22m";//非粗体
-	public static String NON_UNDERLINE = "\033[24m";//非下划线
-	public static String NON_BLINK = "\033[25m";//非闪烁
-	public static String NON_REVERSED = "\033[27m";//非反转
-	public static String VISIBLE = "\033[28m";//可见
-	
-	public static String BLACK = "\033[30m";//黑色
-	public static String RED = "\033[31m";//红色
-	public static String GREEN = "\033[32m";//绿色
-	public static String YELLOW = "\033[33m";//黄色
-	public static String BLUE = "\033[34m";//蓝色
-	public static String MAGENTA = "\033[35m";//洋红色
-	public static String CYAN = "\033[36m";//青色
-	public static String GRAY = "\033[37m";//灰色
-	
-	//以下为背景色
-	public static String B_BLACK = "\033[40m";//黑色
-	public static String B_RED = "\033[41m";//红色
-	public static String B_GREEN = "\033[42m";//绿色
-	public static String B_YELLOW = "\033[43m";//黄色
-	public static String B_BLUE = "\033[44m";//蓝色
-	public static String B_MAGENTA = "\033[45m";//洋红色
-	public static String B_CYAN = "\033[46m";//青色
-	public static String B_WHITE = "\033[47m";//白色
-	
-	//光标移动
-	public static String UP(int n) {
-		return "\033["+n+"A";
-	}
-	public static String DOWN(int n) {
-		return "\033["+n+"B";
-	}
-	public static String RIGHT(int n) {
-		return "\033["+n+"C";
-	}
-	public static String LEFT(int n) {
-		return "\033["+n+"D";
-	}
-	
-	public static String SAVE_CURSOR = "\033[s";//保存光标位置
-	public static String ROLLBACK_CURSOR = "\033[u";//恢复光标位置
-	public static String HIDE_CURSOR = "\033[?25l";//隐藏光标
-	public static String SHOW_CURSOR = "\033[?25h";//显示光标
-	
-	//移动光标
-	public static String MOVE_CURSOR(int x, int y) {
-		return "\033["+y+";"+x+"H";
-	}
-	
-	public static String CLEAR_END = "\033[0J";
-	public static String CLEAR_START = "\033[1J";
-	public static String CLEAR = "\033[2J";
-	
-	public static String CLEAR_LINE_END = "\033[0J";
-	public static String CLEAR_LINE_START = "\033[1J";
-	public static String CLEAR_LINE = "\033[2J";
+object Ansi {
+    const val DEFAULT: String = "\u001b[0m"        //默认
+    const val BRIGHT: String = "\u001b[1m"         //高亮
+    const val BOLD: String = "\u001b[2m"           //粗体
+    const val UNDERLINE: String = "\u001b[4m"      //下划线
+    const val BLINK: String = "\u001b[5m"          //闪烁
+    const val REVERSED: String = "\u001b[7m"       //反转
+    const val INVISIBLE: String = "\u001b[8m"      //不可见
+    const val NON_BOLD: String = "\u001b[22m"      //非粗体
+    const val NON_UNDERLINE: String = "\u001b[24m" //非下划线
+    const val NON_BLINK: String = "\u001b[25m"     //非闪烁
+    const val NON_REVERSED: String = "\u001b[27m"  //非反转
+    const val VISIBLE: String = "\u001b[28m"       //可见
 
+    const val BLACK: String = "\u001b[30m"   //黑色
+    const val RED: String = "\u001b[31m"     //红色
+    const val GREEN: String = "\u001b[32m"   //绿色
+    const val YELLOW: String = "\u001b[33m"  //黄色
+    const val BLUE: String = "\u001b[34m"    //蓝色
+    const val MAGENTA: String = "\u001b[35m" //洋红色
+    const val CYAN: String = "\u001b[36m"    //青色
+    const val GRAY: String = "\u001b[37m"    //灰色
+
+    //背景色
+    const val B_BLACK: String = "\u001b[40m"   //黑色
+    const val B_RED: String = "\u001b[41m"     //红色
+    const val B_GREEN: String = "\u001b[42m"   //绿色
+    const val B_YELLOW: String = "\u001b[43m"  //黄色
+    const val B_BLUE: String = "\u001b[44m"    //蓝色
+    const val B_MAGENTA: String = "\u001b[45m" //洋红色
+    const val B_CYAN: String = "\u001b[46m"    //青色
+    const val B_WHITE: String = "\u001b[47m"   //白色
+
+    //光标移动
+    fun UP(n: Int): String {
+        return "\u001b[" + n + "A"
+    }
+
+    fun DOWN(n: Int): String {
+        return "\u001b[" + n + "B"
+    }
+
+    fun RIGHT(n: Int): String {
+        return "\u001b[" + n + "C"
+    }
+
+    fun LEFT(n: Int): String {
+        return "\u001b[" + n + "D"
+    }
+
+    const val SAVE_CURSOR: String = "\u001b[s"     //保存光标位置
+    const val ROLLBACK_CURSOR: String = "\u001b[u" //恢复光标位置
+    const val HIDE_CURSOR: String = "\u001b[?25l"  //隐藏光标
+    const val SHOW_CURSOR: String = "\u001b[?25h"  //显示光标
+
+    //移动光标
+    fun MOVE_CURSOR(x: Int, y: Int): String {
+        return "\u001b[" + y + ";" + x + "H"
+    }
+
+    const val CLEAR_END: String = "\u001b[0J"
+    const val CLEAR_START: String = "\u001b[1J"
+    const val CLEAR: String = "\u001b[2J"
+
+    const val CLEAR_LINE_END: String = "\u001b[0J"
+    const val CLEAR_LINE_START: String = "\u001b[1J"
+    const val CLEAR_LINE: String = "\u001b[2J"
 }

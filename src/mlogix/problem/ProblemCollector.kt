@@ -1,44 +1,43 @@
-package mlogix.problem;
+package mlogix.problem
 
-import arc.struct.Seq;
-import arc.util.Log;
+import arc.struct.Seq
+import arc.util.Log
+import java.util.function.Consumer
 
-public class ProblemCollector {
-    public final Seq<Problem> errors = new Seq<>();
-    public final Seq<Problem> warnings = new Seq<>();
+class ProblemCollector {
+    val errors: Seq<Problem> = Seq<Problem>()
+    val warnings: Seq<Problem> = Seq<Problem>()
 
-    public ProblemCollector() {}
-
-    public boolean hasError() {
-        return !errors.isEmpty();
+    fun hasError(): Boolean {
+        return !errors.isEmpty
     }
 
-    public int errorNum() {
-        return errors.size;
+    fun errorNum(): Int {
+        return errors.size
     }
 
-    public int warningNum() {
-        return warnings.size;
+    fun warningNum(): Int {
+        return warnings.size
     }
 
-    public void addError(Problem error) {
-        errors.add(error);
+    fun addError(error: Problem) {
+        errors.add(error)
     }
 
-    public void addWarning(Problem warning) {
-        warnings.add(warning);
+    fun addWarning(warning: Problem) {
+        warnings.add(warning)
     }
 
-    public void printError() {
-        errors.forEach(e -> Log.err(e.toString()));
+    fun printError() {
+        errors.forEach(Consumer { e: Problem -> Log.err(e.toString()) })
     }
 
-    public void printWarning() {
-        warnings.forEach(w -> Log.warn(w.toString()));
+    fun printWarning() {
+        warnings.forEach(Consumer { w: Problem -> Log.warn(w.toString()) })
     }
 
-    public void clear() {
-        errors.clear();
-        warnings.clear();
+    fun clear() {
+        errors.clear()
+        warnings.clear()
     }
 }

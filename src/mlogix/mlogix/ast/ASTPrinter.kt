@@ -1,184 +1,215 @@
-package mlogix.mlogix.ast;
+package mlogix.mlogix.ast
 
-import arc.struct.Seq;
-import mlogix.compiler.SourceMapManager.SourceMap;
-import mlogix.mlogix.token.Token;
-import mlogix.span.Spanned;
+import arc.struct.Seq
+import mlogix.compiler.SourceMapManager.SourceMap
+import mlogix.mlogix.ast.Stmt.MatchStmt.MatchBranch
+import mlogix.mlogix.ast.Stmt.UseStmt.UseItem
+import mlogix.mlogix.token.Token
+import mlogix.span.Spanned
+import mlogix.util.Ansi
+import kotlin.math.max
 
-import java.lang.reflect.Field;
-
-import static mlogix.util.Ansi.*;
-
-public class ASTPrinter {
-    private static final String STMT_COLOR = YELLOW;    // 蓝色 - 语句
-    private static final String EXPR_COLOR = BLUE;      // 青色 - 表达式
-    private static final String TOKEN_COLOR = CYAN;     // 黄色 - Token
-    private static final String VALUE_COLOR = GREEN;    // 绿色 - 值
-    private static final String FIELD_COLOR = DEFAULT;  // 白色 - 字段
-    private static final String LIST_COLOR = MAGENTA;   // 洋红色 - 列表连接线
-    private static final String LINE_COLOR = DEFAULT;   // 白色 - 连接线
+object ASTPrinter {
+    private const val STMT_COLOR: String = Ansi.YELLOW   // 蓝色 - 语句
+    private const val EXPR_COLOR: String = Ansi.BLUE     // 青色 - 表达式
+    private const val TOKEN_COLOR: String = Ansi.CYAN    // 黄色 - Token
+    private const val VALUE_COLOR: String = Ansi.GREEN   // 绿色 - 值
+    private const val FIELD_COLOR: String = Ansi.DEFAULT // 白色 - 字段
+    private const val LIST_COLOR: String = Ansi.MAGENTA  // 洋红色 - 列表连接线
+    private const val LINE_COLOR: String = Ansi.DEFAULT  // 白色 - 连接线后恢复默认
 
     // 连接线样式
-    private static final String INDENT_BLANK = "   " + LINE_COLOR;
-    private static final String CONNECTOR_LAST = "└──" + LINE_COLOR;
-    private static final String CONNECTOR_MID = "├──" + LINE_COLOR;
-    private static final String VERTICAL_LINE = "│  " + LINE_COLOR;
+    private const val INDENT_BLANK = "   $LINE_COLOR"
+    private const val CONNECTOR_LAST = "└──$LINE_COLOR"
+    private const val CONNECTOR_MID = "├──$LINE_COLOR"
+    private const val VERTICAL_LINE = "│  $LINE_COLOR"
 
     // 是否缩进
-    private static boolean indentEnabled;
+    private var indentEnabled = false
 
-    private static SourceMap sourceMap;
+    private var sourceMap: SourceMap? = null
 
-    public static void print(ASTNode node, SourceMap sourceMap) {
-        if(node == null) throw new RuntimeException("astNode为null");
-        indentEnabled = false; // Program前不需要缩进
-        ASTPrinter.sourceMap = sourceMap;
-        print(node, "", true);
+    fun print(node: ASTNode, sourceMap: SourceMap) {
+        indentEnabled = false // Program前不需要缩进
+        ASTPrinter.sourceMap = sourceMap
+        print(node, "", true)
     }
 
-    private static void print(Object node, String indent, boolean isLast) {
-        if(node == null) {
-            printLine(indent, isLast, "null");
-            return;
+    private fun print(node: Any?, indent: String?, isLast: Boolean) {
+        if (node == null) {
+            printLine(indent, isLast, "null")
+            return
         }
 
         // 处理不同类型
-        if(node instanceof Stmt stmt) {
-            printNode(stmt, indent, isLast, STMT_COLOR);
-        } else if(node instanceof Expr expr) {
-            printNode(expr, indent, isLast, EXPR_COLOR);
-        } else if(node instanceof Stmt.UseStmt.UseItem item) {
-            printNode(item, indent, isLast, EXPR_COLOR);
-        } else if(node instanceof Stmt.MatchStmt.MatchBranch branch) {
-            printNode(branch, indent, isLast, EXPR_COLOR);
-        } else if(node instanceof Token) {
-            printLine(indent, isLast, TOKEN_COLOR + ((Token) node).toSimpleString() + DEFAULT);
-        } else if(node instanceof Seq) {
-            printList((Seq<?>) node, indent, isLast);
-        } else if(node.getClass().isArray()) {
-            printArray((Object[]) node, indent, isLast);
-        } else {
-            printLine(indent, isLast, node.toString());
-        }
-    }
+        when (node) {
+            is Stmt -> {
+                printNode(node, indent, isLast, STMT_COLOR)
+            }
 
-    private static void printNode(Spanned node, String indent, boolean isLast, String color) {
-        // 打印节点类型名称
-        int start = node.span().start;
-        int end = Math.max(node.span().end, start);
+            is Expr -> {
+                printNode(node, indent, isLast, EXPR_COLOR)
+            }
 
-        int startLine = sourceMap.getLine(start);
-        int endLine = sourceMap.getLine(end);
+            is UseItem -> {
+                printNode(node, indent, isLast, EXPR_COLOR)
+            }
 
-        String startLineString = sourceMap.getLineString(startLine);
-        String endLineString = sourceMap.getLineString(endLine);
+            is MatchBranch -> {
+                printNode(node, indent, isLast, EXPR_COLOR)
+            }
 
-        int startCol = Math.max(0, sourceMap.getCol(start) - 1);
-        int endCol = sourceMap.getCol(end) - 1;
+            is Token -> {
+                printLine(indent, isLast, TOKEN_COLOR + node.toSimpleString() + Ansi.DEFAULT)
+            }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(color).append(node.getClass().getSimpleName());
-        sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append(")").append(" ");
-        sb.append(DEFAULT).append(startLine);
-        sb.append(BLACK).append(B_CYAN).append(startLineString, 0, startCol);
-        if(startLine == endLine) {
-            sb.append(B_YELLOW).append(startLineString, startCol, endCol);
-            sb.append(B_CYAN).append(startLineString, endCol, startLineString.length());
-        } else {
-            sb.append(B_YELLOW).append(startLineString, startCol, startLineString.length());
-            sb.append(DEFAULT).append(" ").append(endLine);
-            sb.append(BLACK).append(B_YELLOW).append(endLineString, 0, endCol);
-            sb.append(B_CYAN).append(endLineString, endCol, endLineString.length());
-        }
-        sb.append(DEFAULT);
+            is Seq<*> -> {
+                printList(node, indent, isLast)
+            }
 
-        printLine(indent, isLast, sb.toString());
+            is Array<*> -> {
+                printArray(node, indent, isLast)
+            }
 
-        indentEnabled = true;
-
-        // 计算新的缩进
-        String newIndent = indent + (isLast ? INDENT_BLANK : VERTICAL_LINE + FIELD_COLOR);
-
-        // 获取所有字段
-        Field[] fields = node.getClass().getDeclaredFields();
-        if(fields.length == 0) {
-            return;
-        }
-
-        // 打印所有字段
-        for(int i = 0; i < fields.length; i++) {
-            boolean fieldIsLast = (i == fields.length - 1);
-            Field field = fields[i];
-            field.setAccessible(true);
-
-            try {
-                Object value = field.get(node);
-                printField(field.getName(), value, newIndent, fieldIsLast);
-            } catch(IllegalAccessException e) {
-                printLine(newIndent, fieldIsLast, "ERROR: " + e.getMessage());
+            else -> {
+                printLine(indent, isLast, node.toString())
             }
         }
     }
 
-    private static void printField(String fieldName, Object value, String indent, boolean isLast) {
-        if(value == null) {
-            printLine(indent, isLast, FIELD_COLOR + fieldName + ": " + VALUE_COLOR + "null" + DEFAULT);
-            return;
-        } else if(
-                (value instanceof Seq && ((Seq<?>) value).isEmpty())
-                        || (value.getClass().isArray() && ((Object[]) value).length == 0)
+    private fun printNode(node: Spanned, indent: String?, isLast: Boolean, color: String?) {
+        // 打印节点类型名称
+        val start = node.span().start
+        val end = max(node.span().end, start)
+
+        val startLine = sourceMap!!.getLine(start)
+        val endLine = sourceMap!!.getLine(end)
+
+        val startLineString = sourceMap!!.getLineString(startLine)
+        val endLineString = sourceMap!!.getLineString(endLine)
+
+        val startCol = max(0, sourceMap!!.getCol(start) - 1)
+        val endCol = sourceMap!!.getCol(end) - 1
+
+        val sb = StringBuilder()
+        sb.append(color).append(node::class.simpleName)
+        sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append(")").append(" ")
+        sb.append(Ansi.DEFAULT).append(startLine)
+        sb.append(Ansi.BLACK).append(Ansi.B_CYAN).append(startLineString, 0, startCol)
+        if (startLine == endLine) {
+            sb.append(Ansi.B_YELLOW).append(startLineString, startCol, endCol)
+            sb.append(Ansi.B_CYAN).append(startLineString, endCol, startLineString.length)
+        } else {
+            sb.append(Ansi.B_YELLOW).append(startLineString, startCol, startLineString.length)
+            sb.append(Ansi.DEFAULT).append(" ").append(endLine)
+            sb.append(Ansi.BLACK).append(Ansi.B_YELLOW).append(endLineString, 0, endCol)
+            sb.append(Ansi.B_CYAN).append(endLineString, endCol, endLineString.length)
+        }
+        sb.append(Ansi.DEFAULT)
+
+        val text = buildString {
+            // 前缀
+            append("$color${node::class.simpleName}")
+            append("$VALUE_COLOR[$start,$end) ")
+            append("${Ansi.DEFAULT}${"$startLine"}")
+            append("${Ansi.BLACK}${Ansi.B_CYAN}")
+            append(startLineString.substring(0, startCol))
+
+            if (startLine == endLine) {
+                append("${Ansi.B_YELLOW}${startLineString.substring(startCol, endCol)}")
+                append("${Ansi.B_CYAN}${startLineString.substring(endCol)}")
+            } else {
+                append("${Ansi.B_YELLOW}${startLineString.substring(startCol)}")
+                append("${Ansi.DEFAULT}${" $endLine"}")
+                append("${Ansi.BLACK}${Ansi.B_YELLOW}${endLineString.substring(0, endCol)}")
+                append("${Ansi.B_CYAN}${endLineString.substring(endCol)}")
+            }
+            append(Ansi.DEFAULT)
+        }
+
+        printLine(indent, isLast, text)
+
+        indentEnabled = true
+
+        // 计算新的缩进
+        val newIndent = indent + (if (isLast) INDENT_BLANK else VERTICAL_LINE + FIELD_COLOR)
+
+        // 获取所有字段
+        val fields = node::class.java.declaredFields
+        if (fields.isEmpty()) return
+
+        // 打印所有字段
+        fields.forEachIndexed { i, field ->
+            val fieldIsLast = (i == fields.size - 1)
+            field.isAccessible = true
+
+            try {
+                val value = field.get(node)
+                printField(field.name, value, newIndent, fieldIsLast)
+            } catch (e: IllegalAccessException) {
+                printLine(newIndent, fieldIsLast, "ERROR: ${e.message}")
+            }
+        }
+    }
+
+    private fun printField(fieldName: String?, value: Any?, indent: String?, isLast: Boolean) {
+        if (value == null) {
+            printLine(indent, isLast, "$FIELD_COLOR$fieldName: ${VALUE_COLOR}null${Ansi.DEFAULT}")
+            return
+        } else if ((value is Seq<*> && value.isEmpty)
+            || (value is Array<*> && value.isEmpty())
         ) {
-            printLine(indent, isLast, FIELD_COLOR + fieldName + ": " + LIST_COLOR + "[]" + DEFAULT);
-            return;
+            printLine(indent, isLast, "$FIELD_COLOR$fieldName: $LIST_COLOR[]${Ansi.DEFAULT}")
+            return
         }
 
         // 对于简单类型直接打印
-        if(value instanceof Boolean || value instanceof Number || value instanceof String || value instanceof Token) {
-            printLine(indent, isLast, FIELD_COLOR + fieldName + ": " + VALUE_COLOR + value + DEFAULT);
-            return;
+        if (value is Boolean || value is Number || value is String || value is Token) {
+            printLine(indent, isLast, "$FIELD_COLOR$fieldName: $VALUE_COLOR$value${Ansi.DEFAULT}")
+            return
         }
 
         // 对于复杂类型递归打印
-        printLine(indent, isLast, fieldName + ":");
-        indentEnabled = false;
-        print(value, indent + (isLast ? INDENT_BLANK : VERTICAL_LINE + FIELD_COLOR), true);
+        printLine(indent, isLast, "$fieldName:")
+        indentEnabled = false
+        print(value, indent + (if (isLast) INDENT_BLANK else VERTICAL_LINE + FIELD_COLOR), true)
     }
 
-    private static void printList(Seq<?> seq, String indent, boolean isLast) {
-        if(seq.isEmpty()) {
-            printLine(indent, isLast, "List[]");
-            return;
+    private fun printList(seq: Seq<*>, indent: String?, isLast: Boolean) {
+        if (seq.isEmpty) {
+            printLine(indent, isLast, "List[]")
+            return
         }
 
-        printLine(indent, isLast, LIST_COLOR + "List" + DEFAULT);
-        String newIndent = indent + LIST_COLOR;
+        printLine(indent, isLast, "${LIST_COLOR}List${Ansi.DEFAULT}")
+        val newIndent = indent + LIST_COLOR
 
-        indentEnabled = true;
-        for(int i = 0; i < seq.size; i++) {
-            boolean itemIsLast = (i == seq.size - 1);
-            print(seq.get(i), newIndent, itemIsLast);
-        }
-    }
-
-    private static void printArray(Object[] array, String indent, boolean isLast) {
-        if(array.length == 0) {
-            printLine(indent, isLast, "Array[]");
-            return;
-        }
-
-        printLine(indent, isLast, LIST_COLOR + "Array" + DEFAULT);
-        String newIndent = indent + LIST_COLOR;
-
-        indentEnabled = true;
-        for(int i = 0; i < array.length; i++) {
-            boolean itemIsLast = (i == array.length - 1);
-            print(array[i], newIndent, itemIsLast);
+        indentEnabled = true
+        for ((i, element) in seq.withIndex()) {
+            val itemIsLast = (i == seq.size - 1)
+            print(element, newIndent, itemIsLast)
         }
     }
 
-    private static void printLine(String indent, boolean isLast, String text) {
-        System.out.print(indent);
-        if(indentEnabled) System.out.print(isLast ? CONNECTOR_LAST : CONNECTOR_MID);
-        System.out.println(text);
+    private fun <T> printArray(array: Array<T>, indent: String?, isLast: Boolean) {
+        if (array.isEmpty()) {
+            printLine(indent, isLast, "Array[]")
+            return
+        }
+
+        printLine(indent, isLast, "${LIST_COLOR}Array${Ansi.DEFAULT}")
+        val newIndent = indent + LIST_COLOR
+
+        indentEnabled = true
+        for (i in array.indices) {
+            val itemIsLast = (i == array.size - 1)
+            print(array[i], newIndent, itemIsLast)
+        }
+    }
+
+    private fun printLine(indent: String?, isLast: Boolean, text: String?) {
+        print(indent)
+        if (indentEnabled) print(if (isLast) CONNECTOR_LAST else CONNECTOR_MID)
+        println(text)
     }
 }
