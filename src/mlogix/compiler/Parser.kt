@@ -330,7 +330,7 @@ class Parser(
                     .point(lookAhead(0), "末尾")
                 break
             }
-            val parameter = annotation()
+            val parameter = annotation(Expr.Identifier(next()))
             parameters.add(parameter)
             match(TokenType.COMMA)
         }
@@ -354,7 +354,7 @@ class Parser(
                 if (!check(TokenType.IDENTIFIER)) {
                     break
                 }
-                results.add(annotation())
+                results.add(annotation(Expr.Identifier(next())))
                 match(TokenType.COMMA)
             }
         }
@@ -675,51 +675,16 @@ class Parser(
 
     private fun primary(): Expr {
         if (check(TokenType.LITERALS)) {
-            val literal = next()
+            return annotation(Expr.Literal(next()))
 
-            // lit :
-            if (!this.isStmtEnd && match(TokenType.COLON)) {
-                val annotations = Seq<Expr>()
-
-                // lit : ?
-                if (check(TokenType.QUESTION_MARK)) {
-                    annotations.add(Expr.Literal(Token(next().span, TokenType.NULL)))
-                }
-
-                // lit : anno1 | anno2 ...
-                while (!this.isAtEnd) {
-                    annotations.add(unary())
-                    if (!match(TokenType.OR)) break
-                }
-                if (annotations.isEmpty) return Expr.Annotation(Expr.Literal(literal), annotations)
-                // 如果标注数量为0，视作Literal
-            }
-            return Expr.Literal(literal)
         } else if (check(TokenType.IDENTIFIER)) {
-            val id = next()
+            return annotation(Expr.Identifier(next()))
 
-            // id :
-            if (!this.isStmtEnd && match(TokenType.COLON)) {
-                val annotations = Seq<Expr>()
-
-                // id : ?
-                if (check(TokenType.QUESTION_MARK)) {
-                    annotations.add(Expr.Literal(Token(next().span, TokenType.NULL)))
-                }
-
-                // id : anno1 | anno2 ...
-                while (!this.isAtEnd) {
-                    annotations.add(unary())
-                    if (!match(TokenType.OR)) break
-                }
-                if (annotations.isEmpty) return Expr.Annotation(Expr.Identifier(id), annotations)
-                // 如果标注数量为0，视作Identifier
-            }
-            return Expr.Identifier(id)
         } else if (match(TokenType.LPAREN)) {
             val expr = expression()
             consume(TokenType.RPAREN)
             return expr
+
         } else if (check(TokenType.LBRACE)) {
             val lBrace = next()
             val elements = Seq<Expr>()
@@ -746,11 +711,11 @@ class Parser(
     }
 
     /**
-     * 比较特殊，专门给FnStmt用的，只可能返回Identifier或Annotation
+     * 传入[TokenType.IDENTIFIER]/[TokenType.LITERALS]后尝试解析类型注解，
+     * 失败则返回[subject]
+     * @param subject 已被消耗的[TokenType.IDENTIFIER]/[TokenType.LITERALS]
      */
-    private fun annotation(): Expr {
-        val id = next()
-
+    private fun annotation(subject: Expr): Expr {
         // id :
         if (!this.isStmtEnd && match(TokenType.COLON)) {
             val annotations = Seq<Expr>()
@@ -765,10 +730,10 @@ class Parser(
                 annotations.add(unary())
                 if (!match(TokenType.OR)) break
             }
-            if (!annotations.isEmpty) return Expr.Annotation(Expr.Identifier(id), annotations)
+            if (!annotations.isEmpty) return Expr.Annotation(subject, annotations)
             // 如果标注数量为0，视作Identifier
         }
-        return Expr.Identifier(id)
+        return subject
     }
 
     // ========== 工具方法 ==========
@@ -1135,7 +1100,7 @@ class Parser(
 
         fun lookAhead(index: Int): Token {
             require(index in 0 until capacity) { "index must be between 0 and ${capacity - 1}" }
-            for (i in 0..index - buffer.size) {
+            repeat(index - buffer.size + 1) {
                 buffer.addLast(lexer.scanToken())
             }
             return buffer.get(index)
