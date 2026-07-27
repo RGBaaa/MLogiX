@@ -182,8 +182,6 @@ class Lexer(private val collector: ProblemCollector) {
                     }
                 }
 
-                '@' -> return logicKeyword()
-
                 '\n', '\r' -> {
                     lastIsNewline = true
                     return token(TokenType.NEWLINE)
@@ -222,14 +220,6 @@ class Lexer(private val collector: ProblemCollector) {
         } else {
             token(type)
         }
-    }
-
-    // TODO 舍弃
-    /* 逻辑关键字 */
-    private fun logicKeyword(): Token {
-        while (!this.isAtEnd && (isAlpha(peek()) || isDigit(peek()))) advance()
-        val text = subString(start + 1, current)
-        return token(TokenType.IDENTIFIER, text)
     }
 
     private fun string(): Token {
