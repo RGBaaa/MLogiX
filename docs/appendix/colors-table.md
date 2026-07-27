@@ -2,84 +2,84 @@
 
 | Color Name | Color Preview & Hex |
 | ---------- | ------------------- |
-| CLEAR | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffffff"/><rect width="8" height="8" fill="#ccccccff"/><rect x="8" y="8" width="8" height="8" fill="#ccccccff"/></svg> `#00000000` |
-| BLACK | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#000000ff"/></svg> `#000000ff` |
-| WHITE | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffffff"/></svg> `#ffffffff` |
-| LIGHT_GRAY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#bfbfbfff"/></svg> `#bfbfbfff` |
-| GRAY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7f7f7fff"/></svg> `#7f7f7fff` |
-| DARK_GRAY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#3f3f3fff"/></svg> `#3f3f3fff` |
-| LIGHT_GREY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#bfbfbfff"/></svg> `#bfbfbfff` |
-| GREY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7f7f7fff"/></svg> `#7f7f7fff` |
-| DARK_GREY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#3f3f3fff"/></svg> `#3f3f3fff` |
-| BLUE | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#4169e1ff"/></svg> `#4169e1ff` |
-| NAVY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#00007fff"/></svg> `#00007fff` |
-| ROYAL | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#4169e1ff"/></svg> `#4169e1ff` |
-| SLATE | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#708090ff"/></svg> `#708090ff` |
-| SKY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#87ceebff"/></svg> `#87ceebff` |
-| CYAN | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#00ffffff"/></svg> `#00ffffff` |
-| TEAL | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#007f7fff"/></svg> `#007f7fff` |
-| GREEN | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#38d667ff"/></svg> `#38d667ff` |
-| ACID | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7fff00ff"/></svg> `#7fff00ff` |
-| LIME | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#32cd32ff"/></svg> `#32cd32ff` |
-| FOREST | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#228b22ff"/></svg> `#228b22ff` |
-| OLIVE | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#6b8e23ff"/></svg> `#6b8e23ff` |
-| YELLOW | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffff00ff"/></svg> `#ffff00ff` |
-| GOLD | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd700ff"/></svg> `#ffd700ff` |
-| GOLDENROD | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#daa520ff"/></svg> `#daa520ff` |
-| ORANGE | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffa500ff"/></svg> `#ffa500ff` |
-| BROWN | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#8b4513ff"/></svg> `#8b4513ff` |
-| TAN | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#d2b48cff"/></svg> `#d2b48cff` |
-| BRICK | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#b22222ff"/></svg> `#b22222ff` |
-| RED | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#e55454ff"/></svg> `#e55454ff` |
-| SCARLET | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff341cff"/></svg> `#ff341cff` |
-| CRIMSON | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#dc143cff"/></svg> `#dc143cff` |
-| CORAL | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff7f50ff"/></svg> `#ff7f50ff` |
-| SALMON | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#fa8072ff"/></svg> `#fa8072ff` |
-| PINK | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff69b4ff"/></svg> `#ff69b4ff` |
-| MAGENTA | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff00ffff"/></svg> `#ff00ffff` |
-| PURPLE | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#a020f0ff"/></svg> `#a020f0ff` |
-| VIOLET | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ee82eeff"/></svg> `#ee82eeff` |
-| MAROON | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#b03060ff"/></svg> `#b03060ff` |
-| yellow | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffff00ff"/></svg> `#ffff00ff` |
-| blue | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#4169e1ff"/></svg> `#4169e1ff` |
-| gold | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd700ff"/></svg> `#ffd700ff` |
-| gray | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7f7f7fff"/></svg> `#7f7f7fff` |
-| orange | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffa500ff"/></svg> `#ffa500ff` |
-| crimson | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#dc143cff"/></svg> `#dc143cff` |
-| magenta | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff00ffff"/></svg> `#ff00ffff` |
-| scarlet | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff341cff"/></svg> `#ff341cff` |
-| lightgrey | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#bfbfbfff"/></svg> `#bfbfbfff` |
-| white | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffffff"/></svg> `#ffffffff` |
-| sky | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#87ceebff"/></svg> `#87ceebff` |
-| forest | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#228b22ff"/></svg> `#228b22ff` |
-| green | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#38d667ff"/></svg> `#38d667ff` |
-| maroon | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#b03060ff"/></svg> `#b03060ff` |
-| darkgrey | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#3f3f3fff"/></svg> `#3f3f3fff` |
-| acid | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7fff00ff"/></svg> `#7fff00ff` |
-| red | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#e55454ff"/></svg> `#e55454ff` |
-| cyan | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#00ffffff"/></svg> `#00ffffff` |
-| black | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#000000ff"/></svg> `#000000ff` |
-| violet | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ee82eeff"/></svg> `#ee82eeff` |
-| coral | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff7f50ff"/></svg> `#ff7f50ff` |
-| royal | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#4169e1ff"/></svg> `#4169e1ff` |
-| lime | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#32cd32ff"/></svg> `#32cd32ff` |
-| clear | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffffff"/><rect width="8" height="8" fill="#ccccccff"/><rect x="8" y="8" width="8" height="8" fill="#ccccccff"/></svg> `#00000000` |
-| lightgray | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#bfbfbfff"/></svg> `#bfbfbfff` |
-| navy | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#00007fff"/></svg> `#00007fff` |
-| brown | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#8b4513ff"/></svg> `#8b4513ff` |
-| salmon | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#fa8072ff"/></svg> `#fa8072ff` |
-| purple | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#a020f0ff"/></svg> `#a020f0ff` |
-| darkgray | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#3f3f3fff"/></svg> `#3f3f3fff` |
-| slate | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#708090ff"/></svg> `#708090ff` |
-| grey | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7f7f7fff"/></svg> `#7f7f7fff` |
-| tan | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#d2b48cff"/></svg> `#d2b48cff` |
-| pink | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff69b4ff"/></svg> `#ff69b4ff` |
-| olive | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#6b8e23ff"/></svg> `#6b8e23ff` |
-| brick | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#b22222ff"/></svg> `#b22222ff` |
-| teal | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#007f7fff"/></svg> `#007f7fff` |
-| goldenrod | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#daa520ff"/></svg> `#daa520ff` |
-| accent | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd37fff"/></svg> `#ffd37fff` |
-| unlaunched | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#8982edff"/></svg> `#8982edff` |
-| highlight | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffe0a5ff"/></svg> `#ffe0a5ff` |
-| stat | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd37fff"/></svg> `#ffd37fff` |
-| negstat | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#e55454ff"/></svg> `#e55454ff` |
+| CLEAR | ![](https://placehold.co/16x16/0000/0000) `#00000000` |
+| BLACK | ![](https://placehold.co/16x16/000000/0000) `#000000ff` |
+| WHITE | ![](https://placehold.co/16x16/ffffff/0000) `#ffffffff` |
+| LIGHT_GRAY | ![](https://placehold.co/16x16/bfbfbf/0000) `#bfbfbfff` |
+| GRAY | ![](https://placehold.co/16x16/7f7f7f/0000) `#7f7f7fff` |
+| DARK_GRAY | ![](https://placehold.co/16x16/3f3f3f/0000) `#3f3f3fff` |
+| LIGHT_GREY | ![](https://placehold.co/16x16/bfbfbf/0000) `#bfbfbfff` |
+| GREY | ![](https://placehold.co/16x16/7f7f7f/0000) `#7f7f7fff` |
+| DARK_GREY | ![](https://placehold.co/16x16/3f3f3f/0000) `#3f3f3fff` |
+| BLUE | ![](https://placehold.co/16x16/4169e1/0000) `#4169e1ff` |
+| NAVY | ![](https://placehold.co/16x16/00007f/0000) `#00007fff` |
+| ROYAL | ![](https://placehold.co/16x16/4169e1/0000) `#4169e1ff` |
+| SLATE | ![](https://placehold.co/16x16/708090/0000) `#708090ff` |
+| SKY | ![](https://placehold.co/16x16/87ceeb/0000) `#87ceebff` |
+| CYAN | ![](https://placehold.co/16x16/00ffff/0000) `#00ffffff` |
+| TEAL | ![](https://placehold.co/16x16/007f7f/0000) `#007f7fff` |
+| GREEN | ![](https://placehold.co/16x16/38d667/0000) `#38d667ff` |
+| ACID | ![](https://placehold.co/16x16/7fff00/0000) `#7fff00ff` |
+| LIME | ![](https://placehold.co/16x16/32cd32/0000) `#32cd32ff` |
+| FOREST | ![](https://placehold.co/16x16/228b22/0000) `#228b22ff` |
+| OLIVE | ![](https://placehold.co/16x16/6b8e23/0000) `#6b8e23ff` |
+| YELLOW | ![](https://placehold.co/16x16/ffff00/0000) `#ffff00ff` |
+| GOLD | ![](https://placehold.co/16x16/ffd700/0000) `#ffd700ff` |
+| GOLDENROD | ![](https://placehold.co/16x16/daa520/0000) `#daa520ff` |
+| ORANGE | ![](https://placehold.co/16x16/ffa500/0000) `#ffa500ff` |
+| BROWN | ![](https://placehold.co/16x16/8b4513/0000) `#8b4513ff` |
+| TAN | ![](https://placehold.co/16x16/d2b48c/0000) `#d2b48cff` |
+| BRICK | ![](https://placehold.co/16x16/b22222/0000) `#b22222ff` |
+| RED | ![](https://placehold.co/16x16/e55454/0000) `#e55454ff` |
+| SCARLET | ![](https://placehold.co/16x16/ff341c/0000) `#ff341cff` |
+| CRIMSON | ![](https://placehold.co/16x16/dc143c/0000) `#dc143cff` |
+| CORAL | ![](https://placehold.co/16x16/ff7f50/0000) `#ff7f50ff` |
+| SALMON | ![](https://placehold.co/16x16/fa8072/0000) `#fa8072ff` |
+| PINK | ![](https://placehold.co/16x16/ff69b4/0000) `#ff69b4ff` |
+| MAGENTA | ![](https://placehold.co/16x16/ff00ff/0000) `#ff00ffff` |
+| PURPLE | ![](https://placehold.co/16x16/a020f0/0000) `#a020f0ff` |
+| VIOLET | ![](https://placehold.co/16x16/ee82ee/0000) `#ee82eeff` |
+| MAROON | ![](https://placehold.co/16x16/b03060/0000) `#b03060ff` |
+| yellow | ![](https://placehold.co/16x16/ffff00/0000) `#ffff00ff` |
+| blue | ![](https://placehold.co/16x16/4169e1/0000) `#4169e1ff` |
+| gold | ![](https://placehold.co/16x16/ffd700/0000) `#ffd700ff` |
+| gray | ![](https://placehold.co/16x16/7f7f7f/0000) `#7f7f7fff` |
+| orange | ![](https://placehold.co/16x16/ffa500/0000) `#ffa500ff` |
+| crimson | ![](https://placehold.co/16x16/dc143c/0000) `#dc143cff` |
+| magenta | ![](https://placehold.co/16x16/ff00ff/0000) `#ff00ffff` |
+| scarlet | ![](https://placehold.co/16x16/ff341c/0000) `#ff341cff` |
+| lightgrey | ![](https://placehold.co/16x16/bfbfbf/0000) `#bfbfbfff` |
+| white | ![](https://placehold.co/16x16/ffffff/0000) `#ffffffff` |
+| sky | ![](https://placehold.co/16x16/87ceeb/0000) `#87ceebff` |
+| forest | ![](https://placehold.co/16x16/228b22/0000) `#228b22ff` |
+| green | ![](https://placehold.co/16x16/38d667/0000) `#38d667ff` |
+| maroon | ![](https://placehold.co/16x16/b03060/0000) `#b03060ff` |
+| darkgrey | ![](https://placehold.co/16x16/3f3f3f/0000) `#3f3f3fff` |
+| acid | ![](https://placehold.co/16x16/7fff00/0000) `#7fff00ff` |
+| red | ![](https://placehold.co/16x16/e55454/0000) `#e55454ff` |
+| cyan | ![](https://placehold.co/16x16/00ffff/0000) `#00ffffff` |
+| black | ![](https://placehold.co/16x16/000000/0000) `#000000ff` |
+| violet | ![](https://placehold.co/16x16/ee82ee/0000) `#ee82eeff` |
+| coral | ![](https://placehold.co/16x16/ff7f50/0000) `#ff7f50ff` |
+| royal | ![](https://placehold.co/16x16/4169e1/0000) `#4169e1ff` |
+| lime | ![](https://placehold.co/16x16/32cd32/0000) `#32cd32ff` |
+| clear | ![](https://placehold.co/16x16/0000/0000) `#00000000` |
+| lightgray | ![](https://placehold.co/16x16/bfbfbf/0000) `#bfbfbfff` |
+| navy | ![](https://placehold.co/16x16/00007f/0000) `#00007fff` |
+| brown | ![](https://placehold.co/16x16/8b4513/0000) `#8b4513ff` |
+| salmon | ![](https://placehold.co/16x16/fa8072/0000) `#fa8072ff` |
+| purple | ![](https://placehold.co/16x16/a020f0/0000) `#a020f0ff` |
+| darkgray | ![](https://placehold.co/16x16/3f3f3f/0000) `#3f3f3fff` |
+| slate | ![](https://placehold.co/16x16/708090/0000) `#708090ff` |
+| grey | ![](https://placehold.co/16x16/7f7f7f/0000) `#7f7f7fff` |
+| tan | ![](https://placehold.co/16x16/d2b48c/0000) `#d2b48cff` |
+| pink | ![](https://placehold.co/16x16/ff69b4/0000) `#ff69b4ff` |
+| olive | ![](https://placehold.co/16x16/6b8e23/0000) `#6b8e23ff` |
+| brick | ![](https://placehold.co/16x16/b22222/0000) `#b22222ff` |
+| teal | ![](https://placehold.co/16x16/007f7f/0000) `#007f7fff` |
+| goldenrod | ![](https://placehold.co/16x16/daa520/0000) `#daa520ff` |
+| accent | ![](https://placehold.co/16x16/ffd37f/0000) `#ffd37fff` |
+| unlaunched | ![](https://placehold.co/16x16/8982ed/0000) `#8982edff` |
+| highlight | ![](https://placehold.co/16x16/ffe0a5/0000) `#ffe0a5ff` |
+| stat | ![](https://placehold.co/16x16/ffd37f/0000) `#ffd37fff` |
+| negstat | ![](https://placehold.co/16x16/e55454/0000) `#e55454ff` |
