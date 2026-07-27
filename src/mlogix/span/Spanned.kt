@@ -1,5 +1,5 @@
-package mlogix.span;
+package mlogix.span
 
-public interface Spanned {
-    Span span();
+interface Spanned {
+    fun span(): Span
 }

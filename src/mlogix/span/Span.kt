@@ -1,37 +1,21 @@
-package mlogix.span;
+package mlogix.span
 
-public final class Span implements Spanned {
-    public final int index;
-    public final int start;
-    public final int end;
+class Span(
+    val index: Int,  // 该Span所在SourceMap的索引
+    val start: Int,  // 起始字符偏移量
+    val end: Int     // 末尾字符偏移量+1
+) : Spanned {
 
-    // start是开头的字符偏移量，end是末尾的字符偏移量+1
-    // xxx some_chars xxx
-    //     ^         ^
-    //     start     end
+    override fun span(): Span = this
 
-    /**
-     * @param index 该Span所在SourceMap的索引
-     */
-    public Span(int index, int start, int end) {
-        this.index = index;
-        this.start = start;
-        this.end = end;
-    }
+    override fun toString(): String = "Span{$index,$start,$end}"
 
-    public static Span between(Spanned from, Spanned to) {
-        if(from.span().index != to.span().index) {
-            throw new RuntimeException("不能对index不同的Span使用between(_)");
+    companion object {
+        fun between(from: Spanned, to: Spanned): Span {
+            require(from.span().index == to.span().index) {
+                "不能对index不同的Span使用between(_)"
+            }
+            return Span(from.span().index, from.span().start, to.span().end)
         }
-        return new Span(from.span().index, from.span().start, to.span().end);
-    }
-
-    public String toString() {
-        return String.format("Span{%d,%d,%d}", index, start, end);
-    }
-
-    @Override
-    public Span span() {
-        return this;
     }
 }
