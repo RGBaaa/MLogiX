@@ -1,85 +1,85 @@
 # Color Table
 
-| Color Name | Color Preview & Hex                                  |
-|------------|------------------------------------------------------|
-| CLEAR      | <span style="color: #00000000;">█</span> `#00000000` |
-| BLACK      | <span style="color: #000000ff;">█</span> `#000000ff` |
-| WHITE      | <span style="color: #ffffffff;">█</span> `#ffffffff` |
-| LIGHT_GRAY | <span style="color: #bfbfbfff;">█</span> `#bfbfbfff` |
-| GRAY       | <span style="color: #7f7f7fff;">█</span> `#7f7f7fff` |
-| DARK_GRAY  | <span style="color: #3f3f3fff;">█</span> `#3f3f3fff` |
-| LIGHT_GREY | <span style="color: #bfbfbfff;">█</span> `#bfbfbfff` |
-| GREY       | <span style="color: #7f7f7fff;">█</span> `#7f7f7fff` |
-| DARK_GREY  | <span style="color: #3f3f3fff;">█</span> `#3f3f3fff` |
-| BLUE       | <span style="color: #4169e1ff;">█</span> `#4169e1ff` |
-| NAVY       | <span style="color: #00007fff;">█</span> `#00007fff` |
-| ROYAL      | <span style="color: #4169e1ff;">█</span> `#4169e1ff` |
-| SLATE      | <span style="color: #708090ff;">█</span> `#708090ff` |
-| SKY        | <span style="color: #87ceebff;">█</span> `#87ceebff` |
-| CYAN       | <span style="color: #00ffffff;">█</span> `#00ffffff` |
-| TEAL       | <span style="color: #007f7fff;">█</span> `#007f7fff` |
-| GREEN      | <span style="color: #38d667ff;">█</span> `#38d667ff` |
-| ACID       | <span style="color: #7fff00ff;">█</span> `#7fff00ff` |
-| LIME       | <span style="color: #32cd32ff;">█</span> `#32cd32ff` |
-| FOREST     | <span style="color: #228b22ff;">█</span> `#228b22ff` |
-| OLIVE      | <span style="color: #6b8e23ff;">█</span> `#6b8e23ff` |
-| YELLOW     | <span style="color: #ffff00ff;">█</span> `#ffff00ff` |
-| GOLD       | <span style="color: #ffd700ff;">█</span> `#ffd700ff` |
-| GOLDENROD  | <span style="color: #daa520ff;">█</span> `#daa520ff` |
-| ORANGE     | <span style="color: #ffa500ff;">█</span> `#ffa500ff` |
-| BROWN      | <span style="color: #8b4513ff;">█</span> `#8b4513ff` |
-| TAN        | <span style="color: #d2b48cff;">█</span> `#d2b48cff` |
-| BRICK      | <span style="color: #b22222ff;">█</span> `#b22222ff` |
-| RED        | <span style="color: #e55454ff;">█</span> `#e55454ff` |
-| SCARLET    | <span style="color: #ff341cff;">█</span> `#ff341cff` |
-| CRIMSON    | <span style="color: #dc143cff;">█</span> `#dc143cff` |
-| CORAL      | <span style="color: #ff7f50ff;">█</span> `#ff7f50ff` |
-| SALMON     | <span style="color: #fa8072ff;">█</span> `#fa8072ff` |
-| PINK       | <span style="color: #ff69b4ff;">█</span> `#ff69b4ff` |
-| MAGENTA    | <span style="color: #ff00ffff;">█</span> `#ff00ffff` |
-| PURPLE     | <span style="color: #a020f0ff;">█</span> `#a020f0ff` |
-| VIOLET     | <span style="color: #ee82eeff;">█</span> `#ee82eeff` |
-| MAROON     | <span style="color: #b03060ff;">█</span> `#b03060ff` |
-| yellow     | <span style="color: #ffff00ff;">█</span> `#ffff00ff` |
-| blue       | <span style="color: #4169e1ff;">█</span> `#4169e1ff` |
-| gold       | <span style="color: #ffd700ff;">█</span> `#ffd700ff` |
-| gray       | <span style="color: #7f7f7fff;">█</span> `#7f7f7fff` |
-| orange     | <span style="color: #ffa500ff;">█</span> `#ffa500ff` |
-| crimson    | <span style="color: #dc143cff;">█</span> `#dc143cff` |
-| magenta    | <span style="color: #ff00ffff;">█</span> `#ff00ffff` |
-| scarlet    | <span style="color: #ff341cff;">█</span> `#ff341cff` |
-| lightgrey  | <span style="color: #bfbfbfff;">█</span> `#bfbfbfff` |
-| white      | <span style="color: #ffffffff;">█</span> `#ffffffff` |
-| sky        | <span style="color: #87ceebff;">█</span> `#87ceebff` |
-| forest     | <span style="color: #228b22ff;">█</span> `#228b22ff` |
-| green      | <span style="color: #38d667ff;">█</span> `#38d667ff` |
-| maroon     | <span style="color: #b03060ff;">█</span> `#b03060ff` |
-| darkgrey   | <span style="color: #3f3f3fff;">█</span> `#3f3f3fff` |
-| acid       | <span style="color: #7fff00ff;">█</span> `#7fff00ff` |
-| red        | <span style="color: #e55454ff;">█</span> `#e55454ff` |
-| cyan       | <span style="color: #00ffffff;">█</span> `#00ffffff` |
-| black      | <span style="color: #000000ff;">█</span> `#000000ff` |
-| violet     | <span style="color: #ee82eeff;">█</span> `#ee82eeff` |
-| coral      | <span style="color: #ff7f50ff;">█</span> `#ff7f50ff` |
-| royal      | <span style="color: #4169e1ff;">█</span> `#4169e1ff` |
-| lime       | <span style="color: #32cd32ff;">█</span> `#32cd32ff` |
-| clear      | <span style="color: #00000000;">█</span> `#00000000` |
-| lightgray  | <span style="color: #bfbfbfff;">█</span> `#bfbfbfff` |
-| navy       | <span style="color: #00007fff;">█</span> `#00007fff` |
-| brown      | <span style="color: #8b4513ff;">█</span> `#8b4513ff` |
-| salmon     | <span style="color: #fa8072ff;">█</span> `#fa8072ff` |
-| purple     | <span style="color: #a020f0ff;">█</span> `#a020f0ff` |
-| darkgray   | <span style="color: #3f3f3fff;">█</span> `#3f3f3fff` |
-| slate      | <span style="color: #708090ff;">█</span> `#708090ff` |
-| grey       | <span style="color: #7f7f7fff;">█</span> `#7f7f7fff` |
-| tan        | <span style="color: #d2b48cff;">█</span> `#d2b48cff` |
-| pink       | <span style="color: #ff69b4ff;">█</span> `#ff69b4ff` |
-| olive      | <span style="color: #6b8e23ff;">█</span> `#6b8e23ff` |
-| brick      | <span style="color: #b22222ff;">█</span> `#b22222ff` |
-| teal       | <span style="color: #007f7fff;">█</span> `#007f7fff` |
-| goldenrod  | <span style="color: #daa520ff;">█</span> `#daa520ff` |
-| accent     | <span style="color: #ffd37fff;">█</span> `#ffd37fff` |
-| unlaunched | <span style="color: #8982edff;">█</span> `#8982edff` |
-| highlight  | <span style="color: #ffe0a5ff;">█</span> `#ffe0a5ff` |
-| stat       | <span style="color: #ffd37fff;">█</span> `#ffd37fff` |
-| negstat    | <span style="color: #e55454ff;">█</span> `#e55454ff` |
+| Color Name | Color Preview & Hex                                                                                                                                                                                                              |
+|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CLEAR      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffff"/><rect width="8" height="8" fill="#cccccc"/><rect x="8" y="8" width="8" height="8" fill="#cccccc"/></svg> `#00000000` |
+| BLACK      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#000000"/></svg> `#000000ff` |
+| WHITE      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffff"/></svg> `#ffffffff` |
+| LIGHT_GRAY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#bfbfbf"/></svg> `#bfbfbfff` |
+| GRAY       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7f7f7f"/></svg> `#7f7f7fff` |
+| DARK_GRAY  | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#3f3f3f"/></svg> `#3f3f3fff` |
+| LIGHT_GREY | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#bfbfbf"/></svg> `#bfbfbfff` |
+| GREY       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7f7f7f"/></svg> `#7f7f7fff` |
+| DARK_GREY  | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#3f3f3f"/></svg> `#3f3f3fff` |
+| BLUE       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#4169e1"/></svg> `#4169e1ff` |
+| NAVY       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#00007f"/></svg> `#00007fff` |
+| ROYAL      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#4169e1"/></svg> `#4169e1ff` |
+| SLATE      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#708090"/></svg> `#708090ff` |
+| SKY        | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#87ceeb"/></svg> `#87ceebff` |
+| CYAN       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#00ffff"/></svg> `#00ffffff` |
+| TEAL       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#007f7f"/></svg> `#007f7fff` |
+| GREEN      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#38d667"/></svg> `#38d667ff` |
+| ACID       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7fff00"/></svg> `#7fff00ff` |
+| LIME       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#32cd32"/></svg> `#32cd32ff` |
+| FOREST     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#228b22"/></svg> `#228b22ff` |
+| OLIVE      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#6b8e23"/></svg> `#6b8e23ff` |
+| YELLOW     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffff00"/></svg> `#ffff00ff` |
+| GOLD       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd700"/></svg> `#ffd700ff` |
+| GOLDENROD  | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#daa520"/></svg> `#daa520ff` |
+| ORANGE     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffa500"/></svg> `#ffa500ff` |
+| BROWN      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#8b4513"/></svg> `#8b4513ff` |
+| TAN        | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#d2b48c"/></svg> `#d2b48cff` |
+| BRICK      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#b22222"/></svg> `#b22222ff` |
+| RED        | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#e55454"/></svg> `#e55454ff` |
+| SCARLET    | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff341c"/></svg> `#ff341cff` |
+| CRIMSON    | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#dc143c"/></svg> `#dc143cff` |
+| CORAL      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff7f50"/></svg> `#ff7f50ff` |
+| SALMON     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#fa8072"/></svg> `#fa8072ff` |
+| PINK       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff69b4"/></svg> `#ff69b4ff` |
+| MAGENTA    | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff00ff"/></svg> `#ff00ffff` |
+| PURPLE     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#a020f0"/></svg> `#a020f0ff` |
+| VIOLET     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ee82ee"/></svg> `#ee82eeff` |
+| MAROON     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#b03060"/></svg> `#b03060ff` |
+| yellow     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffff00"/></svg> `#ffff00ff` |
+| blue       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#4169e1"/></svg> `#4169e1ff` |
+| gold       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd700"/></svg> `#ffd700ff` |
+| gray       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7f7f7f"/></svg> `#7f7f7fff` |
+| orange     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffa500"/></svg> `#ffa500ff` |
+| crimson    | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#dc143c"/></svg> `#dc143cff` |
+| magenta    | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff00ff"/></svg> `#ff00ffff` |
+| scarlet    | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff341c"/></svg> `#ff341cff` |
+| lightgrey  | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#bfbfbf"/></svg> `#bfbfbfff` |
+| white      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffff"/></svg> `#ffffffff` |
+| sky        | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#87ceeb"/></svg> `#87ceebff` |
+| forest     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#228b22"/></svg> `#228b22ff` |
+| green      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#38d667"/></svg> `#38d667ff` |
+| maroon     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#b03060"/></svg> `#b03060ff` |
+| darkgrey   | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#3f3f3f"/></svg> `#3f3f3fff` |
+| acid       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7fff00"/></svg> `#7fff00ff` |
+| red        | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#e55454"/></svg> `#e55454ff` |
+| cyan       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#00ffff"/></svg> `#00ffffff` |
+| black      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#000000"/></svg> `#000000ff` |
+| violet     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ee82ee"/></svg> `#ee82eeff` |
+| coral      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff7f50"/></svg> `#ff7f50ff` |
+| royal      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#4169e1"/></svg> `#4169e1ff` |
+| lime       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#32cd32"/></svg> `#32cd32ff` |
+| clear      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffff"/><rect width="8" height="8" fill="#cccccc"/><rect x="8" y="8" width="8" height="8" fill="#cccccc"/></svg> `#00000000` |
+| lightgray  | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#bfbfbf"/></svg> `#bfbfbfff` |
+| navy       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#00007f"/></svg> `#00007fff` |
+| brown      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#8b4513"/></svg> `#8b4513ff` |
+| salmon     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#fa8072"/></svg> `#fa8072ff` |
+| purple     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#a020f0"/></svg> `#a020f0ff` |
+| darkgray   | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#3f3f3f"/></svg> `#3f3f3fff` |
+| slate      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#708090"/></svg> `#708090ff` |
+| grey       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#7f7f7f"/></svg> `#7f7f7fff` |
+| tan        | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#d2b48c"/></svg> `#d2b48cff` |
+| pink       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ff69b4"/></svg> `#ff69b4ff` |
+| olive      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#6b8e23"/></svg> `#6b8e23ff` |
+| brick      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#b22222"/></svg> `#b22222ff` |
+| teal       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#007f7f"/></svg> `#007f7fff` |
+| goldenrod  | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#daa520"/></svg> `#daa520ff` |
+| accent     | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd37f"/></svg> `#ffd37fff` |
+| unlaunched | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#8982ed"/></svg> `#8982edff` |
+| highlight  | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffe0a5"/></svg> `#ffe0a5ff` |
+| stat       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd37f"/></svg> `#ffd37fff` |
+| negstat    | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#e55454"/></svg> `#e55454ff` |
