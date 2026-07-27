@@ -1,6 +1,7 @@
 package mlogix.compiler
 
 import arc.graphics.Color
+import arc.graphics.Colors
 import mlogix.compiler.SourceMapManager.SourceMap
 import mlogix.mlogix.token.Token
 import mlogix.mlogix.token.TokenType
@@ -199,7 +200,7 @@ class Lexer(private val collector: ProblemCollector) {
                 } else {
                     error("未知的字符")
                         .point(start, start + 1, Integer.toHexString(c.code))
-                    recover { ch: Char? -> ch != null && recoverTerminators.contains(ch) }
+                    recover { ch: Char -> recoverTerminators.contains(ch) }
                     return token(TokenType.ERROR, subString(start, current))
                 }
             }
@@ -303,57 +304,103 @@ class Lexer(private val collector: ProblemCollector) {
             }
             return token(TokenType.INT, builder.toString().toLong(2).toDouble())
 
-            // 颜色值
-            // TODO 以内置颜色名称索引 0cRED
+        // 颜色值
         } else if (match('c')) {
             if (peek(-2) != '0') {
                 error("颜色值应以`0c`开头")
                     .point(start, start + 2, "")
-                recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+                recover { c: Char -> !isDigit(c) && !isAlpha(c) }
                 return token(TokenType.ERROR)
             }
-            val builder = StringBuilder()
-            while (!this.isAtEnd) {
-                if (isHexDigit(peek())) {
-                    builder.append(peek())
-                } else if (check('_')) {
-                    // 忽略数字分隔符
-                } else if (isAlpha(peek())) {
-                    // ['g' ~ 'z'] | ['G' ~ 'Z']
-                    error("16进制数字不包括的字符")
-                        .point(current, current + 1, Integer.toHexString(peek().code))
-                    recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
-                    return token(TokenType.ERROR)
+
+            var notColorName = false
+            var notColorValue = false
+            var hasLowerCaseLetter = false
+            val text = buildString {
+                while (!this@Lexer.isAtEnd) {
+                    val c = peek()
+                    when (c) {
+                        '_' -> {
+                            notColorName = true
+                            // 忽略数字分隔符
+                        }
+
+                        in '0'..'9' -> {
+                            notColorName = true
+                            append(peek())
+                        }
+
+                        in 'a'..'f' -> {
+//                            notColorName = true
+                            hasLowerCaseLetter = true
+                            append(peek())
+                        }
+
+                        in 'A'..'F' -> {
+                            append(peek())
+                        }
+
+                        in 'g'..'z' -> {
+//                            notColorName = true
+                            hasLowerCaseLetter = true
+                            notColorValue = true
+                            append(peek())
+                        }
+
+                        in 'G'..'Z' -> {
+                            notColorValue = true
+                            append(peek())
+                        }
+
+                        else -> {
+                            break
+                        }
+                    }
+                    advance()
+                }
+            }
+
+            if (!notColorName) {
+                if (!hasLowerCaseLetter) {
+                    Colors.get(text)?.also {
+                        return token(TokenType.COL, Color.toDoubleBits(it.r, it.g, it.b, it.a))
+                    }
                 } else {
-                    break
-                }
-                advance()
-            }
-
-            when (builder.length) {
-                6 -> { // 0cRR_GG_BB
-                    val r = builder.substring(2, 4).toInt(16)
-                    val g = builder.substring(4, 6).toInt(16)
-                    val b = builder.substring(6, 8).toInt(16)
-                    val a = 0xFF
-                    return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
-                }
-
-                8 -> { // 0cRR_GG_BB_AA
-                    val r = builder.substring(2, 4).toInt(16)
-                    val g = builder.substring(4, 6).toInt(16)
-                    val b = builder.substring(6, 8).toInt(16)
-                    val a = builder.substring(8, 10).toInt(16)
-                    return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
-                }
-
-                else -> {
-                    error("`颜色值`长度应为6或8")
-                        .point(start, current, "长度 = " + (builder.length - 2))
-                    return token(TokenType.ERROR)
+                    Colors.get(text.uppercase())?.also {
+                        error("颜色名称应为大写")
+                            .point(start + 2, current, "")
+                        return token(TokenType.COL, Color.toDoubleBits(it.r, it.g, it.b, it.a))
+                    }
                 }
             }
+            if (!notColorValue) {
+                when (text.length) {
+                    6 -> { // 0cRR_GG_BB
+                        val r = text.substring(0, 2).toInt(16)
+                        val g = text.substring(2, 4).toInt(16)
+                        val b = text.substring(4, 6).toInt(16)
+                        val a = 0xFF
+                        return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
+                    }
 
+                    8 -> { // 0cRR_GG_BB_AA
+                        val r = text.substring(0, 2).toInt(16)
+                        val g = text.substring(2, 4).toInt(16)
+                        val b = text.substring(4, 6).toInt(16)
+                        val a = text.substring(6, 8).toInt(16)
+                        return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
+                    }
+
+                    else -> {
+                        error("`颜色值`十六进制部分长度应为6或8")
+                            .point(start + 2, current, "长度 = " + (text.length))
+                        return token(TokenType.ERROR)
+                    }
+                }
+            }
+            error("颜色值应为内置颜色名称或16进制数字")
+                .point(start, current, "")
+            return token(TokenType.ERROR)
 
             // 普通浮点数 科学计数法 _分隔符
         } else {
@@ -607,7 +654,7 @@ class Lexer(private val collector: ProblemCollector) {
      * 错误恢复，扫描直到期望的字符
      * @param predicate 满足该条件则退出
      */
-    private fun recover(predicate: Predicate<Char?>) {
+    private fun recover(predicate: Predicate<Char>) {
         while (!this.isAtEnd) {
             if (predicate.test(peek())) {
                 return
