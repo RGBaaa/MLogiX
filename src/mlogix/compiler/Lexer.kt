@@ -241,8 +241,8 @@ class Lexer(private val collector: ProblemCollector) {
     }
 
     private fun number(): Token {
-        // 16进制整数 _分隔符
         if (match('x')) {
+            // 16进制整数 _分隔符
             if (peek(-2) != '0') {
                 error("16进制数字应以`0x`开头")
                     .point(start, start + 2, "")
@@ -268,8 +268,8 @@ class Lexer(private val collector: ProblemCollector) {
             }
             return token(TokenType.INT, builder.toString().toLong(16).toDouble())
 
-            // 2进制整数 _分隔符
         } else if (match('b')) {
+            // 2进制整数 _分隔符
             if (peek(-2) != '0') {
                 error("2进制数字应以`0b`开头")
                     .point(start, start + 2, "")
@@ -294,100 +294,13 @@ class Lexer(private val collector: ProblemCollector) {
             }
             return token(TokenType.INT, builder.toString().toLong(2).toDouble())
 
-        // 颜色值
-        } else if (match('c')) {
-            if (peek(-2) != '0') {
-                error("颜色值应以`0c`开头")
-                    .point(start, start + 2, "")
-                recover { c: Char -> !isDigit(c) && !isAlpha(c) }
-                return token(TokenType.ERROR)
-            }
 
-            var notColorName = false
-            var notColorValue = false
-            var hasLowerCaseLetter = false
-            val text = buildString {
-                while (!this@Lexer.isAtEnd) {
-                    val c = peek()
-                    when (c) {
-                        '_' -> {
-                            notColorName = true
-                            // 忽略数字分隔符
-                        }
-                        in '0'..'9' -> {
-                            notColorName = true
-                            append(peek())
-                        }
-                        in 'a'..'f' -> {
-//                            notColorName = true
-                            hasLowerCaseLetter = true
-                            append(peek())
-                        }
-                        in 'A'..'F' -> {
-                            append(peek())
-                        }
-                        in 'g'..'z' -> {
-//                            notColorName = true
-                            hasLowerCaseLetter = true
-                            notColorValue = true
-                            append(peek())
-                        }
-                        in 'G'..'Z' -> {
-                            notColorValue = true
-                            append(peek())
-                        }
-                        else -> {
-                            break
-                        }
-                    }
-                    advance()
-                }
-            }
+        } else if (peek(-1) == '0' && match('%')) {
+            // 颜色值
+            return color()
 
-            if (!notColorName) {
-                if (!hasLowerCaseLetter) {
-                    Colors.get(text)?.also {
-                        return token(TokenType.COL, Color.toDoubleBits(it.r, it.g, it.b, it.a))
-                    }
-                } else {
-                    Colors.get(text.uppercase())?.also {
-                        error("颜色名称应为大写")
-                            .point(start + 2, current, "")
-                        return token(TokenType.COL, Color.toDoubleBits(it.r, it.g, it.b, it.a))
-                    }
-                }
-            }
-            if (!notColorValue) {
-                when (text.length) {
-                    6 -> { // 0cRR_GG_BB
-                        val r = text.substring(0, 2).toInt(16)
-                        val g = text.substring(2, 4).toInt(16)
-                        val b = text.substring(4, 6).toInt(16)
-                        val a = 0xFF
-                        return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
-                    }
-
-                    8 -> { // 0cRR_GG_BB_AA
-                        val r = text.substring(0, 2).toInt(16)
-                        val g = text.substring(2, 4).toInt(16)
-                        val b = text.substring(4, 6).toInt(16)
-                        val a = text.substring(6, 8).toInt(16)
-                        return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
-                    }
-
-                    else -> {
-                        error("`颜色值`十六进制部分长度应为6或8")
-                            .point(start + 2, current, "长度 = " + (text.length))
-                        return token(TokenType.ERROR)
-                    }
-                }
-            }
-            error("颜色值应为内置颜色名称或16进制数字")
-                .point(start, current, "")
-            return token(TokenType.ERROR)
-
-        // 普通浮点数 科学计数法 _分隔符
         } else {
+            // 普通浮点数 科学计数法 _分隔符
             var isInt = true
 
             val builder = StringBuilder()
@@ -459,6 +372,89 @@ class Lexer(private val collector: ProblemCollector) {
                 .point(current, current + 1, Integer.toHexString(c.code))
         }
     }
+
+    /**
+     * 颜色值
+     */
+    private fun color(): Token {
+        var notColorName = false
+        var notColorValue = false
+        val text = buildString {
+            while (!this@Lexer.isAtEnd) {
+                val c = peek()
+                when (c) {
+                    '_' -> append(c)
+
+                    in '0'..'9' -> {
+                        notColorName = true
+                        append(c)
+                    }
+
+                    in 'a'..'f' -> append(c)
+                    in 'A'..'F' -> append(c)
+
+                    in 'g'..'z' -> {
+                        notColorValue = true
+                        append(c)
+                    }
+
+                    in 'G'..'Z' -> {
+                        notColorValue = true
+                        append(c)
+                    }
+
+                    else -> break
+                }
+                advance()
+            }
+        }
+
+        if (!notColorName) {
+            Colors.get(text)?.also {
+                return token(TokenType.COL, Color.toDoubleBits(it.r, it.g, it.b, it.a))
+            }
+            Colors.get(text.uppercase())?.also {
+                error("未知的内置颜色名: $text")
+                    .point(start, current, "你想写的是${text.uppercase()}吗？")
+                return token(TokenType.COL, Color.toDoubleBits(it.r, it.g, it.b, it.a))
+            }
+            Colors.get(text.lowercase().filterNot { it == '_' })?.also {
+                error("未知的内置颜色名: $text")
+                    .point(start, current, "你想写的是${text.lowercase()}吗？")
+                return token(TokenType.COL, Color.toDoubleBits(it.r, it.g, it.b, it.a))
+            }
+        }
+        if (!notColorValue) {
+            when (text.replace("_", "").length) {
+                6 -> { // 0cRR_GG_BB
+                    val r = text.substring(0, 2).toInt(16)
+                    val g = text.substring(2, 4).toInt(16)
+                    val b = text.substring(4, 6).toInt(16)
+                    val a = 0xFF
+                    return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
+                }
+
+                8 -> { // 0cRR_GG_BB_AA
+                    val r = text.substring(0, 2).toInt(16)
+                    val g = text.substring(2, 4).toInt(16)
+                    val b = text.substring(4, 6).toInt(16)
+                    val a = text.substring(6, 8).toInt(16)
+                    return token(TokenType.COL, Color.toDoubleBits(r, g, b, a))
+                }
+
+                else -> {
+                    error("`颜色值`十六进制部分长度应为6或8")
+                        .point(start + 1, current, "长度 = " + (text.length))
+                    return token(TokenType.ERROR)
+                }
+            }
+        }
+
+        error("颜色值应为内置颜色名或16进制数字")
+            .point(start, current, "")
+        return token(TokenType.ERROR)
+    }
+
 
     private fun comment(): Token? {
         val docComment = StringBuilder()
