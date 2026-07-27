@@ -1,5 +1,7 @@
 # Color Table
 
+There is a colored PNG image at the bottom of the page.
+
 | Color Name | Color Preview & Hex                                                                                                                                                                                                              |
 |------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | CLEAR      | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffffff"/><rect width="8" height="8" fill="#cccccc"/><rect x="8" y="8" width="8" height="8" fill="#cccccc"/></svg> `#00000000` |
@@ -83,3 +85,5 @@
 | highlight  | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffe0a5"/></svg> `#ffe0a5ff` |
 | stat       | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#ffd37f"/></svg> `#ffd37fff` |
 | negstat    | <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="16" fill="#e55454"/></svg> `#e55454ff` |
+
+<img width="329" height="3525" alt="image" src="https://github.com/user-attachments/assets/cd619c78-d0f0-470d-a4ad-cd190529977e" />
