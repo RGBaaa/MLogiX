@@ -314,34 +314,28 @@ class Lexer(private val collector: ProblemCollector) {
                             notColorName = true
                             // 忽略数字分隔符
                         }
-
                         in '0'..'9' -> {
                             notColorName = true
                             append(peek())
                         }
-
                         in 'a'..'f' -> {
 //                            notColorName = true
                             hasLowerCaseLetter = true
                             append(peek())
                         }
-
                         in 'A'..'F' -> {
                             append(peek())
                         }
-
                         in 'g'..'z' -> {
 //                            notColorName = true
                             hasLowerCaseLetter = true
                             notColorValue = true
                             append(peek())
                         }
-
                         in 'G'..'Z' -> {
                             notColorValue = true
                             append(peek())
                         }
-
                         else -> {
                             break
                         }
@@ -392,7 +386,7 @@ class Lexer(private val collector: ProblemCollector) {
                 .point(start, current, "")
             return token(TokenType.ERROR)
 
-            // 普通浮点数 科学计数法 _分隔符
+        // 普通浮点数 科学计数法 _分隔符
         } else {
             var isInt = true
 
@@ -401,13 +395,13 @@ class Lexer(private val collector: ProblemCollector) {
 
             while (!this.isAtEnd && peek() == '_') advance() //防止normalNumber报错
 
-            normalNumber(builder)
+            numberFragment(builder)
 
             if (match('.')) {
                 isInt = false
 
                 builder.append('.')
-                normalNumber(builder)
+                numberFragment(builder)
             }
 
             if (match('e') || match('E')) {
@@ -420,12 +414,11 @@ class Lexer(private val collector: ProblemCollector) {
                     builder.append('-')
                 }
 
-                normalNumber(builder)
+                numberFragment(builder)
 
-                //TODO 是否移除
                 if (match('.')) {
                     builder.append('.')
-                    normalNumber(builder)
+                    numberFragment(builder)
                 }
             }
 
@@ -433,23 +426,27 @@ class Lexer(private val collector: ProblemCollector) {
         }
     }
 
-    /* 给number()用的，扫描下一段最普通的数字，123_456，不允许两侧分隔符 */
-    private fun normalNumber(builder: StringBuilder) {
+    /* 给number()用的，扫描下一段最简单的数字片段，123_456，不允许两侧分隔符 */
+    private fun numberFragment(builder: StringBuilder) {
         if (this.isAtEnd) return
-        if (peek() == '_') {
+        val c = peek()
+        if (c == '_') {
             error("数字两端不允许分隔符`_`")
-                .point(current, current + 1, Integer.toHexString(peek().code))
+                .point(current, current + 1, Integer.toHexString(c.code))
+            advance()
         }
 
         while (!this.isAtEnd) {
-            if (isDigit(peek())) {
-                builder.append(peek())
-            } else if (check('_')) {
+            if (isDigit(c)) {
+                builder.append(c)
+            } else if (c == '_') {
                 //忽略分隔符
-            } else if (isAlpha(peek())) {
-                error("不期望的字符")
-                    .point(current, current + 1, Integer.toHexString(peek().code))
-                recover { c: Char? -> !isDigit(c!!) && !isAlpha(c) }
+            } else if (c == 'e' || c == 'E') {
+                break
+            } else if (isAlpha(c)) {
+                error("数字中不期望的字符")
+                    .point(current, current + 1, Integer.toHexString(c.code))
+                recover { c: Char -> !isDigit(c) && !isAlpha(c) }
                 break
             } else {
                 break
@@ -459,7 +456,7 @@ class Lexer(private val collector: ProblemCollector) {
 
         if (builder[builder.length - 1] == '_') {
             error("数字两端不允许分隔符`_`")
-                .point(current, current + 1, Integer.toHexString(peek().code))
+                .point(current, current + 1, Integer.toHexString(c.code))
         }
     }
 
