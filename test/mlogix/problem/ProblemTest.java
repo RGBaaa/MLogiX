@@ -1,6 +1,6 @@
 package mlogix.problem;
 
-import mlogix.compiler.SourceMapManager;
+import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.span.Span;
 import mlogix.mlogix.token.Token;
 import mlogix.mlogix.token.TokenType;
@@ -31,8 +31,7 @@ class ProblemTest {
 
     static void testLexerProblemCreation() {
         Log.info("Running testLexerProblemCreation...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2\ntest line 3");
+        SourceMap sourceMap = new SourceMap("test line 1\ntest line 2\ntest line 3");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -44,11 +43,11 @@ class ProblemTest {
             Log.error("FAILED: mlogix.problem should not be null");
             return;
         }
-        if (!"Test Lexer Error".equals(problem.problemName)) {
+        if (!"Test Lexer Error".equals(problem.getProblemName())) {
             Log.error("FAILED: problemName should be 'Test Lexer Error'");
             return;
         }
-        if (problem.level != Problem.ProblemLevel.ERROR) {
+        if (problem.getLevel() != Problem.ProblemLevel.ERROR) {
             Log.error("FAILED: level should be ERROR");
             return;
         }
@@ -57,8 +56,7 @@ class ProblemTest {
 
     static void testParserProblemCreation() {
         Log.info("Running testParserProblemCreation...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
+        SourceMap sourceMap = new SourceMap("test line 1\ntest line 2");
 
         Problem.ParserProblem problem = new Problem.ParserProblem(
             sourceMap,
@@ -70,11 +68,11 @@ class ProblemTest {
             Log.error("FAILED: mlogix.problem should not be null");
             return;
         }
-        if (!"Test Parser Warning".equals(problem.problemName)) {
+        if (!"Test Parser Warning".equals(problem.getProblemName())) {
             Log.error("FAILED: problemName should be 'Test Parser Warning'");
             return;
         }
-        if (problem.level != Problem.ProblemLevel.WARNING) {
+        if (problem.getLevel() != Problem.ProblemLevel.WARNING) {
             Log.error("FAILED: level should be WARNING");
             return;
         }
@@ -83,8 +81,7 @@ class ProblemTest {
 
     static void testSemanticProblemCreation() {
         Log.info("Running testSemanticProblemCreation...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1");
+        SourceMap sourceMap = new SourceMap("test line 1");
 
         Problem.SemanticProblem problem = new Problem.SemanticProblem(
             sourceMap,
@@ -96,11 +93,11 @@ class ProblemTest {
             Log.error("FAILED: mlogix.problem should not be null");
             return;
         }
-        if (!"Test Semantic Error".equals(problem.problemName)) {
+        if (!"Test Semantic Error".equals(problem.getProblemName())) {
             Log.error("FAILED: problemName should be 'Test Semantic Error'");
             return;
         }
-        if (problem.level != Problem.ProblemLevel.ERROR) {
+        if (problem.getLevel() != Problem.ProblemLevel.ERROR) {
             Log.error("FAILED: level should be ERROR");
             return;
         }
@@ -109,8 +106,7 @@ class ProblemTest {
 
     static void testPointMethodWithPositions() {
         Log.info("Running testPointMethodWithPositions...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
+        SourceMap sourceMap = new SourceMap("test line 1\ntest line 2");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -126,10 +122,6 @@ class ProblemTest {
             return;
         }
         String resultStr = result.toString();
-        if (resultStr == null) {
-            Log.error("FAILED: toString should not return null");
-            return;
-        }
         if (!resultStr.contains("ERROR")) {
             Log.error("FAILED: toString should contain 'ERROR'");
             return;
@@ -143,8 +135,7 @@ class ProblemTest {
 
     static void testPointMethodWithToken() {
         Log.info("Running testPointMethodWithToken...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
+        SourceMap sourceMap = new SourceMap("test line 1\ntest line 2");
 
         Span span = new Span(0, 0, 4);
         Token token = new Token(span, TokenType.IDENTIFIER, "test");
@@ -161,17 +152,13 @@ class ProblemTest {
             Log.error("FAILED: point should return the same mlogix.problem instance");
             return;
         }
-        if (result.toString() == null) {
-            Log.error("FAILED: toString should not return null");
-            return;
-        }
+        result.toString();
         Log.info("PASSED: testPointMethodWithToken");
     }
 
     static void testInfoMethodWithPositions() {
         Log.info("Running testInfoMethodWithPositions...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
+        SourceMap sourceMap = new SourceMap("test line 1\ntest line 2");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -186,10 +173,6 @@ class ProblemTest {
             return;
         }
         String resultStr = result.toString();
-        if (resultStr == null) {
-            Log.error("FAILED: toString should not return null");
-            return;
-        }
         if (!resultStr.contains("WARNING")) {
             Log.error("FAILED: toString should contain 'WARNING'");
             return;
@@ -199,8 +182,7 @@ class ProblemTest {
 
     static void testInfoMethodWithToken() {
         Log.info("Running testInfoMethodWithToken...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
+        SourceMap sourceMap = new SourceMap("test line 1\ntest line 2");
 
         Span span = new Span(0, 0, 4);
         Token token = new Token(span, TokenType.IDENTIFIER, "test");
@@ -217,17 +199,13 @@ class ProblemTest {
             Log.error("FAILED: info should return the same mlogix.problem instance");
             return;
         }
-        if (result.toString() == null) {
-            Log.error("FAILED: toString should not return null");
-            return;
-        }
+        result.toString();
         Log.info("PASSED: testInfoMethodWithToken");
     }
 
     static void testMultiplePointsOnSameLine() {
         Log.info("Running testMultiplePointsOnSameLine...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
+        SourceMap sourceMap = new SourceMap("test line 1\ntest line 2");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -239,10 +217,6 @@ class ProblemTest {
         problem.point(5, 9, "second error");
 
         String result = problem.toString();
-        if (result == null) {
-            Log.error("FAILED: toString should not return null");
-            return;
-        }
         if (!result.contains("first error")) {
             Log.error("FAILED: toString should contain 'first error'");
             return;
@@ -256,8 +230,7 @@ class ProblemTest {
 
     static void testMultipleLines() {
         Log.info("Running testMultipleLines...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("line 1\nline 2\nline 3");
+        SourceMap sourceMap = new SourceMap("line 1\nline 2\nline 3");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -270,10 +243,6 @@ class ProblemTest {
         problem.point(14, 18, "error on line 3");
 
         String result = problem.toString();
-        if (result == null) {
-            Log.error("FAILED: toString should not return null");
-            return;
-        }
         if (!result.contains("error on line 1")) {
             Log.error("FAILED: toString should contain 'error on line 1'");
             return;
@@ -291,7 +260,7 @@ class ProblemTest {
 
     static void testProblemLevelEnum() {
         Log.info("Running testProblemLevelEnum...");
-        if (Problem.ProblemLevel.values().length != 2) {
+        if (Problem.ProblemLevel.getEntries().size() != 2) {
             Log.error("FAILED: ProblemLevel should have 2 values");
             return;
         }
@@ -308,8 +277,7 @@ class ProblemTest {
 
     static void testChainedPointAndInfo() {
         Log.info("Running testChainedPointAndInfo...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line 1\ntest line 2");
+        SourceMap sourceMap = new SourceMap("test line 1\ntest line 2");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -321,10 +289,6 @@ class ProblemTest {
                               .info(5, 9, "info")
                               .toString();
 
-        if (result == null) {
-            Log.error("FAILED: toString should not return null");
-            return;
-        }
         if (!result.contains("error")) {
             Log.error("FAILED: toString should contain 'error'");
             return;
@@ -338,8 +302,7 @@ class ProblemTest {
 
     static void testToStringWithEmptyLineList() {
         Log.info("Running testToStringWithEmptyLineList...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test line");
+        SourceMap sourceMap = new SourceMap("test line");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
@@ -348,10 +311,6 @@ class ProblemTest {
         );
 
         String result = problem.toString();
-        if (result == null) {
-            Log.error("FAILED: toString should not return null");
-            return;
-        }
         if (!result.contains("ERROR")) {
             Log.error("FAILED: toString should contain 'ERROR'");
             return;
@@ -365,8 +324,7 @@ class ProblemTest {
 
     static void testProblemExtendsRuntimeException() {
         Log.info("Running testProblemExtendsRuntimeException...");
-        SourceMapManager manager = new SourceMapManager();
-        SourceMapManager.SourceMap sourceMap = manager.loadSourceMap("test");
+        SourceMap sourceMap = new SourceMap("test");
 
         Problem.LexerProblem problem = new Problem.LexerProblem(
             sourceMap,
