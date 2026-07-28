@@ -2,11 +2,18 @@ package mlogix.compiler;
 
 import arc.struct.Seq;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
+/**
+ * 需要在项目中管理时使用SourceMapManager，否则可以直接使用SourceMap
+ */
 public class SourceMapManager {
     public final Path projectPath; /* 项目根目录 */
     private final Map<Path, SourceMap> sourceMaps = new HashMap<>();
@@ -16,26 +23,12 @@ public class SourceMapManager {
         this.projectPath = projectPath;
     }
 
-    public SourceMapManager() {
-        this.projectPath = null;
-    }
-
     /**
      * 加载文件并创建 SourceMap
      */
     public SourceMap loadSourceMap(Path filePath) throws IOException {
-        SourceMap sourceMap = new SourceMap(filePath, sourceMapList.size);
+        SourceMap sourceMap = new SourceMap(filePath, sourceMapList.size, projectPath);
         sourceMaps.put(filePath, sourceMap);
-        sourceMapList.add(sourceMap);
-        return sourceMap;
-    }
-
-    /**
-     * 从字符串创建 SourceMap
-     */
-    public SourceMap loadSourceMap(String source) {
-        SourceMap sourceMap = new SourceMap(source, sourceMapList.size);
-        // sourceMaps.put(null, sourceMap); 临时代码无需
         sourceMapList.add(sourceMap);
         return sourceMap;
     }
@@ -55,35 +48,33 @@ public class SourceMapManager {
     }
 
     public Stream<Path> walk() throws IOException {
-        if(projectPath != null) {
+        if (projectPath != null) {
             return Files.walk(projectPath);
         }
         throw new RuntimeException("无项目路径的SourceMapManager无法使用walk()");
     }
 
-    public class SourceMap {
+    static public class SourceMap {
         public final Path filePath;
         public final Path relativePath; /* 相对于项目根目录的相对目录 */
         public final String source; /* 存储所有字符 */
         public final int index; /* 在SourceMapManager中的索引 */
         private final List<Integer> lineOffsetList; /* 每行的起始字符索引 */
 
-        private SourceMap(Path filePath, int index) throws IOException {
+        public SourceMap(Path filePath, int index, Path projectPath) throws IOException {
             this.filePath = filePath;
             this.relativePath = projectPath.relativize(filePath);
             this.source = loadSource(filePath);
             this.lineOffsetList = buildLineOffsetList();
-
             this.index = index;
         }
 
-        private SourceMap(String source, int index) {
+        public SourceMap(String source) {
             this.filePath = null;
             this.relativePath = null;
             this.source = loadSource(source);
             this.lineOffsetList = buildLineOffsetList();
-
-            this.index = index;
+            this.index = 0;
         }
 
         /**
