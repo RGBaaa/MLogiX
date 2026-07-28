@@ -5,6 +5,7 @@ import mlogix.compiler.SourceMapManager.SourceMap
 import mlogix.mlogix.ast.Stmt.MatchStmt.MatchBranch
 import mlogix.mlogix.ast.Stmt.UseStmt.UseItem
 import mlogix.mlogix.token.Token
+import mlogix.span.Span
 import mlogix.span.Spanned
 import mlogix.util.Ansi
 import kotlin.math.max
@@ -27,7 +28,7 @@ object ASTPrinter {
     // 是否缩进
     private var indentEnabled = false
 
-    private var sourceMap: SourceMap? = null
+    private lateinit var sourceMap: SourceMap
 
     fun print(node: ASTNode, sourceMap: SourceMap) {
         indentEnabled = false // Program前不需要缩进
@@ -43,37 +44,14 @@ object ASTPrinter {
 
         // 处理不同类型
         when (node) {
-            is Stmt -> {
-                printNode(node, indent, isLast, STMT_COLOR)
-            }
-
-            is Expr -> {
-                printNode(node, indent, isLast, EXPR_COLOR)
-            }
-
-            is UseItem -> {
-                printNode(node, indent, isLast, EXPR_COLOR)
-            }
-
-            is MatchBranch -> {
-                printNode(node, indent, isLast, EXPR_COLOR)
-            }
-
-            is Token -> {
-                printLine(indent, isLast, TOKEN_COLOR + node.toSimpleString() + Ansi.DEFAULT)
-            }
-
-            is Seq<*> -> {
-                printList(node, indent, isLast)
-            }
-
-            is Array<*> -> {
-                printArray(node, indent, isLast)
-            }
-
-            else -> {
-                printLine(indent, isLast, node.toString())
-            }
+            is Stmt -> printNode(node, indent, isLast, STMT_COLOR)
+            is Expr -> printNode(node, indent, isLast, EXPR_COLOR)
+            is UseItem -> printNode(node, indent, isLast, EXPR_COLOR)
+            is MatchBranch -> printNode(node, indent, isLast, EXPR_COLOR)
+            is Token -> printLine(indent, isLast, TOKEN_COLOR + node.toSimpleString() + Ansi.DEFAULT)
+            is Seq<*> -> printList(node, indent, isLast)
+            is Array<*> -> printArray(node, indent, isLast)
+            else -> printLine(indent, isLast, node.toString())
         }
     }
 
@@ -82,30 +60,14 @@ object ASTPrinter {
         val start = node.span().start
         val end = max(node.span().end, start)
 
-        val startLine = sourceMap!!.getLine(start)
-        val endLine = sourceMap!!.getLine(end)
+        val startLine = sourceMap.getLine(start)
+        val endLine = sourceMap.getLine(end)
 
-        val startLineString = sourceMap!!.getLineString(startLine)
-        val endLineString = sourceMap!!.getLineString(endLine)
+        val startLineString = sourceMap.getLineString(startLine)
+        val endLineString = sourceMap.getLineString(endLine)
 
-        val startCol = max(0, sourceMap!!.getCol(start) - 1)
-        val endCol = sourceMap!!.getCol(end) - 1
-
-        val sb = StringBuilder()
-        sb.append(color).append(node::class.simpleName)
-        sb.append(VALUE_COLOR).append("[").append(start).append(",").append(end).append(")").append(" ")
-        sb.append(Ansi.DEFAULT).append(startLine)
-        sb.append(Ansi.BLACK).append(Ansi.B_CYAN).append(startLineString, 0, startCol)
-        if (startLine == endLine) {
-            sb.append(Ansi.B_YELLOW).append(startLineString, startCol, endCol)
-            sb.append(Ansi.B_CYAN).append(startLineString, endCol, startLineString.length)
-        } else {
-            sb.append(Ansi.B_YELLOW).append(startLineString, startCol, startLineString.length)
-            sb.append(Ansi.DEFAULT).append(" ").append(endLine)
-            sb.append(Ansi.BLACK).append(Ansi.B_YELLOW).append(endLineString, 0, endCol)
-            sb.append(Ansi.B_CYAN).append(endLineString, endCol, endLineString.length)
-        }
-        sb.append(Ansi.DEFAULT)
+        val startCol = max(0, sourceMap.getCol(start) - 1)
+        val endCol = sourceMap.getCol(end) - 1
 
         val text = buildString {
             // 前缀
@@ -156,9 +118,10 @@ object ASTPrinter {
         if (value == null) {
             printLine(indent, isLast, "$FIELD_COLOR$fieldName: ${VALUE_COLOR}null${Ansi.DEFAULT}")
             return
-        } else if ((value is Seq<*> && value.isEmpty)
-            || (value is Array<*> && value.isEmpty())
-        ) {
+        } else if (value is Span) {
+            // 只有MatchBranch的span会跑到这来，忽略掉
+            return
+        } else if ((value is Seq<*> && value.isEmpty) || (value is Array<*> && value.isEmpty())) {
             printLine(indent, isLast, "$FIELD_COLOR$fieldName: $LIST_COLOR[]${Ansi.DEFAULT}")
             return
         }
