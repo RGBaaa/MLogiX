@@ -2,6 +2,7 @@ package mlogix.compiler
 
 import arc.graphics.Color
 import arc.graphics.Colors
+import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
 import mlogix.mlogix.token.Token
 import mlogix.mlogix.token.TokenType
@@ -17,7 +18,7 @@ import kotlin.math.min
 /**
  * 一个项目 构造一次
  */
-class Lexer(private val collector: ProblemCollector) {
+class Lexer(private val problems: ProblemCollector) {
 
     private lateinit var sourceMap: SourceMap
 
@@ -43,6 +44,27 @@ class Lexer(private val collector: ProblemCollector) {
 
         this.start = 0
         this.current = 0
+    }
+
+    /**
+     * 解析独立文本为token序列
+     * 运行前会重置problemCollector
+     */
+    fun tokenize(source: String): Seq<Token> {
+        problems.clear()
+
+        val sourceMap = SourceMap(source)
+        reset(sourceMap)
+        val tokens = Seq<Token>()
+        while (true) {
+            val token = scanToken()
+            if (token.type != TokenType.EOF) {
+                tokens.add(token)
+            } else {
+                break
+            }
+        }
+        return tokens
     }
 
     /**
@@ -648,13 +670,13 @@ class Lexer(private val collector: ProblemCollector) {
 
     private fun error(text: String): LexerProblem {
         val e = LexerProblem(sourceMap, text, Problem.ProblemLevel.ERROR)
-        collector.addError(e)
+        problems.addError(e)
         return e
     }
 
     private fun warning(text: String): LexerProblem {
         val w = LexerProblem(sourceMap, text, Problem.ProblemLevel.WARNING)
-        collector.addWarning(w)
+        problems.addWarning(w)
         return w
     } //    public record LexerResult(List<LexerProblem> errorList, List<LexerProblem> warningList) {}
 }

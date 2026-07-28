@@ -1,78 +1,75 @@
 package mlogix.mlogix.ast
 
-import arc.struct.Seq
 import mlogix.mlogix.token.Token
 import mlogix.span.Span
 import mlogix.span.Spanned
 
 //Statement
 abstract class Stmt(span: Span) : ASTNode(span) {
-    init {
-        this.span = span
-    }
+    data class Program(override val span: Span, val stmts: List<Stmt>) : Stmt(span)
 
-    class Program(span: Span, val stmts: Seq<Stmt>) : Stmt(span)
+    data class UseStmt(override val span: Span, val item: UseItem) : Stmt(span) {
 
-    class UseStmt(span: Span, val item: UseItem) : Stmt(span) {
-
-        abstract class UseItem(val span: Span) : Spanned {
+        abstract class UseItem(open val span: Span) : Spanned {
             override fun span(): Span {
                 return this.span
             }
-
         }
 
-        class Single(span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
+        data class Single(override val span: Span, val path: List<Expr.Identifier>) : UseItem(span)
 
         // *
-        class All(span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
+        data class All(override val span: Span, val path: List<Expr.Identifier>) : UseItem(span)
 
         // **
-        class Recursion(span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
+        data class Recursion(override val span: Span, val path: List<Expr.Identifier>) : UseItem(span)
 
         // {...}
-        class Multi(span: Span, val path: Seq<Expr.Identifier>, val items: Seq<UseItem>) : UseItem(span)
+        data class Multi(override val span: Span, val path: List<Expr.Identifier>, val items: List<UseItem>) :
+            UseItem(span)
     }
 
-    class BlockStmt(span: Span, val stmts: Seq<Stmt>) : Stmt(span)
+    data class BlockStmt(override val span: Span, val stmts: List<Stmt?>) : Stmt(span)
 
-    class ExprStmt(span: Span, val expr: Expr) : Stmt(span)
+    data class ExprStmt(override val span: Span, val expr: Expr) : Stmt(span)
 
-    class IfStmt(span: Span, val condition: Expr, val thenBranch: Stmt?, val elseBranch: Stmt?) : Stmt(span)
+    data class IfStmt(override val span: Span, val condition: Expr, val thenBranch: Stmt?, val elseBranch: Stmt?) :
+        Stmt(span)
 
-    class MatchStmt(span: Span, val scrutinee: Expr, val branches: Seq<MatchBranch>?) : Stmt(span) {
-        class MatchBranch(val span: Span, val pattern: Expr, val body: Stmt) : Spanned {
+    data class MatchStmt(override val span: Span, val scrutinee: Expr, val branches: List<MatchBranch>?) : Stmt(span) {
+        data class MatchBranch(val span: Span, val pattern: Expr, val body: Stmt) : Spanned {
             override fun span(): Span {
                 return this.span
             }
         }
     }
 
-    class ForStmt(
-        span: Span,
+    data class ForStmt(
+        override val span: Span,
         val flag: Expr.Identifier?,
         val varDecl: Expr.Identifier?,
         val body: Stmt?,
         val expr: Expr?
     ) : Stmt(span)
 
-    class WhileStmt(span: Span, val flag: Expr.Identifier?, val body: Stmt?, val expr: Expr) : Stmt(span)
+    data class WhileStmt(override val span: Span, val flag: Expr.Identifier?, val body: Stmt?, val expr: Expr) :
+        Stmt(span)
 
-    class BreakStmt(span: Span, flag: Expr.Identifier?) : Stmt(span)
+    data class BreakStmt(override val span: Span, val flag: Expr.Identifier?) : Stmt(span)
 
-    class ContinueStmt(span: Span, flag: Expr.Identifier?) : Stmt(span)
+    data class ContinueStmt(override val span: Span, val flag: Expr.Identifier?) : Stmt(span)
 
-    class FnStmt(
-        span: Span,
+    data class FnStmt(
+        override val span: Span,
         val name: Token?,
-        val parameters: Seq<Expr>?,
-        val results: Seq<Expr>?,
+        val parameters: List<Expr>?,
+        val results: List<Expr>?,
         val body: Stmt?
     ) : Stmt(span)
 
-    class ReturnStmt(span: Span, val expr: Expr?) : Stmt(span)
+    data class ReturnStmt(override val span: Span, val expr: Expr?) : Stmt(span)
 
-    class AssignStmt(span: Span, val `var`: Expr, val operator: Token, val value: Expr) : Stmt(span)
+    data class AssignStmt(override val span: Span, val `var`: Expr, val operator: Token, val value: Expr) : Stmt(span)
 
-    class SetVarStmt(span: Span, val `var`: Expr, val assignStmt: Stmt?) : Stmt(span)
+    data class SetVarStmt(override val span: Span, val `var`: Expr, val assignStmt: Stmt?) : Stmt(span)
 }

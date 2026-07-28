@@ -10,6 +10,43 @@ class Span(
 
     override fun toString(): String = "Span{$index,$start,$end}"
 
+    /**
+     * ⚠︎WARNING: 为了减少ASTNode相等判断的样板代码，本方法忽略Span的[index],[start]和[end]属性
+     *
+     * 要使用不忽略属性的相等判断，请使用[structuralEquals]
+     */
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return true
+    }
+
+    fun structuralEquals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as Span
+        if (index != other.index) return false
+        if (start != other.start) return false
+        if (end != other.end) return false
+        return true
+    }
+
+    /**
+     * ⚠︎WARNING: 为了减少ASTNode相等判断的样板代码，本方法忽略Span的[index],[start]和[end]属性
+     *
+     * 要使用不忽略属性的方法，请使用[structuralHashCode]
+     */
+    override fun hashCode(): Int {
+        return 0
+    }
+
+    fun structuralHashCode(): Int {
+        var result = index
+        result = 31 * result + start
+        result = 31 * result + end
+        return result
+    }
+
     companion object {
         fun between(from: Spanned, to: Spanned): Span {
             require(from.span().index == to.span().index) {
