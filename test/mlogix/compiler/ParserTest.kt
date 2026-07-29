@@ -77,7 +77,7 @@ class ParserTest {
         val aParam = Expr.Identifier(token(TokenType.IDENTIFIER, "a"))
         val bParam = Expr.Identifier(token(TokenType.IDENTIFIER, "b"))
         val results = listOf(
-            Expr.Literal(token(TokenType.NULL)),
+            Expr.Identifier(token(TokenType.IDENTIFIER, "Null")),
             Expr.Identifier(token(TokenType.IDENTIFIER, "Num")),
             Expr.Identifier(token(TokenType.IDENTIFIER, "Int"))
         )
