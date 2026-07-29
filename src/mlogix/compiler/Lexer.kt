@@ -10,8 +10,6 @@ import mlogix.problem.Problem
 import mlogix.problem.Problem.LexerProblem
 import mlogix.problem.ProblemCollector
 import mlogix.span.Span
-import mlogix.util.Ansi
-import mlogix.util.Log
 import java.util.function.Predicate
 import kotlin.math.min
 
@@ -26,7 +24,7 @@ class Lexer(private val problems: ProblemCollector) {
     private var start: Int = 0
     private var current: Int = 0
 
-    private var lastIsNewline: Boolean = false
+    private var isPrevNewline: Boolean = false
 
     private val recoverTerminators: Set<Char> = setOf(
         ' ', '\n', '\r', ':', ';', ',', '.', '(', ')', '[', ']', '{', '}'
@@ -40,7 +38,7 @@ class Lexer(private val problems: ProblemCollector) {
         this.sourceMap = sourceMap
         this.length = sourceMap.length()
 
-        this.lastIsNewline = false
+        this.isPrevNewline = false
 
         this.start = 0
         this.current = 0
@@ -75,8 +73,8 @@ class Lexer(private val problems: ProblemCollector) {
             start = current
 
             if (this.isAtEnd) return eofToken()
-            if (lastIsNewline) {
-                lastIsNewline = false
+            if (isPrevNewline) {
+                isPrevNewline = false
                 recover { c: Char? -> c != '\n' } // 跳过newline防止重复出现
                 if (this.isAtEnd) return eofToken()
                 start = current
@@ -205,7 +203,7 @@ class Lexer(private val problems: ProblemCollector) {
                 }
 
                 '\n', '\r' -> {
-                    lastIsNewline = true
+                    isPrevNewline = true
                     return token(TokenType.NEWLINE)
                 }
 
@@ -625,18 +623,18 @@ class Lexer(private val problems: ProblemCollector) {
 
     // EOF特化
     private fun eofToken(): Token {
-        // 特化部分:current -> start + 1
-        val span = Span(sourceMap.index, start, start + 1)
+        // 特化部分:current -> start
+        val span = Span(sourceMap.index, start, start)
 
-        if (Log.isAllowed(Log.LogType.DEBUG)) {
-            val lineAndCol = sourceMap.getLineAndCol(start)
-            Log.debug(
-                (start.toString() + Ansi.CYAN + "┃"
-                        + Ansi.DEFAULT + "(" + lineAndCol[0] + "," + lineAndCol[1] + ")" + Ansi.CYAN + "┃"
-                        + Ansi.DEFAULT + TokenType.EOF.name + Ansi.CYAN + "┃"
-                        + Ansi.DEFAULT)
-            )
-        }
+//        if (Log.isAllowed(Log.LogType.DEBUG)) {
+//            val lineAndCol = sourceMap.getLineAndCol(start)
+//            Log.debug(
+//                (start.toString() + Ansi.CYAN + "┃"
+//                        + Ansi.DEFAULT + "(" + lineAndCol[0] + "," + lineAndCol[1] + ")" + Ansi.CYAN + "┃"
+//                        + Ansi.DEFAULT + TokenType.EOF.name + Ansi.CYAN + "┃"
+//                        + Ansi.DEFAULT)
+//            )
+//        }
 
         return Token(span, TokenType.EOF, null)
     }

@@ -45,12 +45,12 @@ class Parser(
      * 运行前会重置problemCollector
      */
     fun parse(source: String): Stmt {
-        this.problems.clear()
+        problems.clear()
 
-        this.sourceMap = SourceMap(source)
-        this.lexer.reset(this.sourceMap)
-        this.input = LookAheadWindow()
-        this.prevToken = lookAhead(0)
+        sourceMap = SourceMap(source)
+        lexer.reset(sourceMap)
+        input = LookAheadWindow()
+        prevToken = lookAhead(0)
 
         return program()
     }
@@ -60,7 +60,7 @@ class Parser(
     private fun program(): Stmt {
         val stmts = ArrayList<Stmt>()
 
-        while (!this.isAtEnd) {
+        while (!isAtEnd) {
             val stmt = statement()
             if (stmt != null) {
                 stmts.add(stmt)
@@ -137,7 +137,7 @@ class Parser(
 
         val stmts = ArrayList<Stmt?>()
         while (!check(TokenType.RBRACE)) {
-            if (this.isAtEnd) {
+            if (isAtEnd) {
                 error("期望`块`语句的`}`")
                     .info(lBrace, "开头")
                     .point(lookAhead(0), "当前")
@@ -187,7 +187,7 @@ class Parser(
 
         val branches = ArrayList<MatchStmt.MatchBranch>()
         while (!match(TokenType.RBRACE)) {
-            if (this.isAtEnd) {
+            if (isAtEnd) {
                 error("期望`match`语句的`}`")
                     .info(start, "语句开头")
                     .point(lookAhead(0), "当前")
@@ -198,14 +198,14 @@ class Parser(
                 )
             }
             val pattern = expression()
-            if (consume(TokenType.ARROW) == null || expect(TokenType.LBRACE) == null) {
+            if (consume(TokenType.ARROW) == null) {
                 return MatchStmt(
                     between(start, (if (branches.isEmpty()) start else branches[branches.size - 1])),
                     scrutinee,
                     branches,
                 )
             }
-            val body = block()
+            val body = statement()
             branches.add(MatchStmt.MatchBranch(between(pattern, prevToken), pattern, body))
         }
         return MatchStmt(
@@ -333,12 +333,12 @@ class Parser(
         val parameters = ArrayList<Expr>()
 
         while (!match(TokenType.RPAREN)) {
-            if (this.isAtEnd) {
-                error("无法结束的`函数形参声明`")
-                    .info(start, "函数声明开头")
-                    .point(lookAhead(0), "末尾")
-                return FnStmt(between(start, prevToken), name, null, null, null)
-            }
+//            if (isAtEnd) {
+//                error("无法结束的`函数形参声明`")
+//                    .info(start, "函数声明开头")
+//                    .point(lookAhead(0), "末尾")
+//                return FnStmt(between(start, prevToken), name, null, null, null)
+//            }
             if (!check(TokenType.IDENTIFIER)) {
                 error("期望`)`")
                     .info(lparen, "开头")
@@ -357,19 +357,19 @@ class Parser(
             }
             match(TokenType.OR)
             while (!check(TokenType.LBRACE)) {
-                if (this.isAtEnd) {
-                    if (results.isEmpty()) {
-                        error("无法找到`函数返回值声明`")
-                            .info(start, "函数开头")
-                            .point(lookAhead(0), "期望`标识符`或`_`")
-                        return FnStmt(between(start, prevToken), name, parameters, null, null)
-                    } else {
-                        error("无法找到函数体")
-                            .info(start, "函数开头")
-                            .point(lookAhead(0), "期望`{`")
-                        return FnStmt(between(start, prevToken), name, parameters, results, null)
-                    }
-                }
+//                if (isAtEnd) {
+//                    if (results.isEmpty()) {
+//                        error("无法找到`函数返回值声明`")
+//                            .info(start, "函数开头")
+//                            .point(lookAhead(0), "期望`标识符`或`_`")
+//                        return FnStmt(between(start, prevToken), name, parameters, null, null)
+//                    } else {
+//                        error("无法找到函数体")
+//                            .info(start, "函数开头")
+//                            .point(lookAhead(0), "期望`{`")
+//                        return FnStmt(between(start, prevToken), name, parameters, results, null)
+//                    }
+//                }
                 if (!check(TokenType.IDENTIFIER)) {
                     error("无法找到`函数返回值声明`")
                         .info(start, "函数开头")
@@ -571,7 +571,7 @@ class Parser(
         var expr = addAndSub()
 
         // expr :< ...    expr := ...
-        if (!this.isStmtEnd && check(TokenType.RANGE_OPERATORS)) {
+        if (!isStmtEnd && check(TokenType.RANGE_OPERATORS)) {
             val operator = next()
 
             // TODO 没有left?
@@ -661,27 +661,20 @@ class Parser(
 
                     val arguments = ArrayList<Expr>()
                     while (true) {
-                        if (this.isAtEnd) {
-                            error("无法结束的`函数传参`")
-                                .info(lParen, "参数开头")
-                                .point(lookAhead(0), "末尾")
-                            expr = if (arguments.isEmpty()) {
-                                Expr.Call(expr.span, expr, arguments)
-                            } else {
-                                Expr.Call(
-                                    between(expr, arguments[arguments.size - 1]),
-                                    expr,
-                                    arguments,
-                                )
-                            }
-                            break
-                        }
                         if (check(TokenType.RPAREN)) {
                             expr = Expr.Call(between(expr, next()), expr, arguments)
                             break
                         }
-
-                        arguments.add(expression())
+                        val innerExpr = expression()
+                        if (innerExpr is ErrorExpr) {
+                            val end = arguments.lastOrNull() ?: lParen
+                            error("期望`)`作为函数调用参数末尾")
+                                .info(lParen, "参数开头")
+                                .point(end, "末尾")
+                            expr = Expr.Call(between(expr, end), expr, arguments)
+                            break
+                        }
+                        arguments.add(innerExpr)
                         match(TokenType.COMMA) // 可选逗号
                     }
                     continue
@@ -720,22 +713,21 @@ class Parser(
         } else if (check(TokenType.LBRACE)) {
             val lBrace = next()
             val elements = ArrayList<Expr>()
-            while (!check(TokenType.RBRACE)) {
-                if (this.isAtEnd) {
-                    error("无法结束的数组")
-                        .info(lBrace, "数组开头")
-                        .point(lookAhead(0), "末尾")
+            while (true) {
+                if (check(TokenType.RBRACE)) {
+                    return Expr.Array(between(lBrace, next()), elements)
                 }
-                //                try {
-                elements.add(expression())
-                //                } catch(Problem.ParserProblem e) {
-//                    e.info(lBrace, "解析`数组`时出现错误");
-//                    elements.add(new Literal(token(ERROR, lookAhead())));
-//                }
+                val expr = expression()
+                if (expr is ErrorExpr) {
+                    val end = elements.lastOrNull() ?: lBrace
+                    error("期望`}`作为数组末尾")
+                        .info(lBrace, "数组开头")
+                        .point(end, "末尾")
+                    return Expr.Array(between(lBrace, end), elements)
+                }
+                elements.add(expr)
                 match(TokenType.COMMA) // 可选逗号
             }
-            val rBrace = next()
-            return Expr.Array(between(lBrace, rBrace), elements)
         }
 
         error("期望表达式").point(lookAhead(0), "")
@@ -749,7 +741,7 @@ class Parser(
      */
     private fun annotation(subject: Expr): Expr {
         // id :
-        if (!this.isStmtEnd && match(TokenType.COLON)) {
+        if (!isStmtEnd && match(TokenType.COLON)) {
             val annotations = ArrayList<Expr>()
 
             // id : ?
@@ -758,7 +750,7 @@ class Parser(
             }
 
             // id : anno1 | anno2 ...
-            while (!this.isAtEnd) {
+            while (!isAtEnd) {
                 annotations.add(unary())
                 if (!match(TokenType.OR)) break
             }
@@ -1043,7 +1035,7 @@ class Parser(
      * 错误恢复，扫描直到期望的TokenType
      */
     private fun recover(expected: TokenType) {
-        while (!this.isAtEnd) {
+        while (!isAtEnd) {
             if (check(expected)) {
                 return
             }
@@ -1052,10 +1044,10 @@ class Parser(
     }
 
     /**
-     * 错误恢复，扫描直到期望的TokenType
+     * 错误恢复，扫描直到期望的TokenType，但不会消耗
      */
     private fun recover(expecteds: Set<TokenType>) {
-        while (!this.isAtEnd) {
+        while (!isAtEnd) {
             if (check(expecteds)) return
             next()
         }
