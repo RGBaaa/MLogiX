@@ -8,7 +8,14 @@ class Span(
 
     override fun span(): Span = this
 
-    override fun toString(): String = "Span{$index,$start,$end}"
+    /**
+     * ⚠︎WARNING: 为了减少ASTNode相等判断的样板代码，本方法忽略Span的[index],[start]和[end]属性
+     *
+     * 要使用不忽略属性的方法，请使用[toStructuralString]
+     */
+    override fun toString(): String = "Span"
+
+    fun toStructuralString(): String = "Span{$index,$start,$end}"
 
     /**
      * ⚠︎WARNING: 为了减少ASTNode相等判断的样板代码，本方法忽略Span的[index],[start]和[end]属性
