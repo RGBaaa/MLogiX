@@ -1,9 +1,9 @@
 package mlogix.problem
 
-import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
 import mlogix.span.Spanned
 import mlogix.util.Ansi
+import kotlin.math.max
 
 // 用于表示编译器问题，包含错误和警告
 abstract class Problem(
@@ -11,7 +11,7 @@ abstract class Problem(
     val problemName: String,    // 这个问题的名称
     val level: ProblemLevel     // 问题级别（错误或警告）
 ) {
-    val lineInfos = Seq<LineInfo>()
+    val lineInfos = ArrayList<LineInfo>()
 
     // 获取行，若不存在则新建并返回
     private fun getLineInfo(line: Int): LineInfo {
@@ -30,7 +30,11 @@ abstract class Problem(
 
     fun point(start: Int, end: Int, text: String): Problem {
         val lineInfo = getLineInfo(sourceMap.getLine(start))
-        lineInfo.point(sourceMap.getCol(start), "^".repeat(end - start), text)
+        lineInfo.point(
+            sourceMap.getCol(start),
+            "^".repeat(max(1, end - start)),
+            text
+        )
         return this
     }
 
@@ -41,14 +45,18 @@ abstract class Problem(
 
     fun info(start: Int, end: Int, text: String): Problem {
         val lineInfo = getLineInfo(sourceMap.getLine(start))
-        lineInfo.info(sourceMap.getCol(start), "-".repeat(end - start), text)
+        lineInfo.info(
+            sourceMap.getCol(start),
+            "-".repeat(max(1, end - start)),
+            text
+        )
         return this
     }
 
     override fun toString(): String {
         val color = if (level == ProblemLevel.ERROR) Ansi.RED else Ansi.YELLOW
         val str = StringBuilder("$color${level.name}:$problemName${Ansi.DEFAULT}\n")
-        lineInfos.sort(Comparator.comparing { li -> li.line })
+        lineInfos.sortWith<LineInfo>(Comparator.comparing { li -> li.line })
 
         var maxLineDigitLen = 0  // 所有 LineInfo 中最长的行号长度
         for (lineInfo in lineInfos) {
