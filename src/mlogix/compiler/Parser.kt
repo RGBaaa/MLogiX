@@ -101,9 +101,9 @@ class Parser(
             if (check(TokenType.IDENTIFIER)) {
                 path.add(Expr.Identifier(next()))
             } else if (check(TokenType.STAR)) {
-                return UseStmt.All(if (path.isEmpty()) next().span else between(path.get(0), next()), path)
+                return UseStmt.All(if (path.isEmpty()) next().span else between(path[0], next()), path)
             } else if (check(TokenType.STAR_STAR)) {
-                return UseStmt.Recursion(if (path.isEmpty()) next().span else between(path.get(0), next()), path)
+                return UseStmt.Recursion(if (path.isEmpty()) next().span else between(path[0], next()), path)
             } else if (check(TokenType.LBRACE)) {
                 val lbrace = next()
 
@@ -120,7 +120,7 @@ class Parser(
                     }
                     match(TokenType.COMMA)
                 }
-                return UseStmt.Multi(between((if (path.isEmpty()) lbrace else path.get(0)), prevToken), path, items)
+                return UseStmt.Multi(between((if (path.isEmpty()) lbrace else path[0]), prevToken), path, items)
             } else {
                 error("期望标识符、* 或 **")
                     .point(lookAhead(0), "")
@@ -128,7 +128,7 @@ class Parser(
                 return null
             }
             if (!match(TokenType.DOT)) {
-                return UseStmt.Single(between(path.get(0), prevToken), path)
+                return UseStmt.Single(between(path[0], prevToken), path)
             }
         }
     }
@@ -192,7 +192,7 @@ class Parser(
                     .info(start, "语句开头")
                     .point(lookAhead(0), "当前")
                 return MatchStmt(
-                    between(start, (if (branches.isEmpty()) start else branches.get(branches.size - 1))),
+                    between(start, (if (branches.isEmpty()) start else branches[branches.size - 1])),
                     scrutinee,
                     branches,
                 )
@@ -200,7 +200,7 @@ class Parser(
             val pattern = expression()
             if (consume(TokenType.ARROW) == null || expect(TokenType.LBRACE) == null) {
                 return MatchStmt(
-                    between(start, (if (branches.isEmpty()) start else branches.get(branches.size - 1))),
+                    between(start, (if (branches.isEmpty()) start else branches[branches.size - 1])),
                     scrutinee,
                     branches,
                 )
@@ -663,7 +663,7 @@ class Parser(
                             Expr.Call(expr.span, expr, arguments)
                         } else {
                             Expr.Call(
-                                between(expr, arguments.get(arguments.size - 1)),
+                                between(expr, arguments[arguments.size - 1]),
                                 expr,
                                 arguments,
                             )
@@ -753,7 +753,7 @@ class Parser(
                 annotations.add(unary())
                 if (!match(TokenType.OR)) break
             }
-            if (!annotations.isEmpty()) return Expr.Annotation(subject, annotations)
+            if (annotations.isNotEmpty()) return Expr.Annotation(subject, annotations)
             // 如果标注数量为0，视作Identifier
         }
         return subject
