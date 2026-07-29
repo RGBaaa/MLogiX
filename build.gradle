@@ -58,7 +58,7 @@ configurations.configureEach {
     }
 }
 
-tasks.register('run', JavaExec) {
+tasks.register('compile', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'mlogix.Main'
     args 'c'
@@ -71,7 +71,7 @@ tasks.register('run', JavaExec) {
     }
 }
 
-tasks.register('run-debug', JavaExec) {
+tasks.register('compile-debug', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'mlogix.Main'
     args 'c', 'd'
