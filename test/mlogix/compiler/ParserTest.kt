@@ -142,7 +142,7 @@ class ParserTest {
             span,
             null,
             Stmt.BlockStmt(span, listOf(Stmt.ContinueStmt(span, null))),
-            Expr.Literal(token(TokenType.INT, 0.0))
+            Expr.Literal(token(TokenType.TRUE))
         )
         assertEquals(ast, expectedWhile)
     }
