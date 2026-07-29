@@ -15,7 +15,6 @@ import mlogix.problem.Problem.ParserProblem
 import mlogix.problem.ProblemCollector
 import mlogix.span.Span
 import mlogix.span.Spanned
-import java.util.*
 
 /**
  * 一个项目 一次构造
@@ -140,7 +139,8 @@ class Parser(
         while (!check(TokenType.RBRACE)) {
             if (this.isAtEnd) {
                 error("期望`块`语句的`}`")
-                    .point(lBrace, "开头")
+                    .info(lBrace, "开头")
+                    .point(lookAhead(0), "当前")
                 return BlockStmt(between(lBrace, prevToken), stmts)
             }
             stmts.add(statement())
@@ -352,8 +352,8 @@ class Parser(
 
         val results = ArrayList<Expr>()
         if (match(TokenType.ARROW)) {
-            if(check(TokenType.QUESTION_MARK)) {
-                results.add(Expr.Literal(Token(next().span, TokenType.NULL)))
+            if (check(TokenType.QUESTION_MARK)) {
+                results.add(Expr.Identifier(Token(next().span, TokenType.IDENTIFIER, "Null")))
             }
             match(TokenType.OR)
             while (!check(TokenType.LBRACE)) {
@@ -478,17 +478,20 @@ class Parser(
 
     private fun or(): Expr {
         var expr = and()
+        var errorRight: Expr? = null
 
         while (check(TokenType.OR_OR)) {
             val operator = next()
 
-            val right = or()
+            val right = and()
             if (right is Expr.Binary && right.operator.type == TokenType.AND_AND) {
-                error("不明确关系的逻辑运算表达式，请添加括号")
-                    .point(expr.span.start, right.span.end, "")
-                // 此处遵循优先级and > or
+                errorRight = right
             }
             expr = Expr.Binary(expr, operator, right)
+        }
+        errorRight?.let {
+            error("不明确关系的逻辑运算表达式，请添加括号")
+                .point(expr.span.start, errorRight.span.end, "")
         }
 
         return expr
@@ -500,7 +503,7 @@ class Parser(
         while (check(TokenType.AND_AND)) {
             val operator = next()
 
-            val right = or()
+            val right = equality()
             if (right is Expr.Binary && right.operator.type == TokenType.OR_OR) {
                 error("不明确关系的逻辑运算表达式，请添加括号")
                     .point(expr.span.start, right.span.end, "")
@@ -556,12 +559,12 @@ class Parser(
 
             // :<    :=
             if (!check(TokenType.LITERALS) && !check(TokenType.IDENTIFIER) && !check(TokenType.LPAREN)) {
-                Expr.Range(operator.span, null, operator, null)
+                return Expr.Range(operator.span, null, operator, null)
             }
 
             // :< expr    := expr
             val right = addAndSub()
-            Expr.Range(between(operator, right), null, operator, right)
+            return Expr.Range(between(operator, right), null, operator, right)
         }
 
         // expr
@@ -574,7 +577,7 @@ class Parser(
             // TODO 没有left?
             // expr :<    expr :=
             if (!check(TokenType.LITERALS) && !check(TokenType.IDENTIFIER) && !check(TokenType.LPAREN)) {
-                Expr.Range(between(operator, operator), null, operator, null)
+                return Expr.Range(between(operator, operator), null, operator, null)
             }
 
             // expr :< expr    expr := expr
@@ -637,59 +640,65 @@ class Parser(
         while (true) {
 //            if(isStmtEnd()) return expr;
 
-            if (check(TokenType.LBRACKET)) { // 对列表的索引或切片
-                val lBracket = next()
+            when {
+                check(TokenType.LBRACKET) -> { // 对列表的索引或切片
+                    val lBracket = next()
 
-                val index = expression()
-                val rBracket =
-                    consume(TokenType.RBRACKET) { e: Problem -> e.info(lBracket, "解析`数组索引`时出现错误") }
+                    val index = expression()
+                    val rBracket =
+                        consume(TokenType.RBRACKET) { e: Problem -> e.info(lBracket, "解析`数组索引`时出现错误") }
 
-                expr = if (rBracket != null) {
-                    Expr.Index(between(lBracket, rBracket), expr, index)
-                } else {
-                    Expr.Index(between(lBracket, index), expr, index)
+                    expr = if (rBracket != null) {
+                        Expr.Index(between(lBracket, rBracket), expr, index)
+                    } else {
+                        Expr.Index(between(lBracket, index), expr, index)
+                    }
+                    continue
                 }
-                continue
-            } else if (check(TokenType.LPAREN)) { // 函数调用
-                val lParen = next()
 
-                val arguments = ArrayList<Expr>()
-                while (true) {
-                    if (this.isAtEnd) {
-                        error("无法结束的`函数传参`")
-                            .info(lParen, "参数开头")
-                            .point(lookAhead(0), "末尾")
-                        expr = if (arguments.isEmpty()) {
-                            Expr.Call(expr.span, expr, arguments)
-                        } else {
-                            Expr.Call(
-                                between(expr, arguments[arguments.size - 1]),
-                                expr,
-                                arguments,
-                            )
+                check(TokenType.LPAREN) -> { // 函数调用
+                    val lParen = next()
+
+                    val arguments = ArrayList<Expr>()
+                    while (true) {
+                        if (this.isAtEnd) {
+                            error("无法结束的`函数传参`")
+                                .info(lParen, "参数开头")
+                                .point(lookAhead(0), "末尾")
+                            expr = if (arguments.isEmpty()) {
+                                Expr.Call(expr.span, expr, arguments)
+                            } else {
+                                Expr.Call(
+                                    between(expr, arguments[arguments.size - 1]),
+                                    expr,
+                                    arguments,
+                                )
+                            }
+                            break
                         }
-                        break
-                    }
-                    if (check(TokenType.RPAREN)) {
-                        expr = Expr.Call(between(expr, next()), expr, arguments)
-                        break
-                    }
+                        if (check(TokenType.RPAREN)) {
+                            expr = Expr.Call(between(expr, next()), expr, arguments)
+                            break
+                        }
 
-                    arguments.add(expression())
-                    match(TokenType.COMMA) // 可选逗号
+                        arguments.add(expression())
+                        match(TokenType.COMMA) // 可选逗号
+                    }
+                    continue
                 }
-                continue
-            } else if (check(TokenType.DOT)) { // 访问类的元素
-                val dot = next()
 
-                val id =
-                    consume(TokenType.IDENTIFIER) { e: Problem ->
-                        e.info(dot, "解析`类元素访问`时出现错误")
-                    } ?: return expr
-                val field: Expr = Expr.Identifier(id)
+                check(TokenType.DOT) -> { // 访问类的元素
+                    val dot = next()
 
-                expr = Get(expr, field)
-                continue
+                    val id =
+                        consume(TokenType.IDENTIFIER) { e: Problem ->
+                            e.info(dot, "解析`类元素访问`时出现错误")
+                        } ?: return expr
+                    val field: Expr = Expr.Identifier(id)
+
+                    expr = Get(expr, field)
+                    continue
+                }
             }
 
             return expr
@@ -745,7 +754,7 @@ class Parser(
 
             // id : ?
             if (check(TokenType.QUESTION_MARK)) {
-                annotations.add(Expr.Literal(Token(next().span, TokenType.NULL)))
+                annotations.add(Expr.Identifier(Token(next().span, TokenType.IDENTIFIER, "Null")))
             }
 
             // id : anno1 | anno2 ...
@@ -1047,27 +1056,17 @@ class Parser(
      */
     private fun recover(expecteds: Set<TokenType>) {
         while (!this.isAtEnd) {
-            if (check(expecteds)) {
-                return
-            }
+            if (check(expecteds)) return
             next()
         }
     }
 
     /**
-     * 等价于recover(EnumSet.of(USE, IF, MATCH, FOR, WHILE, FN, LBRACE))
+     * 等价于recover(TokenType.STMT_START)
      */
     private fun normalRecover() {
         recover(
-            EnumSet.of(
-                TokenType.USE,
-                TokenType.IF,
-                TokenType.MATCH,
-                TokenType.FOR,
-                TokenType.WHILE,
-                TokenType.FN,
-                TokenType.LBRACE,
-            )
+            TokenType.RECOVERY_TOKEN
         )
     }
 

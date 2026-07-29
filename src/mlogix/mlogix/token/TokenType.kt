@@ -130,7 +130,7 @@ enum class TokenType(private val keyword: String? = null) {
     }
 
     companion object {
-        val STMT_START: Set<TokenType> = EnumSet.of(
+        val RECOVERY_TOKEN: Set<TokenType> = EnumSet.of(
             USE,
             SET, MACRO, CONST,
             IF,
@@ -139,7 +139,9 @@ enum class TokenType(private val keyword: String? = null) {
             MATCH,
             FN, RETURN,
             ENUM,
-            LBRACE,
+            LPAREN, RPAREN,
+            LBRACKET, RBRACKET,
+            LBRACE, RBRACE,
         )
 
         val LITERALS: Set<TokenType> = EnumSet.of(
