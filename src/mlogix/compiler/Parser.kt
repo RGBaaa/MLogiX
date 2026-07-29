@@ -198,7 +198,7 @@ class Parser(
                 )
             }
             val pattern = expression()
-            if (consume(TokenType.ARROW) == null || consume(TokenType.LBRACE) == null) {
+            if (consume(TokenType.ARROW) == null || expect(TokenType.LBRACE) == null) {
                 return MatchStmt(
                     between(start, (if (branches.isEmpty()) start else branches.get(branches.size - 1))),
                     scrutinee,
@@ -352,6 +352,10 @@ class Parser(
 
         val results = ArrayList<Expr>()
         if (match(TokenType.ARROW)) {
+            if(check(TokenType.QUESTION_MARK)) {
+                results.add(Expr.Literal(Token(next().span, TokenType.NULL)))
+            }
+            match(TokenType.OR)
             while (!check(TokenType.LBRACE)) {
                 if (this.isAtEnd) {
                     if (results.isEmpty()) {
@@ -367,10 +371,13 @@ class Parser(
                     }
                 }
                 if (!check(TokenType.IDENTIFIER)) {
+                    error("无法找到`函数返回值声明`")
+                        .info(start, "函数开头")
+                        .point(lookAhead(0), "期望`标识符`或`_`")
                     break
                 }
                 results.add(annotation(Expr.Identifier(next())))
-                match(TokenType.COMMA)
+                match(TokenType.OR)
             }
         }
 
