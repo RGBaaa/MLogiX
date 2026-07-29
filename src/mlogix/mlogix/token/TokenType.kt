@@ -7,15 +7,15 @@ enum class TokenType(private val keyword: String? = null) {
     USE("use"),
     SET("set"), MACRO("macro"), CONST("const"),
     IF("if"), ELIF("elif"), ELSE("else"),
-    WHILE("while"), FOR("for"), BREAK("break"), CONTINUE("continue"),
+    FOR("for"), WHILE("while"), BREAK("break"), CONTINUE("continue"),
     STRUCT("struct"),
     MATCH("match"),
     FN("fn"), RETURN("return"),
     ENUM("enum"),
 
     // 标识符
-    // xxx      'xxx
-    IDENTIFIER, FLAG,
+    // xxx
+    IDENTIFIER,
 
     // 字面量
     NUM, INT, COL, STR, TRUE("true"), FALSE("false"), NULL("null"),
@@ -130,6 +130,18 @@ enum class TokenType(private val keyword: String? = null) {
     }
 
     companion object {
+        val STMT_START: Set<TokenType> = EnumSet.of(
+            USE,
+            SET, MACRO, CONST,
+            IF,
+            FOR, WHILE, BREAK, CONTINUE,
+            STRUCT,
+            MATCH,
+            FN, RETURN,
+            ENUM,
+            LBRACE,
+        )
+
         val LITERALS: Set<TokenType> = EnumSet.of(
             NUM, INT, COL, STR, TRUE, FALSE, NULL
         )
