@@ -14,7 +14,7 @@ class LexerTest {
     val lexer = Lexer(problemCollector)
 
     @Test
-    fun `lexer should tokenize simple arithmetic expression`() {
+    fun `tokenize simple arithmetic expression`() {
         val source = "3 + 5 * 2"
         val tokens = lexer.tokenize(source)
 
@@ -29,7 +29,7 @@ class LexerTest {
     }
 
     @Test
-    fun `lexer should tokenize operators and separators`() {
+    fun `tokenize operators and separators`() {
         val source = "+ - * / ** % %% // & | ^ << >> ~ ++ -- = == != === !== < > <= >= && || ! : := :< -> ; , . ( ) [ ] { }"
         val tokens = lexer.tokenize(source)
 
@@ -46,7 +46,7 @@ class LexerTest {
     }
 
     @Test
-    fun `lexer should tokenize literals strings colors and identifiers`() {
+    fun `tokenize literals strings colors and identifiers`() {
         val source = "true false null \"hello\\nworld\" 0%FF0000 0%red 0xFF_00_7F 0b111_000 abc_def"
         val tokens = lexer.tokenize(source)
 
