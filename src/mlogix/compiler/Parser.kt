@@ -316,7 +316,7 @@ class Parser(
     private fun functionStmt(): Stmt {
         val start = next()
 
-        val name = consume(TokenType.IDENTIFIER)
+        val name = consume(TokenType.IDENTIFIER) { e -> e.info(start, "函数声明必须有函数名") }
         val lparen: Token?
         if (name == null) {
             if (!check(TokenType.LPAREN)) {
@@ -324,7 +324,7 @@ class Parser(
             }
             lparen = next()
         } else {
-            lparen = consume(TokenType.LPAREN)
+            lparen = consume(TokenType.LPAREN) { e -> e.info(start, "函数声明必须有形参") }
             if (lparen == null) {
                 return FnStmt(between(start, name), name, null, null, null)
             }
@@ -333,62 +333,49 @@ class Parser(
         val parameters = ArrayList<Expr>()
 
         while (!match(TokenType.RPAREN)) {
-//            if (isAtEnd) {
-//                error("无法结束的`函数形参声明`")
-//                    .info(start, "函数声明开头")
-//                    .point(lookAhead(0), "末尾")
-//                return FnStmt(between(start, prevToken), name, null, null, null)
-//            }
-            if (!check(TokenType.IDENTIFIER)) {
-                error("期望`)`")
-                    .info(lparen, "开头")
-                    .point(lookAhead(0), "末尾")
-                break
+            val id = expect(TokenType.IDENTIFIER) { e -> e.info(start, "函数形参声明必须使用标识符") }
+            if (id != null) {
+                parameters.add(annotation(Expr.Identifier(next())))
+                match(TokenType.COMMA)
+            } else {
+                recover(TokenType.RECOVERY)
+                if (!check(TokenType.RPAREN)) {
+                    error("期望`)`作为函数声明形参末尾")
+                        .info(lparen, "形参开头")
+                        .point(lookAhead(0), "末尾")
+                    return FnStmt(between(start, prevToken), name, parameters, null, null)
+                }
             }
-            val parameter = annotation(Expr.Identifier(next()))
-            parameters.add(parameter)
-            match(TokenType.COMMA)
         }
 
         val results = ArrayList<Expr>()
         if (match(TokenType.ARROW)) {
             if (check(TokenType.QUESTION_MARK)) {
                 results.add(Expr.Identifier(Token(next().span, TokenType.IDENTIFIER, "Null")))
+                if (check(TokenType.OR)) {
+                    warning("多余的`|`")
+                        .point(next(), "")
+                }
             }
-            match(TokenType.OR)
             while (!check(TokenType.LBRACE)) {
-//                if (isAtEnd) {
-//                    if (results.isEmpty()) {
-//                        error("无法找到`函数返回值声明`")
-//                            .info(start, "函数开头")
-//                            .point(lookAhead(0), "期望`标识符`或`_`")
-//                        return FnStmt(between(start, prevToken), name, parameters, null, null)
-//                    } else {
-//                        error("无法找到函数体")
-//                            .info(start, "函数开头")
-//                            .point(lookAhead(0), "期望`{`")
-//                        return FnStmt(between(start, prevToken), name, parameters, results, null)
-//                    }
-//                }
-                if (!check(TokenType.IDENTIFIER)) {
-                    error("无法找到`函数返回值声明`")
-                        .info(start, "函数开头")
-                        .point(lookAhead(0), "期望`标识符`或`_`")
+                if (check(TokenType.IDENTIFIER)) {
+                    results.add(annotation(Expr.Identifier(next())))
+                    match(TokenType.OR)
+                } else {
+                    if (!matchStmtEnd()) {
+                        error("函数返回值声明必须使用标识符")
+                        recover(TokenType.RECOVERY)
+                    }
                     break
                 }
-                results.add(annotation(Expr.Identifier(next())))
-                match(TokenType.OR)
             }
         }
 
-        if (expect(
-                TokenType.LBRACE,
-            ) { e: Problem -> e.info(between(start, prevToken), "`fn`语句") } == null
-        ) {
-            return FnStmt(between(start, prevToken), name, parameters, results, null)
-        } else {
+        if (check(TokenType.LBRACE)) {
             val body = block()
             return FnStmt(between(start, body), name, parameters, results, body)
+        } else {
+            return FnStmt(between(start, prevToken), name, parameters, results, null)
         }
     }
 
@@ -638,8 +625,6 @@ class Parser(
         var expr = primary()
 
         while (true) {
-//            if(isStmtEnd()) return expr;
-
             when {
                 check(TokenType.LBRACKET) -> { // 对列表的索引或切片
                     val lBracket = next()
@@ -667,11 +652,10 @@ class Parser(
                         }
                         val innerExpr = expression()
                         if (innerExpr is ErrorExpr) {
-                            val end = arguments.lastOrNull() ?: lParen
                             error("期望`)`作为函数调用参数末尾")
                                 .info(lParen, "参数开头")
-                                .point(end, "末尾")
-                            expr = Expr.Call(between(expr, end), expr, arguments)
+                                .point(lookAhead(0), "末尾")
+                            expr = Expr.Call(between(expr, arguments.lastOrNull() ?: lParen), expr, arguments)
                             break
                         }
                         arguments.add(innerExpr)
@@ -719,11 +703,10 @@ class Parser(
                 }
                 val expr = expression()
                 if (expr is ErrorExpr) {
-                    val end = elements.lastOrNull() ?: lBrace
                     error("期望`}`作为数组末尾")
                         .info(lBrace, "数组开头")
-                        .point(end, "末尾")
-                    return Expr.Array(between(lBrace, end), elements)
+                        .point(lookAhead(0), "末尾")
+                    return Expr.Array(between(lBrace, elements.lastOrNull() ?: lBrace), elements)
                 }
                 elements.add(expr)
                 match(TokenType.COMMA) // 可选逗号
@@ -731,7 +714,7 @@ class Parser(
         }
 
         error("期望表达式").point(lookAhead(0), "")
-        return ErrorExpr(prevToken.span)
+        return ErrorExpr(lookAhead(0).span)
     }
 
     /**
@@ -747,12 +730,19 @@ class Parser(
             // id : ?
             if (check(TokenType.QUESTION_MARK)) {
                 annotations.add(Expr.Identifier(Token(next().span, TokenType.IDENTIFIER, "Null")))
+                if (check(TokenType.OR)) {
+                    warning("多余的`|`")
+                        .point(next(), "")
+                }
             }
 
             // id : anno1 | anno2 ...
             while (!isAtEnd) {
-                annotations.add(unary())
-                if (!match(TokenType.OR)) break
+                consume(TokenType.IDENTIFIER)?.let {
+                    annotations.add(Expr.Identifier(it))
+                    if (match(TokenType.OR)) continue
+                }
+                break
             }
             if (annotations.isNotEmpty()) return Expr.Annotation(subject, annotations)
             // 如果标注数量为0，视作Identifier
@@ -1054,11 +1044,11 @@ class Parser(
     }
 
     /**
-     * 等价于recover(TokenType.STMT_START)
+     * 等价于recover(TokenType.RECOVERY)
      */
     private fun normalRecover() {
         recover(
-            TokenType.RECOVERY_TOKEN
+            TokenType.RECOVERY
         )
     }
 
