@@ -71,11 +71,17 @@ class ParserTest {
 
     @Test
     fun `parse function declaration`() {
-        val ast = parser.parse("fn add(a b) -> ? Num|Int { return a + b }")
+        val ast = parser.parse("fn add(a:b c:d) -> ? Num|Int { return a + b }")
 
         val name = token(TokenType.IDENTIFIER, "add")
-        val aParam = Expr.Identifier(token(TokenType.IDENTIFIER, "a"))
-        val bParam = Expr.Identifier(token(TokenType.IDENTIFIER, "b"))
+        val aParam = Expr.Annotation(
+            Expr.Identifier(token(TokenType.IDENTIFIER, "a")),
+            listOf(Expr.Identifier(token(TokenType.IDENTIFIER, "b"))),
+        )
+        val bParam = Expr.Annotation(
+            Expr.Identifier(token(TokenType.IDENTIFIER, "c")),
+            listOf(Expr.Identifier(token(TokenType.IDENTIFIER, "d"))),
+        )
         val results = listOf(
             Expr.Identifier(token(TokenType.IDENTIFIER, "Null")),
             Expr.Identifier(token(TokenType.IDENTIFIER, "Num")),
