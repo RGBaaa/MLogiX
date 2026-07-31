@@ -145,6 +145,14 @@ enum class TokenType(private val keyword: String? = null) {
             SEMICOLON, EOF,
         )
 
+        val STMT_END: Set<TokenType> = EnumSet.of(
+            NEWLINE, SEMICOLON, EOF
+        )
+
+        val BRACES: Set<TokenType> = EnumSet.of(
+            LBRACE, RBRACE
+        )
+
         val LITERALS: Set<TokenType> = EnumSet.of(
             NUM, INT, COL, STR, TRUE, FALSE, NULL
         )

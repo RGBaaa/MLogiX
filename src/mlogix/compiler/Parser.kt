@@ -76,7 +76,7 @@ class Parser(
         check(TokenType.MATCH) -> matchStmt()
         check(TokenType.FOR) -> forStmt(null)
         check(TokenType.WHILE) -> whileStmt(null)
-        check(TokenType.FN) -> functionStmt()
+        check(TokenType.FN) -> fnStmt()
         check(TokenType.LBRACE) -> block()
         check(TokenType.BREAK) -> breakStmt()
         check(TokenType.CONTINUE) -> continueStmt()
@@ -97,37 +97,45 @@ class Parser(
     private fun useItem(): UseStmt.UseItem? {
         val path = ArrayList<Expr.Identifier>()
         while (true) {
-            if (check(TokenType.IDENTIFIER)) {
-                path.add(Expr.Identifier(next()))
-            } else if (check(TokenType.STAR)) {
-                return UseStmt.All(if (path.isEmpty()) next().span else between(path[0], next()), path)
-            } else if (check(TokenType.STAR_STAR)) {
-                return UseStmt.Recursion(if (path.isEmpty()) next().span else between(path[0], next()), path)
-            } else if (check(TokenType.LBRACE)) {
-                val lbrace = next()
-
-                val items = ArrayList<UseStmt.UseItem>()
-                while (true) {
-                    if (match(TokenType.RBRACE)) {
-                        break
+            when {
+                check(TokenType.IDENTIFIER) -> {
+                    path.add(Expr.Identifier(next()))
+                    if (!match(TokenType.DOT)) {
+                        return UseStmt.Single(between(path[0], prevToken), path)
                     }
-                    val item = useItem()
-                    if (item == null) {
-                        break
-                    } else {
-                        items.add(item)
-                    }
-                    match(TokenType.COMMA)
+                    continue
                 }
-                return UseStmt.Multi(between((if (path.isEmpty()) lbrace else path[0]), prevToken), path, items)
-            } else {
-                error("期望标识符、* 或 **")
-                    .point(lookAhead(0), "")
-                normalRecover()
-                return null
-            }
-            if (!match(TokenType.DOT)) {
-                return UseStmt.Single(between(path[0], prevToken), path)
+
+                check(TokenType.STAR) -> {
+                    return UseStmt.All(if (path.isEmpty()) next().span else between(path[0], next()), path)
+                }
+
+                check(TokenType.STAR_STAR) -> {
+                    return UseStmt.Recursion(if (path.isEmpty()) next().span else between(path[0], next()), path)
+                }
+
+                check(TokenType.LBRACE) -> {
+                    val lbrace = next()
+
+                    val items = ArrayList<UseStmt.UseItem>()
+                    while (!match(TokenType.RBRACE)) {
+                        val item = useItem()
+                        if (item == null) {
+                            break
+                        } else {
+                            items.add(item)
+                        }
+                        match(TokenType.COMMA)
+                    }
+                    return UseStmt.Multi(between((if (path.isEmpty()) lbrace else path[0]), prevToken), path, items)
+                }
+
+                else -> {
+                    error("期望标识符、* 或 **")
+                        .point(lookAhead(0), "")
+                    recover(TokenType.RECOVERY)
+                    return null
+                }
             }
         }
     }
@@ -313,7 +321,7 @@ class Parser(
     }
 
 
-    private fun functionStmt(): Stmt {
+    private fun fnStmt(): Stmt {
         val start = next()
 
         val name = consume(TokenType.IDENTIFIER) { e -> e.info(start, "函数声明必须有函数名") }
@@ -420,7 +428,7 @@ class Parser(
     private fun exprStmt(): Stmt? {
         val expr = expression()
         if (expr is ErrorExpr) {
-            normalRecover()
+            recover(TokenType.RECOVERY)
             return null
         }
 
@@ -561,7 +569,6 @@ class Parser(
         if (!isStmtEnd && check(TokenType.RANGE_OPERATORS)) {
             val operator = next()
 
-            // TODO 没有left?
             // expr :<    expr :=
             if (!check(TokenType.LITERALS) && !check(TokenType.IDENTIFIER) && !check(TokenType.LPAREN)) {
                 return Expr.Range(between(operator, operator), null, operator, null)
@@ -950,13 +957,7 @@ class Parser(
      * 不报错。
      */
     private fun matchStmtEnd(): Boolean {
-        val peekType = lookAhead(0).type
-        if (peekType == TokenType.NEWLINE || peekType == TokenType.SEMICOLON || peekType == TokenType.EOF) {
-            next()
-            return true
-        }
-        // 检查 { } 作为语句结束符，不推进
-        return peekType == TokenType.LBRACE || peekType == TokenType.RBRACE
+        return match(TokenType.STMT_END) || check(TokenType.BRACES)
     }
 
     /**
@@ -965,14 +966,7 @@ class Parser(
      * 都没有则报错。
      */
     private fun consumeStmtEnd() {
-        val peekType = lookAhead(0).type
-        if (peekType == TokenType.NEWLINE || peekType == TokenType.SEMICOLON || peekType == TokenType.EOF) {
-            next()
-            return
-        }
-        if (peekType == TokenType.LBRACE || peekType == TokenType.RBRACE) {
-            return
-        }
+        if (match(TokenType.STMT_END) || check(TokenType.BRACES)) return
         // 如果没有找到，报告错误
         error("缺少换行或分号作为语句结束符")
             .point(lookAhead(0), "")
