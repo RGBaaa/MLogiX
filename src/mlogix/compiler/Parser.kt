@@ -2,6 +2,7 @@ package mlogix.compiler
 
 import arc.func.Cons
 import arc.struct.Queue
+import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
 import mlogix.mlogix.ast.Expr
 import mlogix.mlogix.ast.Expr.ErrorExpr
@@ -56,7 +57,7 @@ class Parser(
     // ========== 主要解析部分 ==========
     // ---------- Stmt ----------
     private fun program(): Stmt {
-        val stmts = ArrayList<Stmt>()
+        val stmts = Seq<Stmt>()
 
         while (!isAtEnd) {
             val stmt = statement()
@@ -93,7 +94,7 @@ class Parser(
     }
 
     private fun useItem(): UseStmt.UseItem? {
-        val path = ArrayList<Expr.Identifier>()
+        val path = Seq<Expr.Identifier>()
         while (true) {
             when {
                 check(TokenType.IDENTIFIER) -> {
@@ -105,17 +106,17 @@ class Parser(
                 }
 
                 check(TokenType.STAR) -> {
-                    return UseStmt.All(if (path.isEmpty()) next().span else between(path[0], next()), path)
+                    return UseStmt.All(if (path.isEmpty) next().span else between(path[0], next()), path)
                 }
 
                 check(TokenType.STAR_STAR) -> {
-                    return UseStmt.Recursion(if (path.isEmpty()) next().span else between(path[0], next()), path)
+                    return UseStmt.Recursion(if (path.isEmpty) next().span else between(path[0], next()), path)
                 }
 
                 check(TokenType.LBRACE) -> {
                     val lbrace = next()
 
-                    val items = ArrayList<UseStmt.UseItem>()
+                    val items = Seq<UseStmt.UseItem>()
                     while (!match(TokenType.RBRACE)) {
                         val item = useItem()
                         if (item == null) {
@@ -125,7 +126,7 @@ class Parser(
                         }
                         match(TokenType.COMMA)
                     }
-                    return UseStmt.Multi(between((if (path.isEmpty()) lbrace else path[0]), prevToken), path, items)
+                    return UseStmt.Multi(between((if (path.isEmpty) lbrace else path[0]), prevToken), path, items)
                 }
 
                 else -> {
@@ -141,7 +142,7 @@ class Parser(
     private fun block(): Stmt {
         val lBrace = next()
 
-        val stmts = ArrayList<Stmt?>()
+        val stmts = Seq<Stmt?>()
         while (!check(TokenType.RBRACE)) {
             if (isAtEnd) {
                 error("期望`块`语句的`}`")
@@ -191,14 +192,14 @@ class Parser(
             return MatchStmt(between(start, scrutinee), scrutinee, null)
         }
 
-        val branches = ArrayList<MatchStmt.MatchBranch>()
+        val branches = Seq<MatchStmt.MatchBranch>()
         while (!match(TokenType.RBRACE)) {
             if (isAtEnd) {
                 error("期望`match`语句的`}`")
                     .info(start, "语句开头")
                     .point(lookAhead(0), "当前")
                 return MatchStmt(
-                    between(start, (if (branches.isEmpty()) start else branches[branches.size - 1])),
+                    between(start, (if (branches.isEmpty) start else branches[branches.size - 1])),
                     scrutinee,
                     branches,
                 )
@@ -206,7 +207,7 @@ class Parser(
             val pattern = expression()
             if (consume(TokenType.ARROW) == null) {
                 return MatchStmt(
-                    between(start, (if (branches.isEmpty()) start else branches[branches.size - 1])),
+                    between(start, (if (branches.isEmpty) start else branches[branches.size - 1])),
                     scrutinee,
                     branches,
                 )
@@ -336,7 +337,7 @@ class Parser(
             }
         }
 
-        val parameters = ArrayList<Expr>()
+        val parameters = Seq<Expr>()
 
         while (!match(TokenType.RPAREN)) {
             val id = expect(TokenType.IDENTIFIER) { e -> e.info(start, "函数形参声明必须使用标识符") }
@@ -354,7 +355,7 @@ class Parser(
             }
         }
 
-        val results = ArrayList<Expr>()
+        val results = Seq<Expr>()
         if (match(TokenType.ARROW)) {
             if (check(TokenType.QUESTION_MARK)) {
                 results.add(Expr.Identifier(Token(next().span, TokenType.IDENTIFIER, "Null")))
@@ -649,7 +650,7 @@ class Parser(
                 check(TokenType.LPAREN) -> { // 函数调用
                     val lParen = next()
 
-                    val arguments = ArrayList<Expr>()
+                    val arguments = Seq<Expr>()
                     while (true) {
                         if (check(TokenType.RPAREN)) {
                             expr = Expr.Call(between(expr, next()), expr, arguments)
@@ -701,7 +702,7 @@ class Parser(
 
         } else if (check(TokenType.LBRACE)) {
             val lBrace = next()
-            val elements = ArrayList<Expr>()
+            val elements = Seq<Expr>()
             while (true) {
                 if (check(TokenType.RBRACE)) {
                     return Expr.Array(between(lBrace, next()), elements)
@@ -730,7 +731,7 @@ class Parser(
     private fun annotation(subject: Expr): Expr {
         // id :
         if (!isStmtEnd && match(TokenType.COLON)) {
-            val annotations = ArrayList<Expr>()
+            val annotations = Seq<Expr>()
 
             // id : ?
             if (check(TokenType.QUESTION_MARK)) {
@@ -749,7 +750,7 @@ class Parser(
                 }
                 break
             }
-            if (annotations.isNotEmpty()) return Expr.Annotation(subject, annotations)
+            if (!annotations.isEmpty) return Expr.Annotation(subject, annotations)
             // 如果标注数量为0，视作Identifier
         }
         return subject

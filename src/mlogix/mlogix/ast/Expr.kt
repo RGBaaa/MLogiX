@@ -1,5 +1,6 @@
 package mlogix.mlogix.ast
 
+import arc.struct.Seq
 import mlogix.mlogix.token.Token
 import mlogix.span.Span
 
@@ -20,7 +21,7 @@ abstract class Expr(span: Span) : ASTNode(span) {
      */
     data class Annotation(
         val expr: Expr,
-        val annotations: List<Expr>
+        val annotations: Seq<Expr>
     ) : Expr(Span.between(expr, annotations[annotations.size - 1]))
 
     /**
@@ -40,7 +41,7 @@ abstract class Expr(span: Span) : ASTNode(span) {
     /**
      * 数组
      */
-    data class Array(override val span: Span, val elements: List<Expr>) : Expr(span)
+    data class Array(override val span: Span, val elements: Seq<Expr>) : Expr(span)
 
     /**
      * 索引
@@ -56,7 +57,7 @@ abstract class Expr(span: Span) : ASTNode(span) {
     /**
      * 函数调用 func(...)
      */
-    data class Call(override val span: Span, val callee: Expr, val arguments: List<Expr>) : Expr(span)
+    data class Call(override val span: Span, val callee: Expr, val arguments: Seq<Expr>) : Expr(span)
 
     /**
      * 获取字段 type.field  type.func

@@ -1,23 +1,24 @@
 package mlogix.problem
 
+import arc.struct.Seq
 import arc.util.Log
 import java.util.function.Consumer
 
 class ProblemCollector {
-    val errors = ArrayList<Problem>()
-    val warnings = ArrayList<Problem>()
+    val errors = Seq<Problem>()
+    val warnings = Seq<Problem>()
 
     fun createSnapshot(): ProblemCollectorSnapshot {
         return ProblemCollectorSnapshot(errorNum(), warningNum())
     }
 
     fun restoreSnapshot(snapshot: ProblemCollectorSnapshot) {
-        errors.subList(snapshot.errorNum, errorNum()).clear()
-        warnings.subList(snapshot.warningNum, warningNum()).clear()
+        errors.removeRange(snapshot.errorNum, errorNum())
+        warnings.removeRange(snapshot.warningNum, warningNum())
     }
 
     fun hasError(): Boolean {
-        return !errors.isEmpty()
+        return !errors.isEmpty
     }
 
     fun errorNum(): Int {

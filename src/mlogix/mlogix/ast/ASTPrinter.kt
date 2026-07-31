@@ -1,5 +1,6 @@
 package mlogix.mlogix.ast
 
+import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
 import mlogix.mlogix.ast.Stmt.MatchStmt.MatchBranch
 import mlogix.mlogix.ast.Stmt.UseStmt.UseItem
@@ -48,7 +49,7 @@ object ASTPrinter {
             is UseItem -> printNode(node, indent, isLast, EXPR_COLOR)
             is MatchBranch -> printNode(node, indent, isLast, EXPR_COLOR)
             is Token -> printLine(indent, isLast, TOKEN_COLOR + node.toSimpleString() + Ansi.DEFAULT)
-            is List<*> -> printList(node, indent, isLast)
+            is Seq<*> -> printList(node, indent, isLast)
             is Array<*> -> printArray(node, indent, isLast)
             else -> printLine(indent, isLast, node.toString())
         }
@@ -120,7 +121,7 @@ object ASTPrinter {
         } else if (value is Span) {
             // 只有MatchBranch的span会跑到这来，忽略掉
             return
-        } else if ((value is List<*> && value.isEmpty()) || (value is Array<*> && value.isEmpty())) {
+        } else if ((value is Seq<*> && value.isEmpty) || (value is Array<*> && value.isEmpty())) {
             printLine(indent, isLast, "$FIELD_COLOR$fieldName: $LIST_COLOR[]${Ansi.DEFAULT}")
             return
         }
@@ -137,8 +138,8 @@ object ASTPrinter {
         print(value, indent + (if (isLast) INDENT_BLANK else VERTICAL_LINE + FIELD_COLOR), true)
     }
 
-    private fun printList(list: List<*>, indent: String?, isLast: Boolean) {
-        if (list.isEmpty()) {
+    private fun printList(list: Seq<*>, indent: String?, isLast: Boolean) {
+        if (list.isEmpty) {
             printLine(indent, isLast, "List[]")
             return
         }

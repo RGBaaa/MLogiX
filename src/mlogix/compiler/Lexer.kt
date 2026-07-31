@@ -401,8 +401,7 @@ class Lexer(private val problems: ProblemCollector) {
         var notColorValue = false
         val text = buildString {
             while (!this@Lexer.isAtEnd) {
-                val c = peek()
-                when (c) {
+                when (val c = peek()) {
                     '_' -> append(c)
 
                     in '0'..'9' -> {

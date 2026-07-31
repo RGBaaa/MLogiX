@@ -1,12 +1,13 @@
 package mlogix.mlogix.ast
 
+import arc.struct.Seq
 import mlogix.mlogix.token.Token
 import mlogix.span.Span
 import mlogix.span.Spanned
 
 //Statement
 abstract class Stmt(span: Span) : ASTNode(span) {
-    data class Program(override val span: Span, val stmts: List<Stmt>) : Stmt(span)
+    data class Program(override val span: Span, val stmts: Seq<Stmt>) : Stmt(span)
 
     data class UseStmt(override val span: Span, val item: UseItem) : Stmt(span) {
 
@@ -16,27 +17,27 @@ abstract class Stmt(span: Span) : ASTNode(span) {
             }
         }
 
-        data class Single(override val span: Span, val path: List<Expr.Identifier>) : UseItem(span)
+        data class Single(override val span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
 
         // *
-        data class All(override val span: Span, val path: List<Expr.Identifier>) : UseItem(span)
+        data class All(override val span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
 
         // **
-        data class Recursion(override val span: Span, val path: List<Expr.Identifier>) : UseItem(span)
+        data class Recursion(override val span: Span, val path: Seq<Expr.Identifier>) : UseItem(span)
 
         // {...}
-        data class Multi(override val span: Span, val path: List<Expr.Identifier>, val items: List<UseItem>) :
+        data class Multi(override val span: Span, val path: Seq<Expr.Identifier>, val items: Seq<UseItem>) :
             UseItem(span)
     }
 
-    data class BlockStmt(override val span: Span, val stmts: List<Stmt?>) : Stmt(span)
+    data class BlockStmt(override val span: Span, val stmts: Seq<Stmt?>) : Stmt(span)
 
     data class ExprStmt(override val span: Span, val expr: Expr) : Stmt(span)
 
     data class IfStmt(override val span: Span, val condition: Expr, val thenBranch: Stmt?, val elseBranch: Stmt?) :
         Stmt(span)
 
-    data class MatchStmt(override val span: Span, val scrutinee: Expr, val branches: List<MatchBranch>?) : Stmt(span) {
+    data class MatchStmt(override val span: Span, val scrutinee: Expr, val branches: Seq<MatchBranch>?) : Stmt(span) {
         data class MatchBranch(val span: Span, val pattern: Expr, val body: Stmt?) : Spanned {
             override fun span(): Span {
                 return this.span
@@ -62,8 +63,8 @@ abstract class Stmt(span: Span) : ASTNode(span) {
     data class FnStmt(
         override val span: Span,
         val name: Token?,
-        val parameters: List<Expr>?,
-        val results: List<Expr>?,
+        val parameters: Seq<Expr>?,
+        val results: Seq<Expr>?,
         val body: Stmt?
     ) : Stmt(span)
 

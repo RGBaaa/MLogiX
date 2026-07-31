@@ -1,5 +1,6 @@
 package mlogix.problem
 
+import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
 import mlogix.span.Spanned
 import mlogix.util.Ansi
@@ -11,7 +12,7 @@ abstract class Problem(
     val problemName: String,    // 这个问题的名称
     val level: ProblemLevel     // 问题级别（错误或警告）
 ) {
-    val lineInfos = ArrayList<LineInfo>()
+    val lineInfos = Seq<LineInfo>()
 
     // 获取行，若不存在则新建并返回
     private fun getLineInfo(line: Int): LineInfo {
@@ -56,7 +57,7 @@ abstract class Problem(
     override fun toString(): String {
         val color = if (level == ProblemLevel.ERROR) Ansi.RED else Ansi.YELLOW
         val str = StringBuilder("$color${level.name}:$problemName${Ansi.DEFAULT}\n")
-        lineInfos.sortWith<LineInfo>(Comparator.comparing { li -> li.line })
+        lineInfos.sort(Comparator.comparing { li -> li.line })
 
         var maxLineDigitLen = 0  // 所有 LineInfo 中最长的行号长度
         for (lineInfo in lineInfos) {

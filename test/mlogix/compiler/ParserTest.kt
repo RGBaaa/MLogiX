@@ -1,5 +1,6 @@
 package mlogix.compiler
 
+import arc.struct.Seq
 import mlogix.mlogix.ast.Expr
 import mlogix.mlogix.ast.Stmt
 import mlogix.mlogix.token.Token
@@ -53,8 +54,8 @@ class ParserTest {
         val ast = parser.parse("if 1 { 2 } else { 3 }")
 
         val condition = Expr.Literal(token(TokenType.INT, 1.0))
-        val thenBranch = Stmt.BlockStmt(span, listOf(Stmt.ExprStmt(span, Expr.Literal(token(TokenType.INT, 2.0)))))
-        val elseBranch = Stmt.BlockStmt(span, listOf(Stmt.ExprStmt(span, Expr.Literal(token(TokenType.INT, 3.0)))))
+        val thenBranch = Stmt.BlockStmt(span, Seq.with(Stmt.ExprStmt(span, Expr.Literal(token(TokenType.INT, 2.0)))))
+        val elseBranch = Stmt.BlockStmt(span, Seq.with(Stmt.ExprStmt(span, Expr.Literal(token(TokenType.INT, 3.0)))))
 
         val expected = Stmt.IfStmt(span, condition, thenBranch, elseBranch)
         assertEquals(ast, expected)
@@ -64,7 +65,7 @@ class ParserTest {
     fun `parse for repeat loop`() {
         val ast = parser.parse("for 3 { 1 }")
 
-        val body = Stmt.BlockStmt(span, listOf(Stmt.ExprStmt(span, Expr.Literal(token(TokenType.INT, 1.0)))))
+        val body = Stmt.BlockStmt(span, Seq.with(Stmt.ExprStmt(span, Expr.Literal(token(TokenType.INT, 1.0)))))
         val expected = Stmt.ForStmt(span, null, null, body, Expr.Literal(token(TokenType.INT, 3.0)))
         assertEquals(ast, expected)
     }
@@ -76,19 +77,19 @@ class ParserTest {
         val name = token(TokenType.IDENTIFIER, "add")
         val aParam = Expr.Annotation(
             Expr.Identifier(token(TokenType.IDENTIFIER, "a")),
-            listOf(Expr.Identifier(token(TokenType.IDENTIFIER, "b"))),
+            Seq.with(Expr.Identifier(token(TokenType.IDENTIFIER, "b"))),
         )
         val bParam = Expr.Annotation(
             Expr.Identifier(token(TokenType.IDENTIFIER, "c")),
-            listOf(Expr.Identifier(token(TokenType.IDENTIFIER, "d"))),
+            Seq.with(Expr.Identifier(token(TokenType.IDENTIFIER, "d"))),
         )
-        val results = listOf(
+        val results = Seq.with<Expr>(
             Expr.Identifier(token(TokenType.IDENTIFIER, "Null")),
             Expr.Identifier(token(TokenType.IDENTIFIER, "Num")),
             Expr.Identifier(token(TokenType.IDENTIFIER, "Int"))
         )
         val body = Stmt.BlockStmt(
-            span, listOf(
+            span, Seq.with(
                 Stmt.ReturnStmt(
                     span, Expr.Binary(
                         Expr.Identifier(token(TokenType.IDENTIFIER, "a")),
@@ -99,7 +100,7 @@ class ParserTest {
             )
         )
 
-        val expectedFn = Stmt.FnStmt(span, name, listOf(aParam, bParam), results, body)
+        val expectedFn = Stmt.FnStmt(span, name, Seq.with(aParam, bParam), results, body)
         assertEquals(ast, expectedFn)
     }
 
@@ -107,7 +108,7 @@ class ParserTest {
     fun `parse function call`() {
         val ast = parser.parse("add(1, 2)")
         val call = Expr.Call(
-            span, Expr.Identifier(token(TokenType.IDENTIFIER, "add")), listOf(
+            span, Expr.Identifier(token(TokenType.IDENTIFIER, "add")), Seq.with(
                 Expr.Literal(token(TokenType.INT, 1.0)), Expr.Literal(token(TokenType.INT, 2.0))
             )
         )
@@ -120,10 +121,10 @@ class ParserTest {
 
         val varExpr = Expr.Annotation(
             Expr.Identifier(token(TokenType.IDENTIFIER, "a")),
-            listOf(Expr.Identifier(token(TokenType.IDENTIFIER, "Int")))
+            Seq.with(Expr.Identifier(token(TokenType.IDENTIFIER, "Int")))
         )
         val array = Expr.Array(
-            span, listOf(
+            span, Seq.with(
                 Expr.Literal(token(TokenType.INT, 1.0)), Expr.Literal(token(TokenType.INT, 2.0))
             )
         )
@@ -135,9 +136,9 @@ class ParserTest {
     @Test
     fun `parse match`() {
         val ast = parser.parse("match 1 { 1 -> { break } }")
-        val matchBranchBody = Stmt.BlockStmt(span, listOf(Stmt.BreakStmt(span, null)))
+        val matchBranchBody = Stmt.BlockStmt(span, Seq.with(Stmt.BreakStmt(span, null)))
         val branch = Stmt.MatchStmt.MatchBranch(span, Expr.Literal(token(TokenType.INT, 1.0)), matchBranchBody)
-        val expectedMatch = Stmt.MatchStmt(span, Expr.Literal(token(TokenType.INT, 1.0)), listOf(branch))
+        val expectedMatch = Stmt.MatchStmt(span, Expr.Literal(token(TokenType.INT, 1.0)), Seq.with(branch))
         assertEquals(ast, expectedMatch)
     }
 
@@ -147,7 +148,7 @@ class ParserTest {
         val expectedWhile = Stmt.WhileStmt(
             span,
             null,
-            Stmt.BlockStmt(span, listOf(Stmt.ContinueStmt(span, null))),
+            Stmt.BlockStmt(span, Seq.with(Stmt.ContinueStmt(span, null))),
             Expr.Literal(token(TokenType.TRUE))
         )
         assertEquals(ast, expectedWhile)
@@ -158,6 +159,6 @@ class ParserTest {
     }
 
     private fun assertEquals(actual: Stmt, vararg stmts: Stmt) {
-        assertEquals(Stmt.Program(span, listOf(*stmts)), actual, "AST 结构必须匹配")
+        assertEquals(Stmt.Program(span, Seq.with(*stmts)), actual, "AST 结构必须匹配")
     }
 }
