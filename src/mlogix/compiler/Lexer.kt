@@ -676,5 +676,17 @@ class Lexer(private val problems: ProblemCollector) {
         val w = LexerProblem(sourceMap, text, Problem.ProblemLevel.WARNING)
         problems.addWarning(w)
         return w
-    } //    public record LexerResult(List<LexerProblem> errorList, List<LexerProblem> warningList) {}
+    }
+
+    fun createSnapshot(): LexerSnapshot {
+        return LexerSnapshot(start, current, isPrevNewline)
+    }
+
+    fun restoreSnapshot(snapshot: LexerSnapshot) {
+        start = snapshot.start
+        current = snapshot.current
+        isPrevNewline = snapshot.isPrevNewline
+    }
+
+    data class LexerSnapshot(val start: Int, val current: Int, val isPrevNewline: Boolean)
 }

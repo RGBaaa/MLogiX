@@ -24,8 +24,8 @@ class Parser(
     private val problems: ProblemCollector,
 ) {
     private lateinit var sourceMap: SourceMap
-    private lateinit var input: LookAheadWindow
-    private lateinit var prevToken: Token
+    private lateinit var input: InputWindow
+    private val prevToken: Token get() = input.prevToken
 
     /**
      * 一个文件 一次调用
@@ -33,9 +33,8 @@ class Parser(
      */
     fun parse(sourceMap: SourceMap): Stmt {
         this.sourceMap = sourceMap
-        this.lexer.reset(sourceMap)
-        this.input = LookAheadWindow()
-        this.prevToken = lookAhead(0)
+        lexer.reset(sourceMap)
+        input = InputWindow()
 
         return program()
     }
@@ -49,8 +48,7 @@ class Parser(
 
         sourceMap = SourceMap(source)
         lexer.reset(sourceMap)
-        input = LookAheadWindow()
-        prevToken = lookAhead(0)
+        input = InputWindow()
 
         return program()
     }
@@ -764,8 +762,7 @@ class Parser(
      * 向前推进一个token
      */
     private fun next(): Token {
-        prevToken = input.next()
-        return prevToken
+        return input.next()
     }
 
     /**
@@ -773,8 +770,7 @@ class Parser(
      * @param step must be in [1,LookAheadWindow.capacity]
      */
     private fun next(step: Int): Token {
-        prevToken = input.next(step)
-        return prevToken
+        return input.next(step)
     }
 
     /**
@@ -1037,13 +1033,18 @@ class Parser(
         }
     }
 
-    /**
-     * 等价于recover(TokenType.RECOVERY)
-     */
-    private fun normalRecover() {
-        recover(
-            TokenType.RECOVERY
+    private fun createSnapshot(): Snapshot {
+        return Snapshot(
+            input,
+            lexer.createSnapshot(),
+            problems.createSnapshot()
         )
+    }
+
+    private fun restoreSnapshot(snapshot: Snapshot) {
+        input = snapshot.inputSnapshot
+        lexer.restoreSnapshot(snapshot.lexerSnapshot)
+        problems.restoreSnapshot(snapshot.problemsSnapshot)
     }
 
     // ---------- 类生成方法 ----------
@@ -1073,16 +1074,21 @@ class Parser(
     }
 
     // ========== 工具类 ==========
-    private inner class LookAheadWindow {
+    private inner class InputWindow {
         private val capacity: Int = 5
         private val buffer = Queue<Token>(capacity)
+        var prevToken: Token = lookAhead(0)
 
         /**
          * 返回当下的Token并推进一步
          */
         fun next(): Token {
-            if (buffer.size < 1) return lexer.scanToken()
-            return buffer.removeFirst()
+            if (buffer.size < 1) {
+                prevToken = lexer.scanToken()
+            } else {
+                prevToken = buffer.removeFirst()
+            }
+            return prevToken
         }
 
         /**
@@ -1104,4 +1110,10 @@ class Parser(
             return buffer.get(index)
         }
     }
+
+    private data class Snapshot(
+        val inputSnapshot: InputWindow,
+        val lexerSnapshot: Lexer.LexerSnapshot,
+        val problemsSnapshot: ProblemCollector.ProblemCollectorSnapshot
+    )
 }
