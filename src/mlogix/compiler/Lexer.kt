@@ -139,6 +139,20 @@ class Lexer(private val problems: ProblemCollector) {
                     token(TokenType.BANG)
                 }
 
+                '！' -> {
+                    error("应该使用英文符号`!`")
+                        .point(start, start + 1, "")
+                    return if (match('=')) {
+                        if (match('=')) {
+                            token(TokenType.BANG_EQ_EQ)
+                        } else {
+                            token(TokenType.BANG_EQ)
+                        }
+                    } else {
+                        token(TokenType.BANG)
+                    }
+                }
+
                 '<' -> return if (match('<')) {
                     token(TokenType.SHL)
                 } else if (match('=')) {
@@ -167,6 +181,12 @@ class Lexer(private val problems: ProblemCollector) {
 
                 '.' -> return token(TokenType.DOT)
 
+                '。' -> {
+                    error("应该使用英文符号`.`")
+                        .point(start, start + 1, "")
+                    return token(TokenType.DOT)
+                }
+
                 ':' -> return if (match('<')) {
                     token(TokenType.COLON_LESS)
                 } else if (match('=')) {
@@ -175,20 +195,86 @@ class Lexer(private val problems: ProblemCollector) {
                     token(TokenType.COLON)
                 }
 
+                '：' -> {
+                    error("应该使用英文符号`:`")
+                        .point(start, start + 1, "")
+                    return if (match('<')) {
+                        token(TokenType.COLON_LESS)
+                    } else if (match('=')) {
+                        token(TokenType.COLON_ASSIGN)
+                    } else {
+                        token(TokenType.COLON)
+                    }
+                }
+
                 ';' -> return token(TokenType.SEMICOLON)
+
+                '；' -> {
+                    error("应该使用英文符号`;`")
+                        .point(start, start + 1, "")
+                    return token(TokenType.SEMICOLON)
+                }
+
                 ',' -> return token(TokenType.COMMA)
+
+                '，' -> {
+                    error("应该使用英文符号`,`")
+                        .point(start, start + 1, "")
+                    return token(TokenType.COMMA)
+                }
+
                 '(' -> return token(TokenType.LPAREN)
+
+                '（' -> {
+                    error("应该使用英文符号`(`")
+                        .point(start, start + 1, "")
+                    return token(TokenType.LPAREN)
+                }
+
                 ')' -> return token(TokenType.RPAREN)
+
+                '）' -> {
+                    error("应该使用英文符号`)`")
+                        .point(start, start + 1, "")
+                    return token(TokenType.RPAREN)
+                }
+
                 '[' -> return token(TokenType.LBRACKET)
+
+                '【' -> {
+                    error("应该使用英文符号`[`")
+                        .point(start, start + 1, "")
+                    return token(TokenType.LBRACKET)
+                }
+
                 ']' -> return token(TokenType.RBRACKET)
+
+                '】' -> {
+                    error("应该使用英文符号`]`")
+                        .point(start, start + 1, "")
+                    return token(TokenType.RBRACKET)
+                }
+
                 '{' -> return token(TokenType.LBRACE)
                 '}' -> return token(TokenType.RBRACE)
                 '?' -> return token(TokenType.QUESTION_MARK)
 
+                '？' -> {
+                    error("应该使用英文符号`?`")
+                        .point(start, start + 1, "")
+                    return token(TokenType.QUESTION_MARK)
+                }
+
                 '"' -> return string()
 
                 '“' -> {
-                    warning("字符串应该使用英文双引号`\"`")
+                    error("字符串应该使用英文双引号`\"`")
+                        .point(start, start + 1, "\"")
+                    return string()
+                }
+
+                '”' -> {
+                    error("字符串应该使用英文双引号`\"`")
                         .point(start, start + 1, "\"")
                     return string()
                 }
