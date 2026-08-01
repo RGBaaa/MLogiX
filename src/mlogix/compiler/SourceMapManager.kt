@@ -1,176 +1,168 @@
-package mlogix.compiler;
+package mlogix.compiler
 
-import arc.struct.Seq;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
+import arc.struct.Seq
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.stream.Stream
 
 /**
  * 需要在项目中管理时使用SourceMapManager，否则可以直接使用SourceMap
  */
-public class SourceMapManager {
-    public final Path projectPath; /* 项目根目录 */
-    private final Map<Path, SourceMap> sourceMaps = new HashMap<>();
-    private final Seq<SourceMap> sourceMapList = new Seq<>(); /* 以此通过索引获取sourceMap */
+class SourceMapManager(/* 项目根目录 */val projectPath: Path) {
+    private val sourceMaps = HashMap<Path, SourceMap>()
 
-    public SourceMapManager(Path projectPath) {
-        this.projectPath = projectPath;
-    }
+    /* 以此通过索引获取sourceMap */
+    private val sourceMapList = Seq<SourceMap>()
 
     /**
      * 加载文件并创建 SourceMap
      */
-    public SourceMap loadSourceMap(Path filePath) throws IOException {
-        SourceMap sourceMap = new SourceMap(filePath, sourceMapList.size, projectPath);
-        sourceMaps.put(filePath, sourceMap);
-        sourceMapList.add(sourceMap);
-        return sourceMap;
+    @Throws(IOException::class)
+    fun loadSourceMap(filePath: Path): SourceMap {
+        val sourceMap = SourceMap(filePath, sourceMapList.size, projectPath)
+        sourceMaps[filePath] = sourceMap
+        sourceMapList.add(sourceMap)
+        return sourceMap
     }
 
     /**
      * 获取文件的 SourceMap
      */
-    public SourceMap getSourceMap(Path filePath) {
-        return sourceMaps.get(filePath);
+    fun getSourceMap(filePath: Path): SourceMap? {
+        return sourceMaps[filePath]
     }
 
     /**
      * 通过索引获取sourceMap
      */
-    public SourceMap getSourceMap(int index) {
-        return sourceMapList.get(index);
+    fun getSourceMap(index: Int): SourceMap? {
+        return sourceMapList.get(index)
     }
 
-    public Stream<Path> walk() throws IOException {
-        if (projectPath != null) {
-            return Files.walk(projectPath);
-        }
-        throw new RuntimeException("无项目路径的SourceMapManager无法使用walk()");
+    @Throws(IOException::class)
+    fun walk(): Stream<Path> {
+        return Files.walk(projectPath)
     }
 
-    static public class SourceMap {
-        public final Path filePath;
-        public final Path relativePath; /* 相对于项目根目录的相对目录 */
-        public final String source; /* 存储所有字符 */
-        public final int index; /* 在SourceMapManager中的索引 */
-        private final List<Integer> lineOffsetList; /* 每行的起始字符索引 */
+    class SourceMap {
+        val filePath: Path?
+        val relativePath: Path? /* 相对于项目根目录的相对目录 */
+        val source: String /* 存储所有字符 */
+        val index: Int /* 在SourceMapManager中的索引 */
+        private val lineOffsetList: Seq<Int> /* 每行的起始字符索引 */
 
-        public SourceMap(Path filePath, int index, Path projectPath) throws IOException {
-            this.filePath = filePath;
-            this.relativePath = projectPath.relativize(filePath);
-            this.source = loadSource(filePath);
-            this.lineOffsetList = buildLineOffsetList();
-            this.index = index;
+        constructor(filePath: Path, index: Int, projectPath: Path) {
+            this.filePath = filePath
+            this.relativePath = projectPath.relativize(filePath)
+            this.source = loadSource(filePath)
+            this.lineOffsetList = buildLineOffsetList()
+            this.index = index
         }
 
-        public SourceMap(String source) {
-            this.filePath = null;
-            this.relativePath = null;
-            this.source = loadSource(source);
-            this.lineOffsetList = buildLineOffsetList();
-            this.index = 0;
+        constructor(source: String) {
+            this.filePath = null
+            this.relativePath = null
+            this.source = loadSource(source)
+            this.lineOffsetList = buildLineOffsetList()
+            this.index = 0
         }
 
         /**
          * 加载文件内容为字符列表（自动处理UTF-8）
          */
-        private String loadSource(Path filePath) throws IOException {
-            return loadSource(Files.readString(filePath)); // Java 11+ 直接读取为UTF-8字符串
+        @Throws(IOException::class)
+        private fun loadSource(filePath: Path): String {
+            return loadSource(Files.readString(filePath)) // Java 11+ 直接读取为UTF-8字符串
         }
 
         /**
          * 从字符串加载字符列表
          */
-        private String loadSource(String source) {
-            return source.replace("\r\n", "\n").replace('\r', '\n');
+        private fun loadSource(source: String): String {
+            return source.replace("\r\n", "\n").replace('\r', '\n')
         }
 
         /**
          * 构建行号表（记录每行的起始字符索引）
          */
-        private List<Integer> buildLineOffsetList() {
-            List<Integer> offsetList = new ArrayList<>();
-            offsetList.add(0); // 第一行从索引0开始
+        private fun buildLineOffsetList(): Seq<Int> {
+            val offsetList = Seq<Int>()
+            offsetList.add(0) // 第一行从索引0开始
 
-            for (int i = 0; i < source.length(); i++) {
-                if (source.charAt(i) == '\n') {
-                    offsetList.add(i + 1); // 下一行起始位置
+            for ((i, element) in source.withIndex()) {
+                if (element == '\n') {
+                    offsetList.add(i + 1) // 下一行起始位置
                 }
             }
-            return offsetList;
+            return offsetList
         }
 
         /**
          * 根据字符索引获取行号和列号(从1开始)
          */
-        public int[] getLineAndCol(int charIndex) {
+        fun getLineAndCol(charIndex: Int): IntArray {
             /*if (charIndex < 0 || charIndex >= source.size()) {
                 throw new IllegalArgumentException("无效的字符索引(" + charIndex + " -> [0," + source.size() + "))");
             }*/
 
-            int line = 1;
-            for (int i = lineOffsetList.size() - 1; i >= 0; i--) {
-                if (charIndex >= lineOffsetList.get(i)) {
-                    line = i + 1;
-                    break;
+            var line = 1
+            for (i in lineOffsetList.size - 1 downTo 0) {
+                if (charIndex >= lineOffsetList[i]) {
+                    line = i + 1
+                    break
                 }
             }
 
-            int col = charIndex - lineOffsetList.get(line - 1) + 1;
-            return new int[]{line, col};
+            val col = charIndex - lineOffsetList[line - 1] + 1
+            return intArrayOf(line, col)
         }
 
         /**
          * 根据字符索引获取行号(从1开始)
          */
-        public int getLine(int charIndex) {
-            int line = 1;
-            for (int i = lineOffsetList.size() - 1; i >= 0; i--) {
-                if (charIndex >= lineOffsetList.get(i)) {
-                    line = i + 1;
-                    break;
+        fun getLine(charIndex: Int): Int {
+            var line = 1
+            for (i in lineOffsetList.size - 1 downTo 0) {
+                if (charIndex >= lineOffsetList[i]) {
+                    line = i + 1
+                    break
                 }
             }
-            return line;
+            return line
         }
 
         /**
          * 根据字符索引获取列号(从1开始)
          */
-        public int getCol(int charIndex) {
-            return charIndex - lineOffsetList.get(getLine(charIndex) - 1) + 1;
+        fun getCol(charIndex: Int): Int {
+            return charIndex - lineOffsetList[getLine(charIndex) - 1] + 1
         }
 
-        /* 截取为字符串 */
-        public String subString(int start, int end) {
-            return source.substring(start, end);
+        /** 截取为字符串 */
+        fun subString(start: Int, end: Int): String {
+            return source.substring(start, end)
         }
 
         /**
          * 获取一行字符串，不带\n
          */
-        public String getLineString(int line) {
-            line = line - 1;
+        fun getLineString(line: Int): String {
+            val line = line - 1
 
             // 最后一行
-            if (line == lineOffsetList.size() - 1) {
-                return subString(lineOffsetList.get(line), source.length());
+            if (line == lineOffsetList.size - 1) {
+                return subString(lineOffsetList[line], source.length)
             }
-            return subString(lineOffsetList.get(line), lineOffsetList.get(line + 1) - 1);
+            return subString(lineOffsetList[line], lineOffsetList[line + 1] - 1)
         }
 
-        public int length() {
-            return source.length();
+        fun length(): Int {
+            return source.length
         }
 
-        public char charAt(int index) {
-            return source.charAt(index);
+        fun charAt(index: Int): Char {
+            return source[index]
         }
     }
 }

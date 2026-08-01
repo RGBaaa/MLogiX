@@ -23,7 +23,7 @@ class Compiler(projectPath: Path) {
             manager.walk()
                 .filter { path: Path -> Files.isRegularFile(path) }
                 .filter { f: Path -> f.fileName.toString().endsWith(".mlx") }
-                .forEach { file: Path? ->
+                .forEach { file: Path ->
                     val sourceMap: SourceMap
                     try {
                         sourceMap = manager.loadSourceMap(file)
