@@ -13,8 +13,13 @@ class ProblemCollector {
     }
 
     fun restoreSnapshot(snapshot: ProblemCollectorSnapshot) {
-        errors.removeRange(snapshot.errorNum, errorNum())
-        warnings.removeRange(snapshot.warningNum, warningNum())
+        // Left closed and right closed
+        if (errors.size != 0) {
+            errors.removeRange(snapshot.errorNum, errorNum() - 1)
+        }
+        if (warnings.size != 0) {
+            warnings.removeRange(snapshot.warningNum, warningNum() - 1)
+        }
     }
 
     fun hasError(): Boolean {

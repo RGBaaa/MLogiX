@@ -16,6 +16,7 @@ import mlogix.problem.Problem.ParserProblem
 import mlogix.problem.ProblemCollector
 import mlogix.span.Span
 import mlogix.span.Spanned
+import java.util.*
 
 /**
  * 一个项目 一次构造
@@ -338,19 +339,30 @@ class Parser(
         }
 
         val parameters = Seq<Expr>()
-
         while (!match(TokenType.RPAREN)) {
+            val snapshot = problems.createSnapshot()
             val id = expect(TokenType.IDENTIFIER) { e -> e.info(start, "函数形参声明必须使用标识符") }
             if (id != null) {
                 parameters.add(annotation(Expr.Identifier(next())))
-                match(TokenType.COMMA)
+                if (!match(TokenType.COMMA) && !matchStmtEnd()) {
+                    consume(TokenType.RPAREN) { e -> e.info(lookAhead(0), "或者使用`,`来分隔各个形参") }
+                }
             } else {
-                recover(TokenType.RECOVERY)
-                if (!check(TokenType.RPAREN)) {
-                    error("期望`)`作为函数声明形参末尾")
-                        .info(lparen, "形参开头")
-                        .point(lookAhead(0), "末尾")
-                    return FnStmt(between(start, prevToken), name, parameters, null, null)
+                problems.restoreSnapshot(snapshot)
+                when (recoverByTokenTree(TokenType.RPAREN).type) {
+                    TokenType.COMMA -> continue
+                    TokenType.RPAREN -> break
+
+                    TokenType.EOF -> {
+                        error("期望`)`作为函数声明形参末尾")
+                            .info(lparen, "形参开头")
+                            .point(lookAhead(0), "末尾")
+                        return FnStmt(between(start, prevToken), name, parameters, null, null)
+                    }
+
+                    else -> {
+                        kotlin.error("Unreachable")
+                    }
                 }
             }
         }
@@ -1013,19 +1025,46 @@ class Parser(
     // ---------- 错误恢复方法 ----------
 
     /**
-     * 错误恢复，扫描直到期望的TokenType
+     * 错误恢复，扫描直到期望的TokenType(RPAREN, RBRACKET, RBRACE)，但不会消耗，按照Token树解析，不考虑已闭合的定界符
      */
-    private fun recover(expected: TokenType) {
-        while (!isAtEnd) {
-            if (check(expected)) {
-                return
+    private fun recoverByTokenTree(expected: TokenType): Token {
+        val delimiters = Stack<Token>()
+        while (true) {
+            val token = next()
+            when (token.type) {
+                expected -> if (delimiters.empty()) return token
+                TokenType.EOF -> return token
+                TokenType.COMMA -> return token
+
+                TokenType.LPAREN -> delimiters.push(token)
+                TokenType.LBRACKET -> delimiters.push(token)
+                TokenType.LBRACE -> delimiters.push(token)
+
+                TokenType.RPAREN -> {
+                    if (!delimiters.empty() && delimiters.peek().type == TokenType.LPAREN) {
+                        delimiters.pop()
+                    }
+                }
+
+                TokenType.RBRACKET -> {
+                    if (!delimiters.empty() && delimiters.peek().type == TokenType.LBRACKET) {
+                        delimiters.pop()
+                    }
+                }
+
+                TokenType.RBRACE -> {
+                    if (!delimiters.empty() && delimiters.peek().type == TokenType.LBRACE) {
+                        delimiters.pop()
+                    }
+                }
+
+                else -> Unit
             }
-            next()
         }
     }
 
     /**
-     * 错误恢复，扫描直到期望的TokenType，但不会消耗
+     * 错误恢复，扫描直到期望的TokenType，但不会消耗，按照Token树解析，不考虑已闭合的定界符
      */
     private fun recover(expecteds: Set<TokenType>) {
         while (!isAtEnd) {

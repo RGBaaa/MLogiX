@@ -216,7 +216,7 @@ class Lexer(private val problems: ProblemCollector) {
                 } else if (isIdentifierStart(c)) {
                     return identifier()
                 } else {
-                    error("未知的字符")
+                    error("未注册的字符")
                         .point(start, start + 1, Integer.toHexString(c.code))
                     recover { ch: Char -> recoverTerminators.contains(ch) }
                     return token(TokenType.ERROR, subString(start, current))
