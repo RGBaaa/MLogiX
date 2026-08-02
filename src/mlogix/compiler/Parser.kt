@@ -1,6 +1,7 @@
 package mlogix.compiler
 
 import arc.func.Cons
+import arc.func.Prov
 import arc.struct.Queue
 import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
@@ -1025,41 +1026,41 @@ class Parser(
     // ---------- 错误恢复方法 ----------
 
     /**
-     * 错误恢复，扫描直到期望的TokenType(RPAREN, RBRACKET, RBRACE)，但不会消耗，按照Token树解析，不考虑已闭合的定界符
+     * 错误恢复，扫描直到期望的TokenType(定界符)，但不会消耗，按照Token树解析，不考虑已闭合的定界符
      */
-    private fun recoverByTokenTree(expected: TokenType): Token {
-        val delimiters = Stack<Token>()
+    private fun recoverByTokenTree(expected: Set<TokenType>): TokenType {
+        val delimiters = Stack<TokenType>()
         while (true) {
-            val token = next()
-            when (token.type) {
-                expected -> if (delimiters.empty()) return token
-                TokenType.EOF -> return token
-                TokenType.COMMA -> return token
+            val type = lookAhead(0).type
+            if (expected.contains(type)) return type
+            when (type) {
+                TokenType.EOF -> return TokenType.EOF
 
-                TokenType.LPAREN -> delimiters.push(token)
-                TokenType.LBRACKET -> delimiters.push(token)
-                TokenType.LBRACE -> delimiters.push(token)
+                TokenType.LPAREN -> delimiters.push(type)
+                TokenType.LBRACKET -> delimiters.push(type)
+                TokenType.LBRACE -> delimiters.push(type)
 
                 TokenType.RPAREN -> {
-                    if (!delimiters.empty() && delimiters.peek().type == TokenType.LPAREN) {
+                    if (!delimiters.empty() && delimiters.peek() == TokenType.LPAREN) {
                         delimiters.pop()
                     }
                 }
 
                 TokenType.RBRACKET -> {
-                    if (!delimiters.empty() && delimiters.peek().type == TokenType.LBRACKET) {
+                    if (!delimiters.empty() && delimiters.peek() == TokenType.LBRACKET) {
                         delimiters.pop()
                     }
                 }
 
                 TokenType.RBRACE -> {
-                    if (!delimiters.empty() && delimiters.peek().type == TokenType.LBRACE) {
+                    if (!delimiters.empty() && delimiters.peek() == TokenType.LBRACE) {
                         delimiters.pop()
                     }
                 }
 
                 else -> Unit
             }
+            next()
         }
     }
 
