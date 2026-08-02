@@ -17,6 +17,11 @@ abstract class Expr(span: Span) : ASTNode(span) {
     data class Identifier(val token: Token) : Expr(token.span)
 
     /**
+     * 元组
+     */
+    data class Tuple(override val span: Span, val elements: Seq<Expr>) : Expr(span)
+
+    /**
      * 需要保证annotations.size > 0
      */
     data class Annotation(

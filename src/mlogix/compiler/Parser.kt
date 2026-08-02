@@ -737,6 +737,25 @@ class Parser(
     }
 
     /**
+     * 元组，先`check(TokenType.LPAREN)`再调用
+     */
+    private fun tuple(): Expr {
+        val lParen = next()
+        val elements = seq(
+            { expression() },
+            EnumSet.of(TokenType.NEWLINE),
+            true,
+            { error("期望`,`或换行符作为元组分隔符").info(lParen, "元组开头") },
+            TokenType.RPAREN,
+            true,
+            { error("期望`)`作为元组末尾").info(lParen, "元组开头") }
+        )
+//         TODO style提示
+//        if (elements.size == 1) {}
+        return Expr.Tuple(between(lParen, prevToken), elements)
+    }
+
+    /**
      * 传入[TokenType.IDENTIFIER]/[TokenType.LITERALS]后尝试解析类型注解，
      * 失败则返回[subject]
      * @param subject 已被消耗的[TokenType.IDENTIFIER]/[TokenType.LITERALS]
