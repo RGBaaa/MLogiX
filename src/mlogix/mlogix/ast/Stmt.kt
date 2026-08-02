@@ -49,11 +49,11 @@ abstract class Stmt(span: Span) : ASTNode(span) {
         override val span: Span,
         val flag: Expr.Identifier?,
         val varDecl: Expr.Identifier?,
-        val body: Stmt?,
-        val expr: Expr?
+        val expr: Expr?,
+        val body: Stmt?
     ) : Stmt(span)
 
-    data class WhileStmt(override val span: Span, val flag: Expr.Identifier?, val body: Stmt?, val expr: Expr) :
+    data class WhileStmt(override val span: Span, val flag: Expr.Identifier?, val expr: Expr, val body: Stmt?) :
         Stmt(span)
 
     data class BreakStmt(override val span: Span, val flag: Expr.Identifier?) : Stmt(span)

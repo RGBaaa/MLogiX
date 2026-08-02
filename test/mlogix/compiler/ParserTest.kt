@@ -66,13 +66,13 @@ class ParserTest {
         val ast = parser.parse("for 3 { 1 }")
 
         val body = Stmt.BlockStmt(span, Seq.with(Stmt.ExprStmt(span, Expr.Literal(token(TokenType.INT, 1.0)))))
-        val expected = Stmt.ForStmt(span, null, null, body, Expr.Literal(token(TokenType.INT, 3.0)))
+        val expected = Stmt.ForStmt(span, null, null, Expr.Literal(token(TokenType.INT, 3.0)), body)
         assertEquals(ast, expected)
     }
 
     @Test
     fun `parse function declaration`() {
-        val ast = parser.parse("fn add(a:b, c:d) -> ? Num|Int { return a + b }")
+        val ast = parser.parse("fn add(a:b, c:d) -> r : ?Num|Int { return a + b }")
 
         val name = token(TokenType.IDENTIFIER, "add")
         val aParam = Expr.Annotation(
@@ -84,9 +84,14 @@ class ParserTest {
             Seq.with(Expr.Identifier(token(TokenType.IDENTIFIER, "d"))),
         )
         val results = Seq.with<Expr>(
-            Expr.Identifier(token(TokenType.IDENTIFIER, "Null")),
-            Expr.Identifier(token(TokenType.IDENTIFIER, "Num")),
-            Expr.Identifier(token(TokenType.IDENTIFIER, "Int"))
+            Expr.Annotation(
+                Expr.Identifier(token(TokenType.IDENTIFIER, "r")),
+                Seq.with(
+                    Expr.Identifier(token(TokenType.IDENTIFIER, "Null")),
+                    Expr.Identifier(token(TokenType.IDENTIFIER, "Num")),
+                    Expr.Identifier(token(TokenType.IDENTIFIER, "Int"))
+                )
+            )
         )
         val body = Stmt.BlockStmt(
             span, Seq.with(
@@ -148,8 +153,8 @@ class ParserTest {
         val expectedWhile = Stmt.WhileStmt(
             span,
             null,
-            Stmt.BlockStmt(span, Seq.with(Stmt.ContinueStmt(span, null))),
-            Expr.Literal(token(TokenType.TRUE))
+            Expr.Literal(token(TokenType.TRUE)),
+            Stmt.BlockStmt(span, Seq.with(Stmt.ContinueStmt(span, null)))
         )
         assertEquals(ast, expectedWhile)
     }

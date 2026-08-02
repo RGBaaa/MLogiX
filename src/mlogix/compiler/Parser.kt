@@ -241,14 +241,14 @@ class Parser(
 
             if (expect(
                     TokenType.LBRACE,
-                ) { e: Problem -> e.info(between(start, prevToken), "`for`语句") }
+                ) { e: Problem -> e.info(head, "`for`语句") }
                 == null
             ) {
-                return ForStmt(between(start, prevToken), flag, varDecl, null, expr)
+                return ForStmt(between(start, prevToken), flag, varDecl, expr, null)
             }
             val body = block()
 
-            return ForStmt(between(start, body), flag, varDecl, body, expr)
+            return ForStmt(between(start, body), flag, varDecl, expr, body)
 
             // for repeatNum
         } else {
@@ -256,13 +256,13 @@ class Parser(
 
             if (expect(
                     TokenType.LBRACE,
-                ) { e: Problem -> e.info(between(start, expr), "`for`语句") } == null
+                ) { e: Problem -> e.info(head, "`for`语句") } == null
             ) {
-                return ForStmt(between(start, expr), flag, null, null, expr)
+                return ForStmt(between(start, expr), flag, null, expr, null)
             }
             val body = block()
 
-            return ForStmt(between(start, body), flag, null, body, expr)
+            return ForStmt(between(start, body), flag, null, expr, body)
         }
     }
 
@@ -276,48 +276,24 @@ class Parser(
                 TokenType.LBRACE,
             ) { e: Problem -> e.info(between(start, expr), "`while`语句") } == null
         ) {
-            return WhileStmt(between(start, expr), flag, null, expr)
+            return WhileStmt(between(start, expr), flag, expr, null)
         } else {
             val body = block()
-            return WhileStmt(between(start, body), flag, body, expr)
+            return WhileStmt(between(start, body), flag, expr, body)
         }
     }
 
 
     private fun loopStmtWithFlag(): Stmt? {
-        var i = 0
-
-        var flag = lookAhead(i)
-        if (flag.type == TokenType.NEWLINE) {
-            // 第二个不会是NEWLINE，由Lexer.scanToken()保证
-            next()
-            flag = lookAhead(i)
+        val snapshot = createSnapshot()
+        if (check(TokenType.IDENTIFIER)) {
+            val flag = next()
+            if (!isStmtEnd && match(TokenType.COLON)) {
+                if (check(TokenType.FOR)) return forStmt(Expr.Identifier(flag))
+                if (check(TokenType.WHILE)) return whileStmt(Expr.Identifier(flag))
+            }
         }
-        if (flag.type != TokenType.IDENTIFIER) return null
-        i++
-
-        var colon = lookAhead(i)
-        if (colon.type == TokenType.NEWLINE) {
-            i++
-            colon = lookAhead(i)
-        }
-        if (colon.type != TokenType.COLON) return null
-        i++
-
-        var loopHead = lookAhead(i)
-        if (loopHead.type == TokenType.NEWLINE) {
-            i++
-            loopHead = lookAhead(i)
-        }
-        if (loopHead.type == TokenType.FOR) {
-            next(i)
-            return forStmt(Expr.Identifier(flag))
-        }
-        if (loopHead.type == TokenType.WHILE) {
-            next(i)
-            return whileStmt(Expr.Identifier(flag))
-        }
-
+        restoreSnapshot(snapshot)
         return null
     }
 
@@ -719,7 +695,7 @@ class Parser(
         }
 
         error("期望表达式").point(lookAhead(0), "")
-        return ErrorExpr(lookAhead(0).span)
+        return ErrorExpr(next().span)
     }
 
     /**
@@ -1147,7 +1123,7 @@ class Parser(
 
     private fun createSnapshot(): Snapshot {
         return Snapshot(
-            input,
+            input.deepCopy(),
             lexer.createSnapshot(),
             problems.createSnapshot()
         )
@@ -1189,7 +1165,7 @@ class Parser(
     private inner class InputWindow {
         private val capacity: Int = 5
         private val buffer = Queue<Token>(capacity)
-        var prevToken: Token = lookAhead(0)
+        var prevToken: Token = Token(Span(sourceMap.index, 0, 0), TokenType.UNKNOWN)
 
         /**
          * 返回当下的Token并推进一步
@@ -1220,6 +1196,13 @@ class Parser(
                 buffer.addLast(lexer.scanToken())
             }
             return buffer.get(index)
+        }
+
+        fun deepCopy(): InputWindow {
+            return InputWindow().also {
+                this.buffer.forEach { t -> it.buffer.addLast(t) }
+                it.prevToken = this.prevToken
+            }
         }
     }
 
