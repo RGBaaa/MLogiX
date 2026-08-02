@@ -769,6 +769,55 @@ class Parser(
         return subject
     }
 
+    /**
+     * 解析一组连续表达式序列
+     * @param elementProv 解析并返回一个序列元素，无法解析时请返回[ErrorExpr]/`null`以调用恢复，务必消耗元素，否则死循环
+     * @param separators 分隔符，方法内已有自带的分隔符[matchStmtEnd]
+     * @param missSeparator 当`expect(end)`失败时使用missSeparator补充额外信息
+     * @param end 序列结束标志
+     * @param consumeEnd 是否消耗[end]，`false`时不强求[end]出现
+     * @param missEnd 错误恢复到EOF时调用，[consumeEnd]为`false`时不使用
+     */
+    private fun seq(
+        elementProv: Prov<Expr?>,
+        separators: Set<TokenType>,
+        missSeparator: Cons<Problem>,
+        end: TokenType,
+        consumeEnd: Boolean,
+        missEnd: () -> Unit = {},
+    ): Seq<Expr> {
+        val seq = Seq<Expr>()
+        while (!check(end)) {
+            val snapshot = createSnapshot()
+            val element = elementProv.get()
+            if (element != null && element !is ErrorExpr) {
+                seq.add(element)
+                if (!separators.contains(lookAhead(0).type)) {
+                    if (consumeEnd) {
+                        expect(end) { e -> missSeparator.get(e) }?.let { break }
+                    } else break
+                }
+                next()
+            } else {
+                restoreSnapshot(snapshot)
+                when (val type = recoverByTokenTree(EnumSet.of(end) + separators)) {
+                    end -> break
+
+                    TokenType.EOF -> {
+                        if (consumeEnd) {
+                            missEnd()
+                        }
+                        return seq
+                    }
+
+                    else -> if (separators.contains(type)) continue else kotlin.error("Unreachable")
+                }
+            }
+        }
+        if (consumeEnd) next()
+        return seq
+    }
+
     // ========== 工具方法 ==========
     // ---------- Token基础方法 ----------
 
