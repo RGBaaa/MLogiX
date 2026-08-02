@@ -791,7 +791,8 @@ class Parser(
     /**
      * 解析一组连续表达式序列
      * @param elementProv 解析并返回一个序列元素，无法解析时请返回[ErrorExpr]/`null`以调用恢复，务必消耗元素，否则死循环
-     * @param separators 分隔符，方法内已有自带的分隔符[matchStmtEnd]
+     * @param separators 分隔符，方法内已有自带的分隔符[matchStmtEnd]，可填`setOf()`以作空格
+     * @param allowOmitSeparator 是否允许省略分隔符
      * @param missSeparator 当`expect(end)`失败时使用missSeparator补充额外信息
      * @param end 序列结束标志
      * @param consumeEnd 是否消耗[end]，`false`时不强求[end]出现
@@ -800,37 +801,47 @@ class Parser(
     private fun seq(
         elementProv: Prov<Expr?>,
         separators: Set<TokenType>,
-        missSeparator: Cons<Problem>,
+        allowOmitSeparator: Boolean,
+        missSeparator: Prov<Problem>,
         end: TokenType,
         consumeEnd: Boolean,
-        missEnd: () -> Unit = {},
+        missEnd: Prov<Problem>,
     ): Seq<Expr> {
         val seq = Seq<Expr>()
         while (!check(end)) {
             val snapshot = createSnapshot()
             val element = elementProv.get()
-            if (element != null && element !is ErrorExpr) {
-                seq.add(element)
-                if (!separators.contains(lookAhead(0).type)) {
-                    if (consumeEnd) {
-                        expect(end) { e -> missSeparator.get(e) }?.let { break }
-                    } else break
-                }
-                next()
-            } else {
+            if (element == null || element is ErrorExpr) {
                 restoreSnapshot(snapshot)
-                when (val type = recoverByTokenTree(EnumSet.of(end) + separators)) {
-                    end -> break
-
-                    TokenType.EOF -> {
-                        if (consumeEnd) {
-                            missEnd()
-                        }
-                        return seq
-                    }
-
-                    else -> if (separators.contains(type)) continue else kotlin.error("Unreachable")
+            } else {
+                // 成功解析元素
+                seq.add(element)
+                // 有分隔符则消耗并继续解析
+                if (separators.contains(lookAhead(0).type)) {
+                    next()
+                    continue
                 }
+                // 允许忽略分隔符且不是错误分隔符则继续解析
+                if (allowOmitSeparator && separators.isNotEmpty()) continue
+                // 没有检查到正确分隔符，应该有结束符
+                if (check(end)) break
+                // 没有结束符，可能是漏掉了分隔符，报错并恢复
+                if (!isAtEnd) {
+                    missSeparator.get().point(lookAhead(0), "")
+                }
+            }
+            // 解析失败，开始恢复
+            when (val type = recoverByTokenTree(EnumSet.of(end) + separators)) {
+                end -> break
+
+                TokenType.EOF -> {
+                    if (consumeEnd) {
+                        missEnd.get().point(lookAhead(0), "")
+                    }
+                    return seq
+                }
+
+                else -> if (separators.contains(type)) continue else kotlin.error("Unreachable")
             }
         }
         if (consumeEnd) next()
