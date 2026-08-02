@@ -1097,13 +1097,13 @@ class Parser(
     // ---------- 错误恢复方法 ----------
 
     /**
-     * 错误恢复，扫描直到期望的TokenType(定界符)，但不会消耗，按照Token树解析，不考虑已闭合的定界符
+     * 错误恢复，扫描直到期望的TokenType，但不会消耗，按照Token树解析，不考虑已闭合的定界符
      */
     private fun recoverByTokenTree(expected: Set<TokenType>): TokenType {
         val delimiters = Stack<TokenType>()
         while (true) {
             val type = lookAhead(0).type
-            if (expected.contains(type)) return type
+            if (delimiters.empty() && expected.contains(type)) return type
             when (type) {
                 TokenType.EOF -> return TokenType.EOF
 
