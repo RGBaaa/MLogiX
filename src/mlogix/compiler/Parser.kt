@@ -884,7 +884,7 @@ class Parser(
     private val isStmtEnd: Boolean
         get() {
             val peekType = lookAhead(0).type
-            return peekType == TokenType.NEWLINE || peekType == TokenType.SEMICOLON || peekType == TokenType.EOF
+            return peekType in TokenType.STMT_END
         }
 
     /**
@@ -1032,7 +1032,13 @@ class Parser(
      * 不报错。
      */
     private fun matchStmtEnd(): Boolean {
-        return match(TokenType.STMT_END) || check(TokenType.BRACES)
+        val type = lookAhead(0).type
+        if (type in TokenType.STMT_END) {
+            next()
+            return true
+        }
+        if (type in TokenType.BRACES) return true
+        return false
     }
 
     /**
@@ -1041,7 +1047,7 @@ class Parser(
      * 都没有则报错。
      */
     private fun consumeStmtEnd() {
-        if (match(TokenType.STMT_END) || check(TokenType.BRACES)) return
+        if (matchStmtEnd()) return
         // 如果没有找到，报告错误
         error("缺少换行或分号作为语句结束符")
             .point(lookAhead(0), "")
