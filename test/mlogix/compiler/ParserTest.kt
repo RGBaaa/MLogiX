@@ -72,7 +72,7 @@ class ParserTest {
 
     @Test
     fun `parse function declaration`() {
-        val ast = parser.parse("fn add(a:b c:d) -> ? Num|Int { return a + b }")
+        val ast = parser.parse("fn add(a:b, c:d) -> ? Num|Int { return a + b }")
 
         val name = token(TokenType.IDENTIFIER, "add")
         val aParam = Expr.Annotation(

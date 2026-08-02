@@ -326,50 +326,32 @@ class Parser(
         val start = next()
 
         val name = consume(TokenType.IDENTIFIER) { e -> e.info(start, "函数声明必须有函数名") }
-        val lparen: Token?
+        val lParen: Token?
         if (name == null) {
             if (!check(TokenType.LPAREN)) {
                 return FnStmt(start.span, null, null, null, null)
             }
-            lparen = next()
+            lParen = next()
         } else {
-            lparen = consume(TokenType.LPAREN) { e -> e.info(start, "函数声明必须有形参") }
-            if (lparen == null) {
+            lParen = consume(TokenType.LPAREN) { e -> e.info(start, "函数声明必须有形参") }
+            if (lParen == null) {
                 return FnStmt(between(start, name), name, null, null, null)
             }
         }
 
-        val parameters = Seq<Expr>()
-        while (!match(TokenType.RPAREN)) {
-            val snapshot = problems.createSnapshot()
-            val id = expect(TokenType.IDENTIFIER) { e -> e.info(start, "函数形参声明必须使用标识符") }
-            if (id != null) {
-                parameters.add(annotation(Expr.Identifier(next())))
-                if (!match(TokenType.COMMA) && !matchStmtEnd()) {
-                    consume(TokenType.RPAREN) { e -> e.info(lookAhead(0), "或者使用`,`来分隔各个形参") }
-                }
-            } else {
-                problems.restoreSnapshot(snapshot)
-                when (recoverByTokenTree(TokenType.RPAREN).type) {
-                    TokenType.COMMA -> continue
-                    TokenType.RPAREN -> break
-
-                    TokenType.EOF -> {
-                        error("期望`)`作为函数声明形参末尾")
-                            .info(lparen, "形参开头")
-                            .point(lookAhead(0), "末尾")
-                        return FnStmt(between(start, prevToken), name, parameters, null, null)
-                    }
-
-                    else -> {
-                        kotlin.error("Unreachable")
-                    }
-                }
-            }
-        }
+        val parameters = seq(
+            { primary() },
+            EnumSet.of(TokenType.COMMA, TokenType.NEWLINE),
+            false,
+            { error("期望`,`或换行符作为形参分隔符").info(lParen, "形参开头") },
+            TokenType.RPAREN,
+            true,
+            { error("期望`)`作为函数声明形参末尾").info(lParen, "形参开头") }
+        )
 
         val results = Seq<Expr>()
-        if (match(TokenType.ARROW)) {
+        if (check(TokenType.ARROW)) {
+            val arrow = next()
             if (check(TokenType.QUESTION_MARK)) {
                 results.add(Expr.Identifier(Token(next().span, TokenType.IDENTIFIER, "Null")))
                 if (check(TokenType.OR)) {
@@ -377,17 +359,21 @@ class Parser(
                         .point(next(), "")
                 }
             }
-            while (!check(TokenType.LBRACE)) {
-                if (check(TokenType.IDENTIFIER)) {
-                    results.add(annotation(Expr.Identifier(next())))
-                    match(TokenType.OR)
-                } else {
-                    if (!matchStmtEnd()) {
-                        error("函数返回值声明必须使用标识符")
-                        recover(TokenType.RECOVERY)
-                    }
-                    break
-                }
+            results.add(
+                seq(
+                    {
+                        if (check(TokenType.LPAREN)) tuple() else primary()
+                    },
+                    EnumSet.of(TokenType.COMMA, TokenType.NEWLINE),
+                    false,
+                    { error("期望`,`或换行符作为返回值分隔符").info(arrow, "返回值开头") },
+                    TokenType.LBRACE,
+                    false,
+                    { error("期望`{`作为返回值声明末尾").info(lParen, "形参开头") }
+                ))
+            if (results.isEmpty) {
+                error("`->`之后必须声明返回值")
+                    .point(arrow, "")
             }
         }
 
