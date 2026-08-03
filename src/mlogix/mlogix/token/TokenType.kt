@@ -24,14 +24,20 @@ enum class TokenType(private val keyword: String? = null) {
     // +  -      *     /      **         %        %%               //
     PLUS, MINUS, STAR, SLASH, STAR_STAR, PERCENT, PERCENT_PERCENT, SLASH_SLASH,
 
-    //&  |   ^      <<   >>   ~
-    AND, OR, CARET, SHL, SHR, TILDE,
+    //&  |   ^      <<   >>   >>>  ~
+    AND, OR, CARET, SHL, SAR, SHR, TILDE,
 
     // ++      --
     PLUS_PLUS, MINUS_MINUS,
 
     // =
     ASSIGN,
+
+    // +=        -=            *=           /=            **=               %=              %%=                     //=
+    PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, SLASH_ASSIGN, STAR_STAR_ASSIGN, PERCENT_ASSIGN, PERCENT_PERCENT_ASSIGN, SLASH_SLASH_ASSIGN,
+
+    // &=       |=         ^=            <<=         >>=         >>>=
+    AND_ASSIGN, OR_ASSIGN, CARET_ASSIGN, SHL_ASSIGN, SAR_ASSIGN, SHR_ASSIGN,
 
     // ==  !=       ===       !==
     EQ_EQ, BANG_EQ, EQ_EQ_EQ, BANG_EQ_EQ,
@@ -93,11 +99,26 @@ enum class TokenType(private val keyword: String? = null) {
             OR -> "`|`"
             CARET -> "`^`"
             SHL -> "`<<`"
-            SHR -> "`>>`"
+            SAR -> "`>>`"
+            SHR -> "`>>>`"
             TILDE -> "`~`"
             PLUS_PLUS -> "`++`"
             MINUS_MINUS -> "`--`"
             ASSIGN -> "`=`"
+            PLUS_ASSIGN -> "`+=`"
+            MINUS_ASSIGN -> "`-=`"
+            STAR_ASSIGN -> "`*=`"
+            SLASH_ASSIGN -> "`/=`"
+            STAR_STAR_ASSIGN -> "`**=`"
+            PERCENT_ASSIGN -> "`%=`"
+            PERCENT_PERCENT_ASSIGN -> "`%%=`"
+            SLASH_SLASH_ASSIGN -> "`//=`"
+            AND_ASSIGN -> "`&=`"
+            OR_ASSIGN -> "`|=`"
+            CARET_ASSIGN -> "`^=`"
+            SHL_ASSIGN -> "`<<=`"
+            SAR_ASSIGN -> "`>>=`"
+            SHR_ASSIGN -> "`>>>=`"
             EQ_EQ -> "`==`"
             BANG_EQ -> "`!=`"
             EQ_EQ_EQ -> "`===`"
@@ -153,6 +174,13 @@ enum class TokenType(private val keyword: String? = null) {
             LBRACE, RBRACE
         )
 
+        val ASSIGNS: Set<TokenType> = EnumSet.of(
+            ASSIGN,
+            PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, SLASH_ASSIGN,
+            STAR_STAR_ASSIGN, PERCENT_ASSIGN, PERCENT_PERCENT_ASSIGN, SLASH_SLASH_ASSIGN,
+            AND_ASSIGN, OR_ASSIGN, CARET_ASSIGN, SHL_ASSIGN, SAR_ASSIGN, SHR_ASSIGN
+        )
+
         val LITERALS: Set<TokenType> = EnumSet.of(
             NUM, INT, COL, STR, TRUE, FALSE, NULL
         )
@@ -179,7 +207,7 @@ enum class TokenType(private val keyword: String? = null) {
 
         val BINARY_OPERATORS: Set<TokenType> = EnumSet.of(
             PLUS, MINUS, STAR, SLASH, STAR_STAR, PERCENT, PERCENT_PERCENT, SLASH_SLASH,
-            AND, OR, CARET, SHL, SHR,
+            AND, OR, CARET, SHL, SAR, SHR,
             AND_AND, OR_OR
         )
 

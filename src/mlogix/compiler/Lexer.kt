@@ -83,12 +83,17 @@ class Lexer(private val problems: ProblemCollector) {
             when (val c = advance()) {
                 '+' -> return if (match('+')) {
                     token(TokenType.PLUS_PLUS)
+                } else if (match('=')) {
+                    token(TokenType.PLUS_ASSIGN)
                 } else {
                     token(TokenType.PLUS)
                 }
 
+
                 '-' -> return if (match('-')) {
                     token(TokenType.MINUS_MINUS)
+                } else if (match('=')) {
+                    token(TokenType.MINUS_ASSIGN)
                 } else if (match('>')) {
                     token(TokenType.ARROW)
                 } else {
@@ -96,33 +101,59 @@ class Lexer(private val problems: ProblemCollector) {
                 }
 
                 '*' -> return if (match('*')) {
-                    token(TokenType.STAR_STAR)
+                    if (match('=')) {
+                        token(TokenType.STAR_STAR_ASSIGN)
+                    } else {
+                        token(TokenType.STAR_STAR)
+                    }
+                } else if (match('=')) {
+                    token(TokenType.STAR_ASSIGN)
                 } else {
                     token(TokenType.STAR)
                 }
 
                 '/' -> return if (match('/')) {
-                    token(TokenType.SLASH_SLASH)
+                    if (match('=')) {
+                        token(TokenType.SLASH_SLASH_ASSIGN)
+                    } else {
+                        token(TokenType.SLASH_SLASH)
+                    }
+                } else if (match('=')) {
+                    token(TokenType.SLASH_ASSIGN)
                 } else {
                     token(TokenType.SLASH)
                 }
 
-                '^' -> return token(TokenType.CARET)
+                '^' -> return if (match('=')) {
+                    token(TokenType.CARET_ASSIGN)
+                } else {
+                    token(TokenType.CARET)
+                }
 
                 '%' -> return if (match('%')) {
-                    token(TokenType.PERCENT_PERCENT)
+                    if (match('=')) {
+                        token(TokenType.PERCENT_PERCENT_ASSIGN)
+                    } else {
+                        token(TokenType.PERCENT_PERCENT)
+                    }
+                } else if (match('=')) {
+                    token(TokenType.PERCENT_ASSIGN)
                 } else {
                     token(TokenType.PERCENT)
                 }
 
                 '&' -> return if (match('&')) {
                     token(TokenType.AND_AND)
+                } else if (match('=')) {
+                    token(TokenType.AND_ASSIGN)
                 } else {
                     token(TokenType.AND)
                 }
 
                 '|' -> return if (match('|')) {
                     token(TokenType.OR_OR)
+                } else if (match('=')) {
+                    token(TokenType.OR_ASSIGN)
                 } else {
                     token(TokenType.OR)
                 }
@@ -154,7 +185,11 @@ class Lexer(private val problems: ProblemCollector) {
                 }
 
                 '<' -> return if (match('<')) {
-                    token(TokenType.SHL)
+                    if (match('=')) {
+                        token(TokenType.SHL_ASSIGN)
+                    } else {
+                        token(TokenType.SHL)
+                    }
                 } else if (match('=')) {
                     token(TokenType.LESS_EQ)
                 } else {
@@ -162,7 +197,19 @@ class Lexer(private val problems: ProblemCollector) {
                 }
 
                 '>' -> return if (match('>')) {
-                    token(TokenType.SHR)
+                    if (match('>')) {
+                        if (match('=')) {
+                            token(TokenType.SHR_ASSIGN)
+                        } else {
+                            token(TokenType.SHR)
+                        }
+                    } else {
+                        if (match('=')) {
+                            token(TokenType.SAR_ASSIGN)
+                        } else {
+                            token(TokenType.SAR)
+                        }
+                    }
                 } else if (match('=')) {
                     token(TokenType.GREATER_EQ)
                 } else {

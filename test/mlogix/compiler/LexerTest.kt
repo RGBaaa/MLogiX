@@ -35,7 +35,14 @@ class LexerTest {
 
         val expected = Seq.with<Token>(
             token(PLUS), token(MINUS), token(STAR), token(SLASH), token(STAR_STAR), token(PERCENT), token(PERCENT_PERCENT), token(SLASH_SLASH),
-            token(AND), token(OR), token(CARET), token(SHL), token(SHR), token(TILDE), token(PLUS_PLUS), token(MINUS_MINUS),
+            token(AND),
+            token(OR),
+            token(CARET),
+            token(SHL),
+            token(SAR),
+            token(TILDE),
+            token(PLUS_PLUS),
+            token(MINUS_MINUS),
             token(ASSIGN), token(EQ_EQ), token(BANG_EQ), token(EQ_EQ_EQ), token(BANG_EQ_EQ),
             token(LESS), token(GREATER), token(LESS_EQ), token(GREATER_EQ), token(AND_AND), token(OR_OR), token(BANG),
             token(COLON), token(COLON_ASSIGN), token(COLON_LESS), token(ARROW), token(SEMICOLON), token(COMMA), token(DOT),
@@ -68,7 +75,7 @@ class LexerTest {
         }
     }
 
-    private fun token(type: TokenType, literal: Any? = null): mlogix.mlogix.token.Token {
+    private fun token(type: TokenType, literal: Any? = null): Token {
         return Token(Span(0, 0, 0), type, literal)
     }
 }
