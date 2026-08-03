@@ -1121,7 +1121,7 @@ class Parser(
     }
 
     /**
-     * 错误恢复，扫描直到期望的TokenType，但不会消耗，按照Token树解析，不考虑已闭合的定界符
+     * 错误恢复，扫描直到期望的TokenType，但不会消耗
      */
     private fun recover(expecteds: Set<TokenType>) {
         while (!isAtEnd) {

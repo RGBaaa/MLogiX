@@ -139,8 +139,8 @@ enum class TokenType(private val keyword: String? = null) {
             MATCH,
             FN, RETURN,
             ENUM,
-            LPAREN, RPAREN,
-            LBRACKET, RBRACKET,
+            RPAREN,
+            RBRACKET,
             LBRACE, RBRACE,
             SEMICOLON, EOF,
         )
