@@ -441,25 +441,43 @@ class Parser(
      */
     private fun assignStmt(expr: Expr): Stmt? {
         if (isStmtEnd) {
-            if (check(TokenType.ASSIGN))
-                return null
+            if (check(TokenType.ASSIGNS)) {
+                error("赋值语句缺少左侧表达式")
+                    .point(next(), "")
+                recoverByTokenTree(TokenType.RECOVERY)
+            }
+            return null
         }
         if (check(TokenType.ASSIGN)) {
             val operator = next()
+            if (isStmtEnd) {
+                error("赋值语句缺少右侧表达式")
+                    .point(next(), "")
+                recoverByTokenTree(TokenType.RECOVERY)
+                return null
+            }
             val value = expression()
 
             if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
             return AssignStmt(between(expr, value), expr, operator, value)
-        } else if (check(TokenType.BINARY_OPERATORS)) {
-            val operator = next()
-            if (match(TokenType.ASSIGN)) {
-                val value = expression()
 
-                if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
-                return AssignStmt(between(expr, value), expr, operator, value)
+        } else if (check(TokenType.ASSIGNS)) {
+            val operator = next()
+            if (isStmtEnd) {
+                error("赋值语句缺少右侧表达式")
+                    .point(next(), "")
+                recoverByTokenTree(TokenType.RECOVERY)
+                return null
             }
+            val assign = Token(operator.span, TokenType.ASSIGN)
+            val subOperator = subOperatorOf(operator)
             val right = expression()
-            return ExprStmt(between(expr, right), Expr.Binary(expr, operator, right))
+            return AssignStmt(
+                between(expr, right),
+                expr,
+                assign,
+                Expr.Binary(expr, subOperator, right)
+            )
         }
         return null
     }
@@ -1170,6 +1188,28 @@ class Parser(
      */
     private fun between(from: Spanned, to: Spanned): Span {
         return Span(sourceMap.index, from.span().start, to.span().end)
+    }
+
+    /** 将复合赋值运算符token拆分 */
+    private fun subOperatorOf(token: Token): Token {
+        val subType = when (token.type) {
+            TokenType.PLUS_ASSIGN -> TokenType.PLUS
+            TokenType.MINUS_ASSIGN -> TokenType.MINUS
+            TokenType.STAR_ASSIGN -> TokenType.STAR
+            TokenType.SLASH_ASSIGN -> TokenType.SLASH
+            TokenType.STAR_STAR_ASSIGN -> TokenType.STAR_STAR
+            TokenType.PERCENT_ASSIGN -> TokenType.PERCENT
+            TokenType.PERCENT_PERCENT_ASSIGN -> TokenType.PERCENT_PERCENT
+            TokenType.SLASH_SLASH_ASSIGN -> TokenType.SLASH_SLASH
+            TokenType.AND_ASSIGN -> TokenType.AND
+            TokenType.OR_ASSIGN -> TokenType.OR
+            TokenType.CARET_ASSIGN -> TokenType.CARET
+            TokenType.SHL_ASSIGN -> TokenType.SHL
+            TokenType.SAR_ASSIGN -> TokenType.SAR
+            TokenType.SHR_ASSIGN -> TokenType.SHR
+            else -> kotlin.error("Unreachable")
+        }
+        return Token(token.span, subType)
     }
 
     private fun error(text: String): ParserProblem {
