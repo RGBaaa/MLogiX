@@ -795,10 +795,10 @@ class Parser(
      * @param elementProv 解析并返回一个序列元素，无法解析时请返回[ErrorExpr]/`null`以调用恢复，务必消耗元素，否则死循环
      * @param separators 分隔符，方法内已有自带的分隔符[matchStmtEnd]，可填`setOf()`以作空格
      * @param allowOmitSeparator 是否允许省略分隔符
-     * @param missSeparator 当`expect(end)`失败时使用missSeparator补充额外信息
+     * @param missSeparator 当`expect(end)`失败时使用missSeparator报错，方法自动调用[Problem.point]
      * @param end 序列结束标志
      * @param consumeEnd 是否消耗[end]，`false`时不强求[end]出现
-     * @param missEnd 错误恢复到EOF时调用，[consumeEnd]为`false`时不使用
+     * @param missEnd 错误恢复到EOF时调用，[consumeEnd]为`false`时不使用，方法自动调用[Problem.point]
      */
     private fun seq(
         elementProv: Prov<Expr?>,
