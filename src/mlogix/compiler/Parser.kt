@@ -92,6 +92,7 @@ class Parser(
     private fun useStmt(): Stmt? {
         val start = next() // consume 'use'
         val item = useItem() ?: return null
+        if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
         return UseStmt(between(start, item), item)
     }
 
@@ -100,10 +101,12 @@ class Parser(
         while (true) {
             when {
                 check(TokenType.IDENTIFIER) -> {
-                    path.add(Expr.Identifier(next()))
+                    val id = next()
+                    path.add(Expr.Identifier(id))
                     if (!match(TokenType.DOT)) {
                         return UseStmt.Single(between(path[0], prevToken), path)
                     }
+                    if (isStmtEnd) break
                     continue
                 }
 
@@ -131,14 +134,13 @@ class Parser(
                     return UseStmt.Multi(between((if (path.isEmpty) lbrace else path[0]), prevToken), path, items)
                 }
 
-                else -> {
-                    error("期望标识符、* 或 **")
-                        .point(lookAhead(0), "")
-                    recover(TokenType.RECOVERY)
-                    return null
-                }
+                else -> break
             }
         }
+        error("期望标识符、* 或 **")
+            .point(lookAhead(0), "")
+        recoverByTokenTree(TokenType.RECOVERY)
+        return null
     }
 
     private fun block(): Stmt {
@@ -374,7 +376,7 @@ class Parser(
         val start = next()
         if (matchStmtEnd()) return BreakStmt(start.span, null)
         val flag = consume(TokenType.IDENTIFIER) ?: return BreakStmt(start.span, null)
-        consumeStmtEnd()
+        if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
         return BreakStmt(between(start, flag), Expr.Identifier(flag))
     }
 
@@ -382,7 +384,7 @@ class Parser(
         val start = next()
         if (matchStmtEnd()) return ContinueStmt(start.span, null)
         val flag = consume(TokenType.IDENTIFIER) ?: return ContinueStmt(start.span, null)
-        consumeStmtEnd()
+        if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
         return ContinueStmt(between(start, flag), Expr.Identifier(flag))
     }
 
@@ -390,17 +392,23 @@ class Parser(
         val start = next()
         if (matchStmtEnd()) return ReturnStmt(start.span, null)
         val expr = expression()
-        consumeStmtEnd()
+        if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
         return ReturnStmt(between(start, expr), expr)
     }
 
-    private fun setStmt(): Stmt {
+    private fun setStmt(): Stmt? {
         val start = next()
 
+        if (isStmtEnd) {
+            error("未声明变量的`set`语句")
+                .info(start, "")
+                .point(lookAhead(0), "")
+            return null
+        }
         val expr = expression()
         val assignStmt = assignStmt(expr)
         if (assignStmt == null) {
-            consumeStmtEnd()
+            if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
             return SetVarStmt(between(start, expr), expr, null)
         } else {
             // assignStmt(_)消耗了StmtEnd
@@ -411,16 +419,17 @@ class Parser(
     private fun exprStmt(): Stmt? {
         val expr = expression()
         if (expr is ErrorExpr) {
-            recover(TokenType.RECOVERY)
+            recoverByTokenTree(TokenType.RECOVERY)
             return null
         }
 
         val assignStmt = assignStmt(expr)
 
         if (assignStmt == null) {
-            consumeStmtEnd()
+            if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
             return ExprStmt(expr.span, expr)
         } else {
+            // assignStmt(_)消耗了StmtEnd
             return assignStmt
         }
     }
@@ -431,18 +440,22 @@ class Parser(
      * @return 没有`=`或者复合赋值运算符时返回null;有时返回AssignStmt并推进
      */
     private fun assignStmt(expr: Expr): Stmt? {
+        if (isStmtEnd) {
+            if (check(TokenType.ASSIGN))
+                return null
+        }
         if (check(TokenType.ASSIGN)) {
             val operator = next()
             val value = expression()
 
-            consumeStmtEnd()
+            if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
             return AssignStmt(between(expr, value), expr, operator, value)
         } else if (check(TokenType.BINARY_OPERATORS)) {
             val operator = next()
             if (match(TokenType.ASSIGN)) {
                 val value = expression()
 
-                consumeStmtEnd()
+                if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
                 return AssignStmt(between(expr, value), expr, operator, value)
             }
             val right = expression()
@@ -1031,11 +1044,12 @@ class Parser(
      * 检查 { } 作为语句结束符，不推进；
      * 都没有则报错。
      */
-    private fun consumeStmtEnd() {
-        if (matchStmtEnd()) return
+    private fun consumeStmtEnd(): Boolean {
+        if (matchStmtEnd()) return true
         // 如果没有找到，报告错误
         error("缺少换行或分号作为语句结束符")
             .point(lookAhead(0), "")
+        return false
     }
 
     /**
