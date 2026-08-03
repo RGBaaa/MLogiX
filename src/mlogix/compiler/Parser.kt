@@ -717,21 +717,16 @@ class Parser(
 
         } else if (check(TokenType.LBRACE)) {
             val lBrace = next()
-            val elements = Seq<Expr>()
-            while (true) {
-                if (check(TokenType.RBRACE)) {
-                    return Expr.Array(between(lBrace, next()), elements)
-                }
-                val expr = expression()
-                if (expr is ErrorExpr) {
-                    error("期望`}`作为数组末尾")
-                        .info(lBrace, "数组开头")
-                        .point(lookAhead(0), "末尾")
-                    return Expr.Array(between(lBrace, elements.lastOrNull() ?: lBrace), elements)
-                }
-                elements.add(expr)
-                match(TokenType.COMMA) // 可选逗号
-            }
+            val elements = seq(
+                { expression() },
+                EnumSet.of(TokenType.COMMA, TokenType.NEWLINE),
+                true,
+                { error(text = "期望空格或`,`或换行符作为数组分隔符").info(obj = lBrace, text = "数组开头") },
+                TokenType.RBRACE,
+                true,
+                { error("期望`}`作为数组末尾").info(lBrace, "数组开头") }
+            )
+            return Expr.Array(between(lBrace, prevToken), elements)
         }
 
         error("期望表达式").point(lookAhead(0), "")
