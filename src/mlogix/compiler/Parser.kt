@@ -208,11 +208,15 @@ class Parser(
             }
             val pattern = expression()
             if (consume(TokenType.ARROW) == null) {
-                return MatchStmt(
-                    between(start, (if (branches.isEmpty) start else branches[branches.size - 1])),
-                    scrutinee,
-                    branches,
-                )
+                when (recoverByTokenTree(EnumSet.of(TokenType.NEWLINE, TokenType.RBRACE))) {
+                    TokenType.EOF -> return MatchStmt(
+                        between(start, (if (branches.isEmpty) start else branches[branches.size - 1])),
+                        scrutinee,
+                        branches,
+                    )
+
+                    else -> continue
+                }
             }
             val body = statement()
             branches.add(MatchStmt.MatchBranch(between(pattern, prevToken), pattern, body))
@@ -227,43 +231,38 @@ class Parser(
     private fun forStmt(flag: Expr.Identifier?): Stmt {
         val head = next()
         val start = flag ?: head
+        var varDecl: Expr.Identifier? = null
+        var expr: Expr?
 
-        // for id
         if (check(TokenType.IDENTIFIER)) {
-            val varDecl = Expr.Identifier(next())
-            val expr: Expr? = if (match("in")) {
+            // for id
+            varDecl = Expr.Identifier(next())
+            expr = if (match("in")) {
                 // for id in expr
                 expression()
             } else {
                 // for id
                 null
             }
-
-            if (expect(
-                    TokenType.LBRACE,
-                ) { e: Problem -> e.info(head, "`for`语句") }
-                == null
-            ) {
-                return ForStmt(between(start, prevToken), flag, varDecl, expr, null)
-            }
-            val body = block()
-
-            return ForStmt(between(start, body), flag, varDecl, expr, body)
-
-            // for repeatNum
         } else {
-            val expr = expression()
-
-            if (expect(
-                    TokenType.LBRACE,
-                ) { e: Problem -> e.info(head, "`for`语句") } == null
-            ) {
-                return ForStmt(between(start, expr), flag, null, expr, null)
-            }
-            val body = block()
-
-            return ForStmt(between(start, body), flag, null, expr, body)
+            // for repeatNum
+            expr = expression()
         }
+        if (expect(TokenType.LBRACE) { e: Problem -> e.info(head, "`for`语句") } == null) {
+            return ForStmt(between(start, prevToken), flag, varDecl, expr, null)
+        }
+        if (expect(TokenType.LBRACE) { e: Problem -> e.info(head, "`for`语句") } == null) {
+            when (recoverByTokenTree(EnumSet.of(TokenType.RBRACE))) {
+                TokenType.RBRACE -> error("不匹配的闭定界符").point(next(), "")
+                TokenType.EOF -> Unit
+                else -> kotlin.error("Unreachable")
+            }
+            return ForStmt(between(start, expr ?: varDecl!!), flag, varDecl, expr, null)
+        }
+        val body = block()
+
+        return ForStmt(between(start, body), flag, varDecl, expr, body)
+
     }
 
     private fun whileStmt(flag: Expr.Identifier?): Stmt {
@@ -272,15 +271,17 @@ class Parser(
 
         val expr = expression()
 
-        if (expect(
-                TokenType.LBRACE,
-            ) { e: Problem -> e.info(between(start, expr), "`while`语句") } == null
-        ) {
+        if (expect(TokenType.LBRACE) { e: Problem -> e.info(head, "`while`语句") } == null) {
+            when (recoverByTokenTree(EnumSet.of(TokenType.RBRACE))) {
+                TokenType.RBRACE -> error("不匹配的闭定界符").point(next(), "")
+                TokenType.EOF -> Unit
+                else -> kotlin.error("Unreachable")
+            }
             return WhileStmt(between(start, expr), flag, expr, null)
-        } else {
-            val body = block()
-            return WhileStmt(between(start, body), flag, expr, body)
         }
+        val body = block()
+        return WhileStmt(between(start, body), flag, expr, body)
+
     }
 
 
@@ -289,6 +290,14 @@ class Parser(
         if (check(TokenType.IDENTIFIER)) {
             val flag = next()
             if (!isStmtEnd && match(TokenType.COLON)) {
+                if (check(TokenType.FOR)) return forStmt(Expr.Identifier(flag))
+                if (check(TokenType.WHILE)) return whileStmt(Expr.Identifier(flag))
+            }
+            if (check(TokenType.COLON)) {
+                // 冒号跟flag不在同一行
+                error("循环标签中`:`必须与标签同行")
+                    .info(flag, "标签")
+                    .point(next(), "")
                 if (check(TokenType.FOR)) return forStmt(Expr.Identifier(flag))
                 if (check(TokenType.WHILE)) return whileStmt(Expr.Identifier(flag))
             }

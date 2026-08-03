@@ -62,12 +62,44 @@ class ParserTest {
     }
 
     @Test
-    fun `parse for repeat loop`() {
-        val ast = parser.parse("for 3 { 1 }")
+    fun `parse for`() {
+        val ast = parser.parse("loop: for i in 1:<links { print(i) }")
 
-        val body = Stmt.BlockStmt(span, Seq.with(Stmt.ExprStmt(span, Expr.Literal(token(TokenType.INT, 1.0)))))
-        val expected = Stmt.ForStmt(span, null, null, Expr.Literal(token(TokenType.INT, 3.0)), body)
+        val flag = Expr.Identifier(token(TokenType.IDENTIFIER, "loop"))
+        val varDecl = Expr.Identifier(token(TokenType.IDENTIFIER, "i"))
+        val expr = Expr.Range(
+            span,
+            Expr.Literal(token(TokenType.INT, 1.0)),
+            token(TokenType.COLON_LESS),
+            Expr.Identifier(token(TokenType.IDENTIFIER, "links")),
+        )
+        val body = Stmt.BlockStmt(
+            span,
+            Seq.with(
+                Stmt.ExprStmt(
+                    span,
+                    Expr.Call(
+                        span,
+                        Expr.Identifier(token(TokenType.IDENTIFIER, "print")),
+                        Seq.with(Expr.Identifier(token(TokenType.IDENTIFIER, "i")))
+                    )
+                )
+            )
+        )
+        val expected = Stmt.ForStmt(span, flag, varDecl, expr, body)
         assertEquals(ast, expected)
+    }
+
+    @Test
+    fun `parse while`() {
+        val ast = parser.parse("loop: while true { continue }")
+        val expectedWhile = Stmt.WhileStmt(
+            span,
+            Expr.Identifier(token(TokenType.IDENTIFIER, "loop")),
+            Expr.Literal(token(TokenType.TRUE)),
+            Stmt.BlockStmt(span, Seq.with(Stmt.ContinueStmt(span, null)))
+        )
+        assertEquals(ast, expectedWhile)
     }
 
     @Test
@@ -145,18 +177,6 @@ class ParserTest {
         val branch = Stmt.MatchStmt.MatchBranch(span, Expr.Literal(token(TokenType.INT, 1.0)), matchBranchBody)
         val expectedMatch = Stmt.MatchStmt(span, Expr.Literal(token(TokenType.INT, 1.0)), Seq.with(branch))
         assertEquals(ast, expectedMatch)
-    }
-
-    @Test
-    fun `parse while`() {
-        val ast = parser.parse("while true { continue }")
-        val expectedWhile = Stmt.WhileStmt(
-            span,
-            null,
-            Expr.Literal(token(TokenType.TRUE)),
-            Stmt.BlockStmt(span, Seq.with(Stmt.ContinueStmt(span, null)))
-        )
-        assertEquals(ast, expectedWhile)
     }
 
     private fun token(type: TokenType, literal: Any? = null): Token {
