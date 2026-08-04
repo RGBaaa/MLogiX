@@ -41,11 +41,7 @@ class Compiler(projectPath: Fi) {
 
 
                 // ---------- 语义分析 ----------
-                try {
-                    semanticAnalyzer.analyze(ast, sourceMap)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                semanticAnalyzer.analyze(ast, sourceMap)
 
                 // ---------- 输出报告 ----------
                 collector.printError()

@@ -1,23 +1,18 @@
-package mlogix.compiler.type;
+package mlogix.compiler.type
 
-import arc.struct.ObjectMap;
+import arc.struct.ObjectMap
 
-public class Type {
-    public final String name;
-    public final ObjectMap<String, Type> fields = new ObjectMap<>();
-    public final ObjectMap<String, Type> methods = new ObjectMap<>();
+open class Type(val name: String) {
+    val fields: ObjectMap<String, Type> = ObjectMap<String, Type>()
+    val methods: ObjectMap<String, FunctionType> = ObjectMap<String, FunctionType>()
 
-    public Type(String name) {
-        this.name = name;
+    fun addField(name: String?, type: Type?): Type {
+        fields.put(name, type)
+        return this
     }
 
-    public Type addField(String name, Type type){
-        fields.put(name, type);
-        return this;
-    }
-
-    public Type addMethod(String name, Type fn){
-        methods.put(name, fn);
-        return this;
+    fun addMethod(name: String?, fn: FunctionType?): Type {
+        methods.put(name, fn)
+        return this
     }
 }
