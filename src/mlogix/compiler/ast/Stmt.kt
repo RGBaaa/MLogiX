@@ -1,7 +1,7 @@
-package mlogix.mlogix.ast
+package mlogix.compiler.ast
 
 import arc.struct.Seq
-import mlogix.mlogix.token.Token
+import mlogix.compiler.token.Token
 import mlogix.span.Span
 import mlogix.span.Spanned
 
@@ -30,7 +30,7 @@ abstract class Stmt(span: Span) : ASTNode(span) {
             UseItem(span)
     }
 
-    data class BlockStmt(override val span: Span, val stmts: Seq<Stmt?>) : Stmt(span)
+    data class BlockStmt(override val span: Span, val stmts: Seq<Stmt>) : Stmt(span)
 
     data class ExprStmt(override val span: Span, val expr: Expr) : Stmt(span)
 

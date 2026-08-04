@@ -2,22 +2,22 @@ package mlogix.compiler
 
 import arc.func.Cons
 import arc.func.Prov
+import arc.struct.EnumSet
 import arc.struct.Queue
 import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
-import mlogix.mlogix.ast.Expr
-import mlogix.mlogix.ast.Expr.ErrorExpr
-import mlogix.mlogix.ast.Expr.Get
-import mlogix.mlogix.ast.Stmt
-import mlogix.mlogix.ast.Stmt.*
-import mlogix.mlogix.token.Token
-import mlogix.mlogix.token.TokenType
+import mlogix.compiler.ast.Expr
+import mlogix.compiler.ast.Expr.ErrorExpr
+import mlogix.compiler.ast.Expr.Get
+import mlogix.compiler.ast.Stmt
+import mlogix.compiler.ast.Stmt.*
+import mlogix.compiler.token.Token
+import mlogix.compiler.token.TokenType
 import mlogix.problem.Problem
 import mlogix.problem.Problem.ParserProblem
 import mlogix.problem.ProblemCollector
 import mlogix.span.Span
 import mlogix.span.Spanned
-import java.util.*
 
 /**
  * 一个项目 一次构造
@@ -146,7 +146,7 @@ class Parser(
     private fun block(): Stmt {
         val lBrace = next()
 
-        val stmts = Seq<Stmt?>()
+        val stmts = Seq<Stmt>()
         while (!check(TokenType.RBRACE)) {
             if (isAtEnd) {
                 error("期望`块`语句的`}`")
@@ -154,7 +154,7 @@ class Parser(
                     .point(lookAhead(0), "当前")
                 return BlockStmt(between(lBrace, prevToken), stmts)
             }
-            stmts.add(statement())
+            statement()?.let { stmts.add(it) }
         }
         val rbrace = next()
 
@@ -797,7 +797,7 @@ class Parser(
      */
     private fun seq(
         elementProv: Prov<Expr?>,
-        separators: Set<TokenType>,
+        separators: EnumSet<TokenType>,
         allowOmitSeparator: Boolean,
         missSeparator: Prov<Problem>,
         end: TokenType,
@@ -819,7 +819,7 @@ class Parser(
                     continue
                 }
                 // 允许忽略分隔符且不是错误分隔符则继续解析
-                if (allowOmitSeparator && separators.isNotEmpty()) continue
+                if (allowOmitSeparator && separators.size > 0) continue
                 // 没有检查到正确分隔符，应该有结束符
                 if (check(end)) break
                 // 没有结束符，可能是漏掉了分隔符，报错并恢复
@@ -828,7 +828,7 @@ class Parser(
                 }
             }
             // 解析失败，开始恢复
-            when (val type = recoverByTokenTree(EnumSet.of(end) + separators)) {
+            when (val type = recoverByTokenTree(separators.with(end))) {
                 end -> break
 
                 TokenType.EOF -> {
@@ -918,7 +918,7 @@ class Parser(
      * 下一个Token的类型在参数中，则返回true
      * 不支持NEWLINE
      */
-    private fun check(types: Set<TokenType>): Boolean {
+    private fun check(types: EnumSet<TokenType>): Boolean {
         val nextType = lookAhead(0).type
         if (nextType == TokenType.NEWLINE) {
             // 第二个不会是NEWLINE，由Lexer.scanToken()保证
@@ -980,7 +980,7 @@ class Parser(
         return false
     }
 
-    private fun match(types: Set<TokenType>): Boolean {
+    private fun match(types: EnumSet<TokenType>): Boolean {
         if (check(types)) {
             next()
             return true
@@ -1111,32 +1111,32 @@ class Parser(
     /**
      * 错误恢复，扫描直到期望的TokenType，但不会消耗，按照Token树解析，不考虑已闭合的定界符
      */
-    private fun recoverByTokenTree(expected: Set<TokenType>): TokenType {
-        val delimiters = Stack<TokenType>()
+    private fun recoverByTokenTree(expected: EnumSet<TokenType>, addition: TokenType? = null): TokenType {
+        val delimiters = Seq<TokenType>()
         while (true) {
             val type = lookAhead(0).type
-            if (delimiters.empty() && expected.contains(type)) return type
+            if (delimiters.isEmpty && (expected.contains(type) || addition == type)) return type
             when (type) {
                 TokenType.EOF -> return TokenType.EOF
 
-                TokenType.LPAREN -> delimiters.push(type)
-                TokenType.LBRACKET -> delimiters.push(type)
-                TokenType.LBRACE -> delimiters.push(type)
+                TokenType.LPAREN -> delimiters.add(type)
+                TokenType.LBRACKET -> delimiters.add(type)
+                TokenType.LBRACE -> delimiters.add(type)
 
                 TokenType.RPAREN -> {
-                    if (!delimiters.empty() && delimiters.peek() == TokenType.LPAREN) {
+                    if (!delimiters.isEmpty && delimiters.peek() == TokenType.LPAREN) {
                         delimiters.pop()
                     }
                 }
 
                 TokenType.RBRACKET -> {
-                    if (!delimiters.empty() && delimiters.peek() == TokenType.LBRACKET) {
+                    if (!delimiters.isEmpty && delimiters.peek() == TokenType.LBRACKET) {
                         delimiters.pop()
                     }
                 }
 
                 TokenType.RBRACE -> {
-                    if (!delimiters.empty() && delimiters.peek() == TokenType.LBRACE) {
+                    if (!delimiters.isEmpty && delimiters.peek() == TokenType.LBRACE) {
                         delimiters.pop()
                     }
                 }
@@ -1150,7 +1150,7 @@ class Parser(
     /**
      * 错误恢复，扫描直到期望的TokenType，但不会消耗
      */
-    private fun recover(expecteds: Set<TokenType>) {
+    private fun recover(expecteds: EnumSet<TokenType>) {
         while (!isAtEnd) {
             if (check(expecteds)) return
             next()

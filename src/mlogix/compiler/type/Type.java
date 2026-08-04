@@ -1,8 +1,6 @@
-package mlogix.mlogix.type;
+package mlogix.compiler.type;
 
 import arc.struct.ObjectMap;
-
-import java.util.*;
 
 public class Type {
     public final String name;

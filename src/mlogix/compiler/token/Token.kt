@@ -1,4 +1,4 @@
-package mlogix.mlogix.token
+package mlogix.compiler.token
 
 import mlogix.span.Span
 import mlogix.span.Spanned

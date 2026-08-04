@@ -1,4 +1,4 @@
-package mlogix.mlogix.type;
+package mlogix.compiler.type;
 
 import java.util.*;
 

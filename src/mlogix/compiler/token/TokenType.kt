@@ -1,6 +1,6 @@
-package mlogix.mlogix.token
+package mlogix.compiler.token
 
-import java.util.*
+import arc.struct.EnumSet
 
 enum class TokenType(private val keyword: String? = null) {
     // 关键字
@@ -146,12 +146,12 @@ enum class TokenType(private val keyword: String? = null) {
             QUESTION_MARK -> "`?`"
             NEWLINE -> "`\\n`"
             EOF -> "<eof>"
-            else -> this.name.lowercase(Locale.getDefault())
+            else -> this.name.lowercase()
         }
     }
 
     companion object {
-        val RECOVERY: Set<TokenType> = EnumSet.of(
+        val RECOVERY: EnumSet<TokenType> = EnumSet.of(
             USE,
             SET, MACRO, CONST,
             IF,
@@ -166,57 +166,57 @@ enum class TokenType(private val keyword: String? = null) {
             SEMICOLON, EOF,
         )
 
-        val STMT_END: Set<TokenType> = EnumSet.of(
+        val STMT_END: EnumSet<TokenType> = EnumSet.of(
             NEWLINE, SEMICOLON, EOF
         )
 
-        val BRACES: Set<TokenType> = EnumSet.of(
+        val BRACES: EnumSet<TokenType> = EnumSet.of(
             LBRACE, RBRACE
         )
 
-        val ASSIGNS: Set<TokenType> = EnumSet.of(
+        val ASSIGNS: EnumSet<TokenType> = EnumSet.of(
             ASSIGN,
             PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, SLASH_ASSIGN,
             STAR_STAR_ASSIGN, PERCENT_ASSIGN, PERCENT_PERCENT_ASSIGN, SLASH_SLASH_ASSIGN,
             AND_ASSIGN, OR_ASSIGN, CARET_ASSIGN, SHL_ASSIGN, SAR_ASSIGN, SHR_ASSIGN
         )
 
-        val LITERALS: Set<TokenType> = EnumSet.of(
+        val LITERALS: EnumSet<TokenType> = EnumSet.of(
             NUM, INT, COL, STR, TRUE, FALSE, NULL
         )
 
-        val EQ_OPERATORS: Set<TokenType> = EnumSet.of(
+        val EQ_OPERATORS: EnumSet<TokenType> = EnumSet.of(
             EQ_EQ, BANG_EQ, EQ_EQ_EQ, BANG_EQ_EQ
         )
 
-        val COMPARISON_OPERATORS: Set<TokenType> = EnumSet.of(
+        val COMPARISON_OPERATORS: EnumSet<TokenType> = EnumSet.of(
             LESS, GREATER, LESS_EQ, GREATER_EQ
         )
 
-        val RANGE_OPERATORS: Set<TokenType> = EnumSet.of(
+        val RANGE_OPERATORS: EnumSet<TokenType> = EnumSet.of(
             COLON_LESS, COLON_ASSIGN
         )
 
-        val MUL_DIV_OPERATORS: Set<TokenType> = EnumSet.of(
+        val MUL_DIV_OPERATORS: EnumSet<TokenType> = EnumSet.of(
             STAR, SLASH, PERCENT, PERCENT_PERCENT, SLASH_SLASH
         )
 
-        val UNARY_OPERATORS: Set<TokenType> = EnumSet.of(
+        val UNARY_OPERATORS: EnumSet<TokenType> = EnumSet.of(
             MINUS, TILDE, BANG
         )
 
-        val BINARY_OPERATORS: Set<TokenType> = EnumSet.of(
+        val BINARY_OPERATORS: EnumSet<TokenType> = EnumSet.of(
             PLUS, MINUS, STAR, SLASH, STAR_STAR, PERCENT, PERCENT_PERCENT, SLASH_SLASH,
             AND, OR, CARET, SHL, SAR, SHR,
             AND_AND, OR_OR
         )
 
 
-        val ADD_SUB_OPERATORS: Set<TokenType> = EnumSet.of(
+        val ADD_SUB_OPERATORS: EnumSet<TokenType> = EnumSet.of(
             PLUS, MINUS
         )
 
-        val SEPARATORS: Set<TokenType> = EnumSet.of(
+        val SEPARATORS: EnumSet<TokenType> = EnumSet.of(
             COLON, SEMICOLON, COMMA, DOT,
             LPAREN, RPAREN,
             LBRACKET, RBRACKET,
