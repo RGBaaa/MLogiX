@@ -1,7 +1,6 @@
 package mlogix;
 
-import java.nio.file.*;
-
+import arc.files.Fi;
 import mlogix.compiler.Compiler;
 import mlogix.util.*;
 
@@ -29,7 +28,7 @@ public class Main {
 
     static void compile() {
         // 获取当前工作目录
-        Path projectDirectory = Paths.get(System.getProperty("user.dir"));
+        Fi projectDirectory = Fi.get(System.getProperty("user.dir"));
 
         Compiler compiler = new Compiler(projectDirectory);
         boolean result = compiler.compile();

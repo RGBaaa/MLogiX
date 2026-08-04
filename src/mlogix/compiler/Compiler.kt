@@ -1,14 +1,17 @@
 package mlogix.compiler
 
+import arc.files.Fi
+import arc.struct.ArrayMap
+import arc.struct.ObjectMap
 import mlogix.compiler.SourceMapManager.SourceMap
 import mlogix.mlogix.ast.ASTPrinter
 import mlogix.problem.ProblemCollector
 import mlogix.util.Log
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
+import kotlin.collections.component1
+import kotlin.collections.component2
 
-class Compiler(projectPath: Path) {
+class Compiler(projectPath: Fi) {
     private val manager: SourceMapManager = SourceMapManager(projectPath)
     private val collector: ProblemCollector = ProblemCollector()
 
@@ -20,38 +23,38 @@ class Compiler(projectPath: Path) {
 
         // 遍历项目树
         try {
-            manager.walk()
-                .filter { path: Path -> Files.isRegularFile(path) }
-                .filter { f: Path -> f.fileName.toString().endsWith(".mlx") }
-                .forEach { file: Path ->
-                    val sourceMap: SourceMap
-                    try {
-                        sourceMap = manager.loadSourceMap(file)
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                        return@forEach
-                    }
-                    if (sourceMap.source.isEmpty()) return@forEach
+            manager.walk { file ->
+                if (!file.extension().equals("mlx")) return@walk
 
-                    // ---------- 词法分析 + 语法分析 ----------
-                    timer.startPhase("词法分析+语法分析")
-                    val ast = parser.parse(sourceMap)
-                    timer.endPhase()
-
-
-                    // ---------- 语义分析 ----------
-//                        timer.startPhase("语义分析");
-//                        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(collector);
-//                        semanticAnalyzer.analyze(ast, sourceMap);
-//                        timer.endPhase();
-
-                    // ---------- 输出报告 ----------
-                    collector.printError()
-                    collector.printWarning()
-                    if (Log.isAllowed(Log.LogType.DEBUG)) {
-                        ASTPrinter.print(ast, sourceMap)
-                    }
+                val sourceMap: SourceMap
+                try {
+                    sourceMap = manager.loadSourceMap(file)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    return@walk
                 }
+                if (sourceMap.source.isEmpty()) return@walk
+
+                // ---------- 词法分析 + 语法分析 ----------
+                timer.startPhase("词法分析+语法分析")
+                val ast = parser.parse(sourceMap)
+                timer.endPhase()
+
+
+                // ---------- 语义分析 ----------
+                //                        timer.startPhase("语义分析");
+                //                        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(collector);
+                //                        semanticAnalyzer.analyze(ast, sourceMap);
+                //                        timer.endPhase();
+
+                // ---------- 输出报告 ----------
+                collector.printError()
+                collector.printWarning()
+                if (Log.isAllowed(Log.LogType.DEBUG)) {
+                    ASTPrinter.print(ast, sourceMap)
+                }
+            }
+
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -74,7 +77,7 @@ class Compiler(projectPath: Path) {
     }
 
     class PhaseTimer {
-        private val phaseTimeMap = HashMap<String, Long>()
+        private val phaseTimeMap = ArrayMap<String, Long>()
         private var currentPhaseName: String? = null
         private var phaseStart: Long = 0
 
@@ -89,7 +92,7 @@ class Compiler(projectPath: Path) {
         fun endPhase() {
             if (currentPhaseName != null) {
                 val duration = System.currentTimeMillis() - phaseStart
-                phaseTimeMap.merge(currentPhaseName!!, duration) { a: Long, b: Long -> a + b }
+                phaseTimeMap.put(currentPhaseName, duration)
                 currentPhaseName = null
             }
         }
@@ -97,12 +100,12 @@ class Compiler(projectPath: Path) {
         fun printPhaseTimes() {
             Log.info("=== 编译阶段耗时统计 ===")
             if (Log.isAllowed(Log.LogType.DEBUG)) {
-                phaseTimeMap.forEach { (phaseName: String, time: Long) ->
-                    System.out.printf("%-10s: %5d ms%n", phaseName, time)
+                phaseTimeMap.forEach { entry: ObjectMap.Entry<String, Long> ->
+                    System.out.printf("%-10s: %5d ms%n", entry.key, entry.value)
                 }
             }
 
-            val total = phaseTimeMap.values.stream().mapToLong { obj: Long -> obj }.sum()
+            val total = phaseTimeMap.values.sum()
             System.out.printf("%-10s: %5d ms%n", "总计", total)
         }
     }
