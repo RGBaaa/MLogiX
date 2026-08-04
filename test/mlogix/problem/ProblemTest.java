@@ -2,8 +2,8 @@ package mlogix.problem;
 
 import mlogix.compiler.SourceMapManager.SourceMap;
 import mlogix.span.Span;
-import mlogix.mlogix.token.Token;
-import mlogix.mlogix.token.TokenType;
+import mlogix.compiler.token.Token;
+import mlogix.compiler.token.TokenType;
 import mlogix.util.Log;
 
 class ProblemTest {

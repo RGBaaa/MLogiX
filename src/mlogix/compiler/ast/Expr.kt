@@ -1,7 +1,7 @@
-package mlogix.mlogix.ast
+package mlogix.compiler.ast
 
 import arc.struct.Seq
-import mlogix.mlogix.token.Token
+import mlogix.compiler.token.Token
 import mlogix.span.Span
 
 //Expression

@@ -1,6 +1,6 @@
-package mlogix.mlogix.type;
+package mlogix.compiler.type;
 
-import mlogix.mlogix.token.TokenType;
+import mlogix.compiler.token.TokenType;
 
 public class BuiltinType {
     public static final Type
@@ -14,7 +14,7 @@ public class BuiltinType {
 
         Str = new Type("Str");
         Array = new Type("Array")
-                .addFields("length", Int);
+                .addField("length", Int);
 
         Fn = new Type("Fn");
 

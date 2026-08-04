@@ -4,12 +4,10 @@ import arc.files.Fi
 import arc.struct.ArrayMap
 import arc.struct.ObjectMap
 import mlogix.compiler.SourceMapManager.SourceMap
-import mlogix.mlogix.ast.ASTPrinter
+import mlogix.compiler.ast.ASTPrinter
 import mlogix.problem.ProblemCollector
 import mlogix.util.Log
 import java.io.IOException
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 class Compiler(projectPath: Fi) {
     private val manager: SourceMapManager = SourceMapManager(projectPath)
@@ -20,6 +18,7 @@ class Compiler(projectPath: Fi) {
         // 可复用
         val lexer = Lexer(collector)
         val parser = Parser(lexer, collector)
+        val semanticAnalyzer = mlogix.compiler.analyzer.SemanticAnalyzer(collector)
 
         // 遍历项目树
         try {
@@ -42,10 +41,11 @@ class Compiler(projectPath: Fi) {
 
 
                 // ---------- 语义分析 ----------
-                //                        timer.startPhase("语义分析");
-                //                        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(collector);
-                //                        semanticAnalyzer.analyze(ast, sourceMap);
-                //                        timer.endPhase();
+                try {
+                    semanticAnalyzer.analyze(ast, sourceMap)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
 
                 // ---------- 输出报告 ----------
                 collector.printError()

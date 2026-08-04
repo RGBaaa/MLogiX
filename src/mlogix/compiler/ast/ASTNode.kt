@@ -1,4 +1,4 @@
-package mlogix.mlogix.ast
+package mlogix.compiler.ast
 
 import mlogix.span.Span
 import mlogix.span.Spanned

@@ -1,10 +1,10 @@
-package mlogix.mlogix.ast
+package mlogix.compiler.ast
 
 import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
-import mlogix.mlogix.ast.Stmt.MatchStmt.MatchBranch
-import mlogix.mlogix.ast.Stmt.UseStmt.UseItem
-import mlogix.mlogix.token.Token
+import mlogix.compiler.ast.Stmt.MatchStmt.MatchBranch
+import mlogix.compiler.ast.Stmt.UseStmt.UseItem
+import mlogix.compiler.token.Token
 import mlogix.span.Span
 import mlogix.span.Spanned
 import mlogix.util.Ansi

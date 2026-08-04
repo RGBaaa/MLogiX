@@ -4,8 +4,8 @@ import arc.graphics.Color
 import arc.graphics.Colors
 import arc.struct.Seq
 import mlogix.compiler.SourceMapManager.SourceMap
-import mlogix.mlogix.token.Token
-import mlogix.mlogix.token.TokenType
+import mlogix.compiler.token.Token
+import mlogix.compiler.token.TokenType
 import mlogix.problem.Problem
 import mlogix.problem.Problem.LexerProblem
 import mlogix.problem.ProblemCollector

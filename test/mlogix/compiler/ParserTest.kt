@@ -1,10 +1,10 @@
 package mlogix.compiler
 
 import arc.struct.Seq
-import mlogix.mlogix.ast.Expr
-import mlogix.mlogix.ast.Stmt
-import mlogix.mlogix.token.Token
-import mlogix.mlogix.token.TokenType
+import mlogix.compiler.ast.Expr
+import mlogix.compiler.ast.Stmt
+import mlogix.compiler.token.Token
+import mlogix.compiler.token.TokenType
 import mlogix.problem.ProblemCollector
 import mlogix.span.Span
 import org.junit.jupiter.api.Assertions.assertEquals
