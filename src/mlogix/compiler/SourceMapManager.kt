@@ -1,5 +1,6 @@
 package mlogix.compiler
 
+import arc.struct.IntSeq
 import arc.struct.Seq
 import java.io.IOException
 import java.nio.file.Files
@@ -50,7 +51,7 @@ class SourceMapManager(/* 项目根目录 */val projectPath: Path) {
         val relativePath: Path? /* 相对于项目根目录的相对目录 */
         val source: String /* 存储所有字符 */
         val index: Int /* 在SourceMapManager中的索引 */
-        private val lineOffsetList: Seq<Int> /* 每行的起始字符索引 */
+        private val lineOffsetList: IntSeq /* 每行的起始字符索引 */
 
         constructor(filePath: Path, index: Int, projectPath: Path) {
             this.filePath = filePath
@@ -86,8 +87,8 @@ class SourceMapManager(/* 项目根目录 */val projectPath: Path) {
         /**
          * 构建行号表（记录每行的起始字符索引）
          */
-        private fun buildLineOffsetList(): Seq<Int> {
-            val offsetList = Seq<Int>()
+        private fun buildLineOffsetList(): IntSeq {
+            val offsetList = IntSeq()
             offsetList.add(0) // 第一行从索引0开始
 
             for ((i, element) in source.withIndex()) {
