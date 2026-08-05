@@ -1,7 +1,7 @@
 package mlogix.compiler.ast
 
-import mlogix.span.Span
-import mlogix.span.Spanned
+import mlogix.compiler.core.span.Span
+import mlogix.compiler.core.span.Spanned
 
 abstract class ASTNode(open val span: Span) : Spanned {
 

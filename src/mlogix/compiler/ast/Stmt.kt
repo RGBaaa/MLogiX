@@ -1,9 +1,10 @@
 package mlogix.compiler.ast
 
 import arc.struct.Seq
-import mlogix.compiler.token.Token
-import mlogix.span.Span
-import mlogix.span.Spanned
+import mlogix.compiler.core.symbol.DefId
+import mlogix.compiler.core.token.Token
+import mlogix.compiler.core.span.Span
+import mlogix.compiler.core.span.Spanned
 
 //Statement
 abstract class Stmt(span: Span) : ASTNode(span) {
@@ -66,7 +67,10 @@ abstract class Stmt(span: Span) : ASTNode(span) {
         val parameters: Seq<Expr>?,
         val results: Seq<Expr>?,
         val body: Stmt?
-    ) : Stmt(span)
+    ) : Stmt(span) {
+        /** 由 Resolver 填充：此函数定义对应的 [DefId]（未声明/解析失败时为 null） */
+        var defId: DefId? = null
+    }
 
     data class ReturnStmt(override val span: Span, val expr: Expr?) : Stmt(span)
 

@@ -1,11 +1,12 @@
 package mlogix.compiler
 
 import arc.struct.Seq
-import mlogix.compiler.token.Token
-import mlogix.compiler.token.TokenType
-import mlogix.compiler.token.TokenType.*
-import mlogix.problem.ProblemCollector
-import mlogix.span.Span
+import mlogix.compiler.core.token.Token
+import mlogix.compiler.core.token.TokenType
+import mlogix.compiler.core.token.TokenType.*
+import mlogix.compiler.diagnostic.ProblemCollector
+import mlogix.compiler.core.span.Span
+import mlogix.compiler.passes.parsing.Lexer
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

@@ -1,12 +1,12 @@
 package mlogix.compiler.ast
 
 import arc.struct.Seq
-import mlogix.compiler.SourceMapManager.SourceMap
+import mlogix.compiler.core.SourceMapManager.SourceMap
 import mlogix.compiler.ast.Stmt.MatchStmt.MatchBranch
 import mlogix.compiler.ast.Stmt.UseStmt.UseItem
-import mlogix.compiler.token.Token
-import mlogix.span.Span
-import mlogix.span.Spanned
+import mlogix.compiler.core.token.Token
+import mlogix.compiler.core.span.Span
+import mlogix.compiler.core.span.Spanned
 import mlogix.util.Ansi
 import kotlin.math.max
 

@@ -1,8 +1,9 @@
 package mlogix.compiler.ast
 
 import arc.struct.Seq
-import mlogix.compiler.token.Token
-import mlogix.span.Span
+import mlogix.compiler.core.symbol.DefId
+import mlogix.compiler.core.token.Token
+import mlogix.compiler.core.span.Span
 
 //Expression
 abstract class Expr(span: Span) : ASTNode(span) {
@@ -14,7 +15,13 @@ abstract class Expr(span: Span) : ASTNode(span) {
     /**
      * 标识符
      */
-    data class Identifier(val token: Token) : Expr(token.span)
+    data class Identifier(val token: Token) : Expr(token.span) {
+        /**
+         * 由 Resolver 填充：此标识符解析到的定义句柄。
+         * 未声明（解析失败）时为 null。注意：不参与 data class 的 equals/hashCode。
+         */
+        var defId: DefId? = null
+    }
 
     /**
      * 元组
