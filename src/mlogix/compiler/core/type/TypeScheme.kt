@@ -71,7 +71,7 @@ class TypeScheme(
      *
      * **必须理解 `envFreeVars`（环境自由变量）的作用：**
      * - 假设我们有嵌套作用域：外层定义了一个泛型结构体 `struct Wrapper<T> { ... }`，
-     *   内层定义了一个闭包 `\|x\| x`。
+     *   内层定义了一个闭包 `x -> x`。
      * - 内层闭包的 `freeTypeVars()` 可能包含外层的 `T`。
      * - 但是，`T` 是属于外层结构体的，内层闭包**不能**把外层的 `T` 抢过来作为自己的泛型参数（否则类型会混乱）。
      * - 因此，`generalize` 会检查 `envFreeVars`，**跳过**那些已经在环境中被占用的变量，只量化"真正自由"的本地变量。
@@ -102,8 +102,24 @@ class TypeScheme(
         return TypeScheme(quantified, body)
     }
 
+
     /**
-     * 收集 [body] 中出现的全部类型变量（按 index 去重）。
+     * 收集并返回当前 `body` 类型中出现的**所有**自由类型变量，并按索引去重。
+     *
+     * 这是一个辅助工具方法，主要用于支持 `generalize` 方法。
+     * 由于类型 `body` 是一个树形结构（可能包含函数类型、数组类型、元组类型等子节点），
+     * 我们必须递归遍历整棵树，找出所有 `Type.Var` 叶子节点。
+     *
+     * **注意：** 这里的"自由"是相对于"整个 `body`"而言的。因为 `body` 本身并没有量化前缀，
+     * 所以只要出现在 `body` 中的变量，在这个上下文中都算作"自由变量"。
+     * 至于这些变量是否真的能被量化（即不在 `envFreeVars` 中），由 `generalize` 决定。
+     *
+     * **实现细节：**
+     * 利用访问者模式（`TypeVisitor`）遍历类型树。虽然 `Type` 有多种子类（`Var`、`Con`、`Func` 等），
+     * 但在此场景下我们只关心 `visitVar` 事件。其他节点（如 `Func`）会递归地访问其子节点（参数类型和返回类型）。
+     *
+     * @return 包含所有不同 `Type.Var` 实例的序列（`Seq`）。
+     *         返回的变量顺序不保证稳定，但每个变量索引（`index`）仅出现一次。
      */
     fun freeTypeVars(): Seq<Type.Var> {
         val result = Seq<Type.Var>(0)
@@ -119,6 +135,29 @@ class TypeScheme(
         return result
     }
 
+
+    /**
+     * 私有工具方法：递归地对给定的类型 `t` 执行替换操作。
+     *
+     * 这是 `instantiate` 的底层实现，负责遍历类型结构，将旧变量替换为新变量。
+     *
+     * **为什么需要递归？**
+     * 类型不是扁平的。例如 `Type.Func` 包含参数列表（`params`）和返回值（`result`），
+     * 这些子节点可能又包含其他子节点（如 `Type.Arr` 包含 `element`）。
+     * 我们必须深入每一种类型构造器，确保任何深层的变量都被替换干净。
+     *
+     * **处理各种类型分支：**
+     * - **`Type.Var`**：查找映射表 `subst`。如果找到了该变量的索引，返回对应的新变量；否则返回原变量（即没有命中替换的保留）。
+     * - **`Type.Con`**：具体类型（如 `Int`、`String`），没有任何变量，直接返回自身。
+     * - **`Type.Func`**：函数类型（如 `(A, B) -> C`）。递归替换所有参数类型和结果类型，构造新的 `Func`。
+     * - **`Type.Arr`**：数组类型（如 `[]T`）。递归替换元素类型。
+     * - **`Type.TupleType`**：元组类型（如 `(A, B)`）。递归替换所有元素。
+     * - **`Type.Unknown` / `Type.Error`**：特殊占位符（用于尚未推断或报错的情况），保持不变。
+     *
+     * @param t 待替换的原始类型
+     * @param subst 替换映射表，键为 `Int`（旧类型变量的索引），值为 `Type.Var`（新类型变量）
+     * @return 完全替换后的新类型（如果替换映射未命中，则返回原类型对象的引用以节省内存）
+     */
     private fun substitute(t: Type, subst: ObjectMap<Int, Type.Var>): Type {
         return when (t) {
             is Type.Var -> subst.get(t.index) ?: t
