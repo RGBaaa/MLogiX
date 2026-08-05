@@ -66,16 +66,14 @@ class TypeSolver(private val problems: ProblemCollector, private val sourceMap: 
             }
 
             is Type.Func -> {
-                val params = Seq<Type>()
-                for (p in t.params) params.add(walk(p))
+                val params = t.params.map { walk(it) }
                 Type.Func(params, walk(t.result))
             }
 
             is Type.Arr -> Type.Arr(walk(t.element))
 
             is Type.TupleType -> {
-                val elements = Seq<Type>()
-                for (e in t.elements) elements.add(walk(e))
+                val elements = t.elements.map { walk(it) }
                 Type.TupleType(elements)
             }
 

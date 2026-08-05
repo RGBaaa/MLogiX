@@ -67,6 +67,11 @@ Project-specific conventions and important patterns
       `ProblemCollector.printError()`）。
     - 日志用 `arc.util.Log`（见 `mlogix/util/Log.kt`、`mlogix/util/Ansi.kt`）。
     - 颜色字面量（`0%RRGGBB` / `0%colorName`）由 Lexer 转为 `arc.graphics.Color` 的 double-bits（`Color.toDoubleBits`）。
+  - `Seq`使用须知:
+      - 不带参数的`Seq`默认初始化16个位置，当能够预测数据数量甚至确定数据数量为0时（比如函数参数），填入预估的初始大小参数，不要往小估。
+      - 明确该Seq不再更改时，使用`shrink()`方法压缩占用。
+      - 批量添加数据使用`addAll`。
+      - 批量修改数据并返回新`Seq`使用`map()`方法。
 - Language positions: use `Span` (in `src/mlogix/compiler/core/span/Span.kt`) across AST nodes and problems. When
   changing AST nodes, ensure spans are correct (use Span.between or propagate token.span).
 - Problem reporting: create `Problem` instances with a `SourceMap` and then call `ProblemCollector.printError()`; the

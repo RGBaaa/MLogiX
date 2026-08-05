@@ -56,9 +56,9 @@ class TypeScheme(
      * @see substitute 本方法依赖的底层替换逻辑
      */
     fun instantiate(freshVar: () -> Type.Var): Type {
-        val subst = ObjectMap<Int, Type.Var>()
-        for ((index) in typeVars) subst.put(index, freshVar())
-        return substitute(body, subst)
+        val subsTable = ObjectMap<Int, Type.Var>()
+        for ((index) in typeVars) subsTable.put(index, freshVar())
+        return substitute(body, subsTable)
     }
 
     /**

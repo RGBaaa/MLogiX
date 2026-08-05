@@ -14,7 +14,7 @@ class SourceMapManager(/* 项目根目录 */val projectPath: Fi) {
     private val sourceMaps = ObjectMap<Fi, SourceMap>()
 
     /* 以此通过索引获取sourceMap */
-    private val sourceMapList = Seq<SourceMap>(1)
+    private val sourceMapList = Seq<SourceMap>()
 
     /**
      * 加载文件并创建 SourceMap

@@ -4,8 +4,8 @@ import arc.struct.Seq
 import arc.util.Log
 
 class ProblemCollector {
-    val errors = Seq<Problem>(0)
-    val warnings = Seq<Problem>(0)
+    val errors = Seq<Problem>()
+    val warnings = Seq<Problem>()
 
     fun createSnapshot(): ProblemCollectorSnapshot {
         return ProblemCollectorSnapshot(errorNum(), warningNum())

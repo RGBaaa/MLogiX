@@ -28,10 +28,10 @@ class TypeInferencer(val problems: ProblemCollector) {
     private lateinit var sourceMap: SourceMap
     private lateinit var symbolTable: SymbolTable
     private lateinit var solver: TypeSolver
-    private val constraints = Seq<Constraint>(0)
+    private val constraints = Seq<Constraint>()
 
     /** 当前函数返回上下文栈：期望返回类型 + 函数声明位置（用于 return 不匹配报错的声明方 info） */
-    private val returnContextStack = Seq<ReturnContext>(0)
+    private val returnContextStack = Seq<ReturnContext>(2)
 
     // ========== 执行类型推断 ==========
     /**
@@ -206,7 +206,7 @@ class TypeInferencer(val problems: ProblemCollector) {
         }
 
         // prepare function type: param type variables + result type variable
-        val paramTypes = Seq<Type>(0)
+        val paramTypes = Seq<Type>(8)
         stmt.parameters?.let { params ->
             repeat(params.size) {
                 val tv = solver.freshVar()

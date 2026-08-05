@@ -57,7 +57,7 @@ class Parser(
     // ========== 主要解析部分 ==========
     // ---------- Stmt ----------
     private fun program(): Stmt {
-        val stmts = Seq<Stmt>(0)
+        val stmts = Seq<Stmt>()
 
         while (!isAtEnd) {
             val stmt = statement()
@@ -95,7 +95,7 @@ class Parser(
     }
 
     private fun useItem(): UseStmt.UseItem? {
-        val path = Seq<Expr.Identifier>(0)
+        val path = Seq<Expr.Identifier>()
         while (true) {
             when {
                 check(TokenType.IDENTIFIER) -> {
@@ -144,7 +144,7 @@ class Parser(
     private fun block(): Stmt {
         val lBrace = next()
 
-        val stmts = Seq<Stmt>(0)
+        val stmts = Seq<Stmt>()
         while (!check(TokenType.RBRACE)) {
             if (isAtEnd) {
                 error("期望`块`语句的`}`")
@@ -194,7 +194,7 @@ class Parser(
             return MatchStmt(between(start, scrutinee), scrutinee, null)
         }
 
-        val branches = Seq<MatchStmt.MatchBranch>(0)
+        val branches = Seq<MatchStmt.MatchBranch>()
         while (!match(TokenType.RBRACE)) {
             if (isAtEnd) {
                 error("期望`match`语句的`}`")
@@ -334,7 +334,7 @@ class Parser(
             { error("期望`)`作为函数声明形参末尾").info(lParen, "形参开头") }
         )
 
-        val results = Seq<Expr>(2)
+        val results = Seq<Expr>(3)
         if (check(TokenType.ARROW)) {
             val arrow = next()
             if (check(TokenType.QUESTION_MARK)) {
@@ -663,7 +663,7 @@ class Parser(
                 check(TokenType.LPAREN) -> { // 函数调用
                     val lParen = next()
 
-                    val arguments = Seq<Expr>(0)
+                    val arguments = Seq<Expr>(8)
                     while (true) {
                         if (check(TokenType.RPAREN)) {
                             expr = Expr.Call(between(expr, next()), expr, arguments)
@@ -758,7 +758,7 @@ class Parser(
     private fun annotation(subject: Expr): Expr {
         // id :
         if (!isStmtEnd && match(TokenType.COLON)) {
-            val annotations = Seq<Expr>(2)
+            val annotations = Seq<Expr>(3)
 
             // id : ?
             if (check(TokenType.QUESTION_MARK)) {
@@ -802,7 +802,7 @@ class Parser(
         consumeEnd: Boolean,
         missEnd: Prov<Problem>,
     ): Seq<Expr> {
-        val seq = Seq<Expr>(0)
+        val seq = Seq<Expr>()
         while (!check(end)) {
             val snapshot = createSnapshot()
             val element = elementProv.get()
@@ -1110,7 +1110,7 @@ class Parser(
      * 错误恢复，扫描直到期望的TokenType，但不会消耗，按照Token树解析，不考虑已闭合的定界符
      */
     private fun recoverByTokenTree(expected: Set<TokenType>, addition: TokenType? = null): TokenType {
-        val delimiters = Seq<TokenType>(0)
+        val delimiters = Seq<TokenType>()
         while (true) {
             val type = lookAhead(0).type
             if (delimiters.isEmpty && (expected.contains(type) || addition == type)) return type
