@@ -91,7 +91,7 @@ class TypeScheme(
      * @see freeTypeVars 用于收集 `body` 中的所有候选变量
      */
     fun generalize(envFreeVars: IntSet): TypeScheme {
-        val quantified = Seq<Type.Var>(0)
+        val quantified = Seq<Type.Var>()
         val seen = ObjectMap<Int, Boolean>()
         for (v in freeTypeVars()) {
             if (!envFreeVars.contains(v.index) && !seen.containsKey(v.index)) {
@@ -122,7 +122,7 @@ class TypeScheme(
      *         返回的变量顺序不保证稳定，但每个变量索引（`index`）仅出现一次。
      */
     fun freeTypeVars(): Seq<Type.Var> {
-        val result = Seq<Type.Var>(0)
+        val result = Seq<Type.Var>()
         val seen = ObjectMap<Int, Boolean>()
         body.accept(object : TypeVisitor {
             override fun visitVar(type: Type.Var) {
@@ -154,30 +154,28 @@ class TypeScheme(
      * - **`Type.TupleType`**：元组类型（如 `(A, B)`）。递归替换所有元素。
      * - **`Type.Unknown` / `Type.Error`**：特殊占位符（用于尚未推断或报错的情况），保持不变。
      *
-     * @param t 待替换的原始类型
-     * @param subst 替换映射表，键为 `Int`（旧类型变量的索引），值为 `Type.Var`（新类型变量）
+     * @param type 待替换的原始类型
+     * @param subsTable 替换映射表，键为 `Int`（旧类型变量的索引），值为 `Type.Var`（新类型变量）
      * @return 完全替换后的新类型（如果替换映射未命中，则返回原类型对象的引用以节省内存）
      */
-    private fun substitute(t: Type, subst: ObjectMap<Int, Type.Var>): Type {
-        return when (t) {
-            is Type.Var -> subst.get(t.index) ?: t
-            is Type.Con -> t
+    private fun substitute(type: Type, subsTable: ObjectMap<Int, Type.Var>): Type {
+        return when (type) {
+            is Type.Var -> subsTable.get(type.index) ?: type
+            is Type.Con -> type
 
             is Type.Func -> {
-                val params = Seq<Type>(0)
-                for (p in t.params) params.add(substitute(p, subst))
-                Type.Func(params, substitute(t.result, subst))
+                val params = type.params.map { substitute(it, subsTable) }
+                Type.Func(params, substitute(type.result, subsTable))
             }
 
-            is Type.Arr -> Type.Arr(substitute(t.element, subst))
+            is Type.Arr -> Type.Arr(substitute(type.element, subsTable))
 
             is Type.TupleType -> {
-                val elements = Seq<Type>(0)
-                for (e in t.elements) elements.add(substitute(e, subst))
+                val elements = type.elements.map { substitute(it, subsTable) }
                 Type.TupleType(elements)
             }
 
-            Type.Unknown, Type.Error -> t
+            Type.Unknown, Type.Error -> type
         }
     }
 }
