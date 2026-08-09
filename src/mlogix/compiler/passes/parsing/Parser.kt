@@ -325,7 +325,13 @@ class Parser(
         }
 
         val parameters = seq(
-            { primary() },
+            {
+                consume(TokenType.IDENTIFIER) { e ->
+                    e.info(lookAhead(0), "函数形参应该是标识符")
+                }?.let {
+                    annotation(Expr.Identifier(it))
+                }
+            },
             EnumSet.of(TokenType.COMMA, TokenType.NEWLINE),
             false,
             { error("期望`,`或换行符作为形参分隔符").info(lParen, "形参开头") },
@@ -347,7 +353,11 @@ class Parser(
             results.add(
                 seq(
                     {
-                        if (check(TokenType.LPAREN)) tuple() else primary()
+                        consume(TokenType.IDENTIFIER) { e ->
+                            e.info(lookAhead(0), "函数返回值应该是标识符")
+                        }?.let {
+                            annotation(Expr.Identifier(it))
+                        }
                     },
                     EnumSet.of(TokenType.COMMA, TokenType.NEWLINE),
                     false,
@@ -403,7 +413,10 @@ class Parser(
                 .point(lookAhead(0), "")
             return null
         }
-        val expr = expression()
+        var expr = expression()
+        if (expr is Expr.Identifier) {
+            expr = annotation(expr)
+        }
         val assignStmt = assignStmt(expr)
         if (assignStmt == null) {
             if (!consumeStmtEnd()) recoverByTokenTree(TokenType.RECOVERY)
@@ -703,10 +716,10 @@ class Parser(
 
     private fun primary(): Expr {
         if (check(TokenType.LITERALS)) {
-            return annotation(Expr.Literal(next()))
+            return Expr.Literal(next())
 
         } else if (check(TokenType.IDENTIFIER)) {
-            return annotation(Expr.Identifier(next()))
+            return Expr.Identifier(next())
 
         } else if (match(TokenType.LPAREN)) {
             val expr = expression()
@@ -732,25 +745,6 @@ class Parser(
     }
 
     /**
-     * 元组，先`check(TokenType.LPAREN)`再调用
-     */
-    private fun tuple(): Expr {
-        val lParen = next()
-        val elements = seq(
-            { expression() },
-            EnumSet.of(TokenType.NEWLINE),
-            true,
-            { error("期望`,`或换行符作为元组分隔符").info(lParen, "元组开头") },
-            TokenType.RPAREN,
-            true,
-            { error("期望`)`作为元组末尾").info(lParen, "元组开头") }
-        )
-//         TODO style提示
-//        if (elements.size == 1) {}
-        return Expr.Tuple(between(lParen, prevToken), elements)
-    }
-
-    /**
      * 传入[TokenType.IDENTIFIER]/[TokenType.LITERALS]后尝试解析类型注解，
      * 失败则返回[subject]
      * @param subject 已被消耗的[TokenType.IDENTIFIER]/[TokenType.LITERALS]
@@ -758,29 +752,57 @@ class Parser(
     private fun annotation(subject: Expr): Expr {
         // id :
         if (!isStmtEnd && match(TokenType.COLON)) {
-            val annotations = Seq<Expr>(3)
+            val enums = anonymousEnum()
 
-            // id : ?
-            if (check(TokenType.QUESTION_MARK)) {
-                annotations.add(Expr.Identifier(Token(next().span, TokenType.IDENTIFIER, "Null")))
-                if (check(TokenType.OR)) {
-                    warning("多余的`|`")
-                        .point(next(), "")
-                }
-            }
-
-            // id : anno1 | anno2 ...
-            while (!isAtEnd) {
-                consume(TokenType.IDENTIFIER)?.let {
-                    annotations.add(Expr.Identifier(it))
-                    if (match(TokenType.OR)) continue
-                }
-                break
-            }
-            if (!annotations.isEmpty) return Expr.Annotation(subject, annotations)
+            if (!enums.isEmpty) return Expr.Annotation(subject, enums)
             // 如果标注数量为0，视作Identifier
         }
         return subject
+    }
+
+    private fun anonymousEnum(): Seq<Expr> {
+        val enums = Seq<Expr>(3)
+        // ?
+        if (check(TokenType.QUESTION_MARK)) {
+            enums.add(Expr.Identifier(Token(next().span, TokenType.IDENTIFIER, "Null")))
+            if (check(TokenType.OR)) {
+                warning("多余的`|`")
+                    .point(next(), "")
+            }
+        }
+
+        // tuple1 | tuple2 ...
+        while (!isAtEnd) {
+            if (check(TokenType.LPAREN)) {
+                enums.add(tuple())
+            } else {
+                consume(TokenType.IDENTIFIER)?.let {
+                    enums.add(Expr.Identifier(it))
+                }
+            }
+            if (!match(TokenType.OR)) break
+        }
+
+        return enums
+    }
+
+    /**
+     * 元组，先`check(TokenType.LPAREN)`再调用
+     */
+    private fun tuple(): Expr {
+        val lParen = next()
+        val elements = seq(
+            { expression() },
+            EnumSet.of(TokenType.COMMA, TokenType.NEWLINE),
+            true,
+            { error("期望`,`或换行符作为元组分隔符").info(lParen, "元组开头") },
+            TokenType.RPAREN,
+            true,
+            { error("期望`)`作为元组末尾").info(lParen, "元组开头") }
+        )
+//         TODO style提示
+        if (elements.size == 1) return elements[0]
+        return Expr.Tuple(between(lParen, prevToken), elements)
     }
 
     /**
@@ -800,7 +822,7 @@ class Parser(
         missSeparator: Prov<Problem>,
         end: TokenType,
         consumeEnd: Boolean,
-        missEnd: Prov<Problem>,
+        missEnd: Prov<Problem>? = null,
     ): Seq<Expr> {
         val seq = Seq<Expr>()
         while (!check(end)) {
@@ -831,7 +853,7 @@ class Parser(
 
                 TokenType.EOF -> {
                     if (consumeEnd) {
-                        missEnd.get().point(lookAhead(0), "")
+                        missEnd?.get()?.point(lookAhead(0), "")
                     }
                     return seq
                 }

@@ -3,10 +3,10 @@ package mlogix.compiler
 import arc.struct.Seq
 import mlogix.compiler.ast.Expr
 import mlogix.compiler.ast.Stmt
+import mlogix.compiler.core.span.Span
 import mlogix.compiler.core.token.Token
 import mlogix.compiler.core.token.TokenType
 import mlogix.compiler.diagnostic.ProblemCollector
-import mlogix.compiler.core.span.Span
 import mlogix.compiler.passes.parsing.Lexer
 import mlogix.compiler.passes.parsing.Parser
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -106,15 +106,24 @@ class ParserTest {
 
     @Test
     fun `parse function declaration`() {
-        val ast = parser.parse("fn add(a:b, c:d) -> r : ?Num|Int { return a + b }")
+        val ast = parser.parse("fn add(a:?(Num Str), b:d) -> r : ?(Num Int), msg : Str { return a + b }")
 
         val name = token(TokenType.IDENTIFIER, "add")
         val aParam = Expr.Annotation(
             Expr.Identifier(token(TokenType.IDENTIFIER, "a")),
-            Seq.with(Expr.Identifier(token(TokenType.IDENTIFIER, "b"))),
+            Seq.with(
+                Expr.Identifier(token(TokenType.IDENTIFIER, "Null")),
+                Expr.Tuple(
+                    span,
+                    Seq.with(
+                        Expr.Identifier(token(TokenType.IDENTIFIER, "Num")),
+                        Expr.Identifier(token(TokenType.IDENTIFIER, "Str")),
+                    )
+                )
+            ),
         )
         val bParam = Expr.Annotation(
-            Expr.Identifier(token(TokenType.IDENTIFIER, "c")),
+            Expr.Identifier(token(TokenType.IDENTIFIER, "b")),
             Seq.with(Expr.Identifier(token(TokenType.IDENTIFIER, "d"))),
         )
         val results = Seq.with<Expr>(
@@ -122,9 +131,18 @@ class ParserTest {
                 Expr.Identifier(token(TokenType.IDENTIFIER, "r")),
                 Seq.with(
                     Expr.Identifier(token(TokenType.IDENTIFIER, "Null")),
-                    Expr.Identifier(token(TokenType.IDENTIFIER, "Num")),
-                    Expr.Identifier(token(TokenType.IDENTIFIER, "Int"))
+                    Expr.Tuple(
+                        span,
+                        Seq.with(
+                            Expr.Identifier(token(TokenType.IDENTIFIER, "Num")),
+                            Expr.Identifier(token(TokenType.IDENTIFIER, "Int")),
+                        )
+                    )
                 )
+            ),
+            Expr.Annotation(
+                Expr.Identifier(token(TokenType.IDENTIFIER, "msg")),
+                Seq.with(Expr.Identifier(token(TokenType.IDENTIFIER, "Str")))
             )
         )
         val body = Stmt.BlockStmt(
