@@ -5,6 +5,7 @@ import mlogix.compiler.ast.Expr
 import mlogix.compiler.ast.Stmt
 import mlogix.compiler.core.SourceMapManager.SourceMap
 import mlogix.compiler.core.span.Span
+import mlogix.compiler.core.symbol.DefId
 import mlogix.compiler.core.symbol.SymbolTable
 import mlogix.compiler.core.token.Token
 import mlogix.compiler.core.token.TokenType
@@ -62,6 +63,13 @@ class TypeInferencer(val problems: ProblemCollector) {
                 if (final !is Type.Var) {
                     // update symbol type if previously Unknown
                     if (symbol.type == BuiltinType.Unknown) symbol.type = final
+                    symbol.values.put("final", final)
+                }
+            } else if (symbol.type is Type.Var) {
+                // 形参等直接挂类型变量的符号：求解后把具体类型写回（如 `a: Int` → Con("Int")）
+                val final = solver.read(symbol.type)
+                if (final !is Type.Var) {
+                    symbol.type = final
                     symbol.values.put("final", final)
                 }
             }
@@ -196,6 +204,12 @@ class TypeInferencer(val problems: ProblemCollector) {
 
     /**
      * 函数声明：为函数符号构造 [Type.Func]，绑定形参类型，分析函数体。
+     *
+     * 形参/返回值类型注解的职责分工：
+     * - Resolver 已把注解中的类型名解析为 [DefId]（填在 [Expr.Identifier.defId]）；
+     * - 本方法只做「已解析注解表达式 → [Type]」的转换（[annotationToType]）并生成
+     *   [Constraint.Equal]（使用方 = 形参类型变量，声明方 = 注解位置）；
+     * - [TypeSolver] 只负责求解，不做名字解析、不做类型构造。
      */
     private fun analyzeFnStmt(stmt: Stmt.FnStmt) {
         val fnSymbol = stmt.defId?.let { symbolTable.get(it) }
@@ -205,17 +219,34 @@ class TypeInferencer(val problems: ProblemCollector) {
             return
         }
 
-        // prepare function type: param type variables + result type variable
+        // 形参类型：无注解 → 类型变量；有注解 → 类型变量 + Equal(变量, 注解类型) 约束
         val paramTypes = Seq<Type>(8)
         stmt.parameters?.let { params ->
-            repeat(params.size) {
+            for (p in params) {
                 val tv = solver.freshVar()
                 paramTypes.add(tv)
+                if (p is Expr.Annotation) {
+                    val declType = annotationToType(p)
+                    val useSpan = unwrapIdentifier(p)?.span ?: p.span
+                    // t1=形参实际类型(使用方)，t2=注解声明的类型(声明方)
+                    constraints.add(Constraint.Equal(tv, declType, useSpan, p.span))
+                }
             }
         }
+
+        // 返回值类型：无注解 → 类型变量；单一返回值有注解 → 约束 resultType == 注解类型。
+        // 多返回值（`-> a: T1, b: T2`）尚未建模（Type.Func 只有单一 result），暂不约束。
         val resultType = solver.freshVar()
-        // set function symbol type
         fnSymbol.type = Type.Func(paramTypes, resultType)
+        stmt.results?.let { results ->
+            if (results.size == 1) {
+                val result = results[0]
+                if (result is Expr.Annotation) {
+                    val declType = annotationToType(result)
+                    constraints.add(Constraint.Equal(resultType, declType, result.span, result.span))
+                }
+            }
+        }
 
         // analyze body with parameters bound
         returnContextStack.add(ReturnContext(resultType, stmt.name?.span ?: stmt.span))
@@ -398,6 +429,60 @@ class TypeInferencer(val problems: ProblemCollector) {
 
             TokenType.GREATER, TokenType.GREATER_EQ, TokenType.LESS, TokenType.LESS_EQ, TokenType.EQ_EQ, TokenType.BANG_EQ -> return BuiltinType.Bool
             else -> return BuiltinType.Unknown
+        }
+    }
+
+    /**
+     * 形参/返回值类型注解 → [Type]。
+     *
+     * 职责边界（Resolver / TypeSolver 分工）：
+     * - Resolver 只做「类型名 → [DefId]」的名称解析（填在 [Expr.Identifier.defId]），
+     *   本方法**不做任何名字解析**，只查 [SymbolTable] 完成「注解表达式 → Type」的转换；
+     * - 生成的 [Constraint.Equal] 由 [TypeSolver] 统一求解。
+     *
+     * 当前限制：注解语法是匿名枚举（多个枚举值，如 `Int | Str`、`?(Num Str)`），
+     * 而类型系统尚未引入联合/枚举类型，因此：
+     * - 单一枚举值（`a: Int`、`r: (Num, Str)`）→ 正常转换为 [Type]；
+     * - 多个枚举值 → 报「暂不支持」错误并返回 [Type.Error]（抑制级联错误）。
+     *
+     * @param annotation 形参/返回值的 `Expr.Annotation` 节点（内部注解即枚举值列表）
+     * @return 注解对应的类型；无注解/无法转换时返回相应占位类型
+     */
+    private fun annotationToType(annotation: Expr.Annotation): Type {
+        val variants = annotation.annotations
+        if (variants.isEmpty) return BuiltinType.Unknown
+        if (variants.size > 1) {
+            error("联合/枚举类型注解暂不支持类型检查")
+                .point(annotation, "请改用单一类型注解，如 `a: Int`")
+            return Type.Error
+        }
+        return variantToType(variants[0])
+    }
+
+    /**
+     * 单个枚举值表达式 → [Type]。
+     * - 标识符：经 [DefId] 查 [SymbolTable] 得符号类型；`Array` 特化为 [Type.Arr]
+     *   （实际数组类型是 `Arr` 而非 `Con("Array")`）；
+     * - 元组：递归转换元素，产出 [Type.TupleType]；
+     * - 无法转换（defId 缺失 / 符号不存在 / 其它表达式）：返回 [Type.Error]。
+     */
+    private fun variantToType(expr: Expr): Type {
+        return when (expr) {
+            is Expr.Identifier -> {
+                val symbol = expr.defId?.let { symbolTable.get(it) }
+                when (symbol?.type) {
+                    BuiltinType.Array -> Type.Arr(solver.freshVar())
+                    else -> symbol?.type ?: Type.Error
+                }
+            }
+
+            is Expr.Tuple -> {
+                val elements = Seq<Type>(0)
+                for (e in expr.elements) elements.add(variantToType(e))
+                Type.TupleType(elements)
+            }
+
+            else -> Type.Error
         }
     }
 

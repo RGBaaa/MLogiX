@@ -153,11 +153,21 @@ class Resolver(private val problems: ProblemCollector) {
         // 未来 `fn foo<T>(...)` 就绪后，在此把泛型形参填入 TypeScheme.typeVars。
         fnSymbol?.typeScheme = TypeScheme(Seq(), BuiltinType.Fn)
 
-        // 形参与函数体在子作用域中
+        // 形参与函数体在子作用域中（未来泛型形参 `<T>` 也绑定在此，类型注解可引用）
         val fnScope = scope.child()
         stmt.parameters?.let { params ->
             for (p in params) bindParam(p, fnScope)
         }
+
+        // 返回值声明中的类型注解：同样只做类型名的名称解析
+        stmt.results?.let { results ->
+            for (r in results) {
+                if (r is Expr.Annotation) {
+                    for (variant in r.annotations) resolveAnnotationNames(variant, fnScope)
+                }
+            }
+        }
+
         resolveStmt(stmt.body, fnScope)
     }
 
@@ -170,6 +180,12 @@ class Resolver(private val problems: ProblemCollector) {
         val name = (ident.token.literal as? String) ?: ident.token.type.toString()
         val symbol = declare(name, BuiltinType.Unknown, ident.span, scope)
         ident.defId = symbol?.id
+
+        // 形参类型注解：这里只做「类型名 → DefId」的名称解析，
+        // 注解 → Type 的转换与约束生成由 TypeInferencer 完成（职责分离，见 resolveAnnotationNames）。
+        if (param is Expr.Annotation) {
+            for (variant in param.annotations) resolveAnnotationNames(variant, scope)
+        }
     }
 
     /**
@@ -284,5 +300,48 @@ class Resolver(private val problems: ProblemCollector) {
         val e = SemanticProblem(sourceMap, text, Problem.ProblemLevel.ERROR)
         problems.addError(e)
         return e
+    }
+
+    /**
+     * 解析类型注解中的类型名（只做名称解析，不做类型推断）。
+     * 递归处理 Annotation/Identifier/TypePath 等类型表达式。
+     */
+    private fun resolveAnnotationNames(expr: Expr, scope: Scope) {
+        when (expr) {
+            is Expr.Identifier -> {
+                val name = (expr.token.literal as? String) ?: expr.token.type.toString()
+                val defId = scope.lookup(name)
+                if (defId == null) {
+                    error("未声明的类型名: $name").point(expr, "未找到此类型名的定义")
+                } else {
+                    expr.defId = defId
+                }
+            }
+
+            is Expr.Annotation -> {
+                resolveAnnotationNames(expr.expr, scope)
+                for (ann in expr.annotations) resolveAnnotationNames(ann, scope)
+            }
+
+            is Expr.Tuple -> {
+                for (e in expr.elements) resolveAnnotationNames(e, scope)
+            }
+
+            is Expr.Array -> {
+                for (e in expr.elements) resolveAnnotationNames(e, scope)
+            }
+
+            is Expr.Call -> {
+                resolveAnnotationNames(expr.callee, scope)
+                for (a in expr.arguments) resolveAnnotationNames(a, scope)
+            }
+
+            is Expr.Get -> {
+                resolveAnnotationNames(expr.obj, scope)
+                resolveAnnotationNames(expr.field, scope)
+            }
+            // 其他类型表达式暂不处理
+            else -> {}
+        }
     }
 }
