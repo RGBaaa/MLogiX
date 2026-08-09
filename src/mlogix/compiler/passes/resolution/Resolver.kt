@@ -1,5 +1,6 @@
 package mlogix.compiler.passes.resolution
 
+import mlogix.compiler.core.symbol.DefId
 import mlogix.compiler.ast.Expr
 import mlogix.compiler.ast.Stmt
 import mlogix.compiler.core.SourceMapManager.SourceMap

@@ -73,7 +73,7 @@ Project-specific conventions and important patterns
       - 批量添加数据使用`addAll`。
       - 批量修改数据并返回新`Seq`使用`map()`方法。
 - Language positions: use `Span` (in `src/mlogix/compiler/core/span/Span.kt`) across AST nodes and problems. When
-  changing AST nodes, ensure spans are correct (use Span.between or propagate token.span).
+  changing AST nodes, ensure spans are correct (use `Span.between` or propagate `token.span`).
 - Problem reporting: create `Problem` instances with a `SourceMap` and then call `ProblemCollector.printError()`; the
   collector is the single place tests and the Compiler inspect for failure counts.
 - Passes must never reference each other directly; they exchange data through IR and share state via `CompilerContext`
