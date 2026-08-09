@@ -7,6 +7,9 @@ Quick start (Windows / PowerShell)
 - Build & run the CLI compile task (recommended):
     - .\gradlew.bat compile # runs mlogix.Main with arg 'c'
     - .\gradlew.bat compile-debug# runs mlogix.Main with args 'c' 'd' (extra debug flag)
+  - 快速试错：需要测试时直接修改项目根目录下的 `test.mlx`（无需保留原内容），然后运行
+    `.\gradlew.bat compile` 即可在终端看到词法/语法/类型推断等报错。`Compiler.compile()` 会遍历 项目下所有 `.mlx` 文件（
+    `src/mlogix/compiler/Compiler.kt`），无需手动指定文件。
 - Run unit tests:
     - .\gradlew.bat test
     - Run a single test class: .\gradlew.bat test --tests "mlogix.compiler.LexerTest"
